@@ -1,3 +1,7 @@
 # The Synbols dataset
 
-TODO
+## Building the docker image
+
+```
+docker build -t synbols .
+```
