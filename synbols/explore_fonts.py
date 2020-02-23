@@ -18,12 +18,9 @@ def check_char_availability(font_path):
 
 
 def get_sys_fonts(lang=None):
-    """Only tested on osx"""
-    if lang is None:
-        cmd = ['fc-list']
-    else:
-        cmd = ['fc-list', ':lang=%s' % lang]
-
+    cmd = ['fc-list']
+    if lang is not None:
+        cmd += [':lang=%s' % lang]
     lines = check_output(cmd).splitlines()
 
     font_dict = {}
