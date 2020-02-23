@@ -10,5 +10,5 @@ docker build -t synbols .
 
 Run the python code in the docker image to make sure all the dependencies are installed. For example:
 ```
-docker run -it synbols python synbols/explore_fonts.py
+docker run -it synbols -v synbols:/synbols python synbols/explore_fonts.py
 ```

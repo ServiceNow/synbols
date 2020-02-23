@@ -3,7 +3,7 @@ import numpy as np
 import synbols
 
 
-def plot_dataset(ds, name=None, class_stride=1):
+def plot_dataset(ds, name="dataset", class_stride=1, save_path="."):
     fig = plt.figure(name)
     plt.axis('off')
 
@@ -14,7 +14,7 @@ def plot_dataset(ds, name=None, class_stride=1):
     plt.imshow(img_grid)
 
     fig.tight_layout()
-    plt.show()
+    plt.savefig("%s/%s.png" % (save_path, name), dpi=300)
 
 
 if __name__ == "__main__":
