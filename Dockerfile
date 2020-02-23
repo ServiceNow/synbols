@@ -8,6 +8,12 @@ RUN apt-get update && \
     ln -s /usr/bin/python3 python && \
     pip3 install --upgrade pip
 
+# Install system dependencies
+RUN apt-get install -y fontconfig libcairo2-dev pkg-config
+
 # Install all python requirements
 COPY requirements.txt .
 RUN pip install -r requirements.txt
+
+# Copy the synbols code into the image
+COPY ./synbols synbols
