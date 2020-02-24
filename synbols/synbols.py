@@ -3,8 +3,8 @@
 
 import cairo
 import numpy as np
-from osx_non_free_fonts import LATIN_FONTS, FUNKY_LATIN_FONTS, GREEK_FONTS, CHINESE_FONTS, CYRILLIC_FONTS, CHINESE_SYMBOLS
-
+# from osx_non_free_fonts import LATIN_FONTS, FUNKY_LATIN_FONTS, GREEK_FONTS, CHINESE_FONTS, CYRILLIC_FONTS, CHINESE_SYMBOLS
+from google_fonts import LATIN_FONTS, GREEK_FONTS
 
 class Language:
     """Combines fonts and symbols for a given language."""
@@ -32,16 +32,19 @@ class Language:
 
 LANGUAGES = {
     'latin': Language(
-        LATIN_FONTS + FUNKY_LATIN_FONTS,
+        LATIN_FONTS,
         list("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")),
-    'greek': Language(
-        GREEK_FONTS,
-        list(u"ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛλΜμΝνΞξΟοΠπΡρΣσΤτΥυΦφΧχΨψΩω")),
-    'cyrillic': Language(
-        CYRILLIC_FONTS,
-        list(u"АаБбВвГгДдЕеЁёЖжЗзИиЙйКкЛлМмНнОоПпРрСсТтУуФфХхЦцЧчШшЩщЪъЫыЬьЭэЮюЯя")),
-    'chinese': Language(CHINESE_FONTS, CHINESE_SYMBOLS),
-    # 'korean': Language(CHINESE_FONTS, KOREAN_SYLLABLES)
+    # 'latin': Language(
+    #     LATIN_FONTS + FUNKY_LATIN_FONTS,
+    #     list("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")),
+    # 'greek': Language(
+    #     GREEK_FONTS,
+    #     list(u"ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛλΜμΝνΞξΟοΠπΡρΣσΤτΥυΦφΧχΨψΩω")),
+    # 'cyrillic': Language(
+    #     CYRILLIC_FONTS,
+    #     list(u"АаБбВвГгДдЕеЁёЖжЗзИиЙйКкЛлМмНнОоПпРрСсТтУуФфХхЦцЧчШшЩщЪъЫыЬьЭэЮюЯя")),
+    # 'chinese': Language(CHINESE_FONTS, CHINESE_SYMBOLS),
+    # # 'korean': Language(CHINESE_FONTS, KOREAN_SYLLABLES)
 }
 
 
