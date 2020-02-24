@@ -9,8 +9,18 @@ RUN apt-get update && \
     pip3 install --upgrade pip
 
 # Install system dependencies
-RUN apt-get install -y fontconfig libcairo2-dev pkg-config
+RUN apt-get install -y fonts-cantarell fontconfig git libcairo2-dev pkg-config ttf-ubuntu-font-family unzip wget
 
 # Install all python requirements
 COPY requirements.txt .
 RUN pip install -r requirements.txt
+
+# Install all Google fonts
+RUN wget https://github.com/google/fonts/archive/master.zip && \
+    unzip master.zip && \
+    mkdir -p /usr/share/fonts/truetype/google-fonts && \
+    find fonts-master -type f -name "*.ttf" | xargs -I{} sh -c "install -Dm644 {} /usr/share/fonts/truetype/google-fonts" && \
+    find /usr/share/fonts/truetype/google-fonts -type f -name "Cantarell-*.ttf" -delete && \
+    find /usr/share/fonts/truetype/google-fonts -type f -name "Ubuntu-*.ttf" -delete && \
+    apt-get --purge remove fonts-roboto && \
+    fc-cache -f > /dev/null
