@@ -15,7 +15,7 @@ RUN apt-get install -y fonts-cantarell fontconfig git libcairo2-dev pkg-config t
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-# Install all Google fonts
+# Install all Google fonts and extract their metadata
 RUN wget https://github.com/google/fonts/archive/master.zip && \
     unzip master.zip && \
     mkdir -p /usr/share/fonts/truetype/google-fonts && \
@@ -23,4 +23,5 @@ RUN wget https://github.com/google/fonts/archive/master.zip && \
     find /usr/share/fonts/truetype/google-fonts -type f -name "Cantarell-*.ttf" -delete && \
     find /usr/share/fonts/truetype/google-fonts -type f -name "Ubuntu-*.ttf" -delete && \
     apt-get --purge remove fonts-roboto && \
-    fc-cache -f > /dev/null
+    fc-cache -f > /dev/null && \
+    find fonts-master -name "METADATA.pb" | xargs -I{} bash -c "dirname {} | cut -d'/' -f3 | xargs printf; printf ","; grep -i 'subset' {} | cut -d':' -f2 | paste -sd "," - | sed 's/\"//g'" > /usr/share/fonts/truetype/google-fonts/google_fonts_metadata
