@@ -1,5 +1,6 @@
 import cairo
 import numpy as np
+import json
 
 from google_fonts import ALPHABET_MAP
 
@@ -22,7 +23,7 @@ def draw_image(ctxt, attributes):
     char = attributes.char
 
     ctxt.set_font_size(0.7)
-    ctxt.select_font_face(attributes.font_family, attributes.slant, weight)
+    ctxt.select_font_face(attributes.font, attributes.slant, weight)
     extent = ctxt.text_extents(char)
     if len(char) == 3:
         extent_main_char = ctxt.text_extents(char[1])
@@ -32,7 +33,7 @@ def draw_image(ctxt, attributes):
         raise Exception("Unexpected length of string: %d. Should be either 3 or 1" % len(char))
 
     if extent_main_char.width == 0. or extent_main_char.height == 0:
-        # print(char, attributes.font_family)  # TODO fix printing of unicode in docker
+        # print(char, attributes.font)  # TODO fix printing of unicode in docker
         return None, None
 
     ctxt.translate(0.5, 0.5)
@@ -56,13 +57,20 @@ def draw_image(ctxt, attributes):
     return extent, extent_main_char
 
 
+SLANT_MAP = {
+    cairo.FONT_SLANT_ITALIC: 'italic',
+    cairo.FONT_SLANT_NORMAL: 'normal',
+    cairo.FONT_SLANT_OBLIQUE: 'oblique',
+}
+
+
 class Attributes:
     """Class containing attributes describing the image
 
     Attributes:
-        language: TODO(allac)
+        alphabet: TODO(allac)
         char: string of 1 or more characters in the image
-        font_family: string describing the font used to draw characters
+        font: string describing the font used to draw characters
         background: TODO(allac)
         slant: one of cairo.FONT_SLANT_ITALIC, cairo.FONT_SLANT_NORMAL, cairo.FONT_SLANT_OBLIQUE
             default: Uniform random
@@ -83,12 +91,18 @@ class Attributes:
 
     """
 
-    def __init__(self, language, char, font_family, background=None,
+    def __init__(self, alphabet, char=None, font=None, background=None,
                  slant=None, is_bold=None, rotation=None, scale=None, translation=None, inverse_color=None,
                  pixel_noise_scale=0.01, resolution=(32, 32), rng=np.random.RandomState(42)):
-        self.language = language
+        self.alphabet = alphabet
+
+        if char is None:
+            char = rng.choice(alphabet.symbols)
         self.char = char
-        self.font_family = font_family
+
+        if font is None:
+            font = rng.choice(alphabet.fonts)
+        self.font = font
 
         if is_bold is None:
             is_bold = rng.choice([True, False])
@@ -143,7 +157,26 @@ class Attributes:
         img += self.rng.randn(*img.shape) * self.pixel_noise_scale
         img = np.clip(img, 0., 1.)
 
+        img = (img*255).astype(np.uint8)
         return img
+
+    def to_json(self):
+        data = dict(
+            alphabet=self.alphabet.name,
+            char=self.char,
+            font=self.font,
+            is_bold=str(self.is_bold),
+            slant=SLANT_MAP[self.slant],
+            scale=self.scale,
+            translation=self.translation,
+            inverse_color=str(self.inverse_color),
+            resolution=self.resolution,
+            pixel_noise_scale=self.pixel_noise_scale,
+            text_rectangle=self.text_rectangle,
+            main_char_rectangle=self.main_char_rectangle,
+        )
+
+        return json.dumps(data)
 
 
 def random_pattern(alpha=0.8, brightness_range=(0, 1), patern_types=('linear', 'radial'), rng=np.random):

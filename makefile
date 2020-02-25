@@ -10,3 +10,5 @@ explore-fonts:
 view-dataset:
 	docker run -it -v $(CURDIR)/synbols:/synbols -v $(CURDIR):/local synbols sh -c "cd /local; python ../synbols/view_dataset.py"
 	open dataset.png
+generate_dataset:
+	docker run -it -v $(CURDIR)/synbols:/synbols -v $(CURDIR):/local synbols sh -c "cd /local; python ../synbols/generate_dataset.py"
