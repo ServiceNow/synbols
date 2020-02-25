@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import synbols
+import google_fonts
 
 
 def plot_dataset(ds, name="dataset", class_stride=1, save_path="."):
@@ -14,9 +15,14 @@ def plot_dataset(ds, name="dataset", class_stride=1, save_path="."):
     plt.imshow(img_grid)
 
     fig.tight_layout()
-    plt.savefig("%s/%s.png" % (save_path, name), dpi=300)
+    plt.savefig("%s/%s.png" % (save_path, name), dpi=600)
 
 
 if __name__ == "__main__":
-    dataset = synbols.make_ds_from_lang(synbols.LANGUAGES['latin'], 64, 64, 20)
-    plot_dataset(dataset, class_stride=4)
+
+    print("Alphabets:")
+    for alphabet_name, alphabet in synbols.ALPHABET_MAP.items():
+        print("%s : %d fonts" % (alphabet_name, len(alphabet.fonts)))
+
+    dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['latin'], 64, 64, 3, 40)
+    plot_dataset(dataset)

@@ -1,52 +1,7 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import cairo
 import numpy as np
 
-# from osx_non_free_fonts import LATIN_FONTS, FUNKY_LATIN_FONTS, GREEK_FONTS, CHINESE_FONTS, CYRILLIC_FONTS, CHINESE_SYMBOLS
-from google_fonts import LATIN_FONTS, GREEK_FONTS
-
-class Language:
-    """Combines fonts and symbols for a given language."""
-
-    def __init__(self, fonts, symbols):
-        self.symbols = symbols
-        self.fonts = fonts
-
-    def partition(self, ratio_dict, rng=np.random.RandomState(42)):
-        """Splits both fonts and symbols into different partitions to define meta-train, meta-valid and meta-test.
-
-        Args:
-            ratio_dict: dict mapping the name of the subset to the ratio it should contain
-            rng: a random number generator defining the randomness of the split
-
-        Returns:
-            A dict mapping the name of the subset to a new Language instance.
-        """
-        set_names, ratios = zip(*ratio_dict.items())
-        symbol_splits = _split(self.symbols, ratios, rng)
-        font_splits = _split(self.fonts, ratios, rng)
-        return {set_name: Language(fonts, symbols)
-                for set_name, symbols, fonts in zip(set_names, symbol_splits, font_splits)}
-
-
-LANGUAGES = {
-    'latin': Language(
-        LATIN_FONTS,
-        list("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")),
-    # 'latin': Language(
-    #     LATIN_FONTS + FUNKY_LATIN_FONTS,
-    #     list("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")),
-    # 'greek': Language(
-    #     GREEK_FONTS,
-    #     list(u"ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛλΜμΝνΞξΟοΠπΡρΣσΤτΥυΦφΧχΨψΩω")),
-    # 'cyrillic': Language(
-    #     CYRILLIC_FONTS,
-    #     list(u"АаБбВвГгДдЕеЁёЖжЗзИиЙйКкЛлМмНнОоПпРрСсТтУуФфХхЦцЧчШшЩщЪъЫыЬьЭэЮюЯя")),
-    # 'chinese': Language(CHINESE_FONTS, CHINESE_SYMBOLS),
-    # # 'korean': Language(CHINESE_FONTS, KOREAN_SYLLABLES)
-}
+from google_fonts import ALPHABET_MAP
 
 
 def draw_image(ctxt, attributes):
@@ -77,8 +32,8 @@ def draw_image(ctxt, attributes):
         raise Exception("Unexpected length of string: %d. Should be either 3 or 1" % len(char))
 
     if extent_main_char.width == 0. or extent_main_char.height == 0:
-        print(char, attributes.font_family)
-        return
+        # print(char, attributes.font_family)  # TODO fix printing of unicode in docker
+        return None, None
 
     ctxt.translate(0.5, 0.5)
     scale = 0.6 / np.maximum(extent_main_char.width, extent_main_char.height)
@@ -245,14 +200,14 @@ def _split(set_, ratios, rng=np.random.RandomState(42)):
     return sets
 
 
-def make_ds_from_lang(lang, width, height, n_samples, rng=np.random.RandomState(42)):
+def make_char_grid_from_lang(lang, width, height, char_stride=1, font_stride=1, rng=np.random.RandomState(42)):
     """Temporary high level interface for making a dataset"""
     dataset = []
-    for char in lang.symbols:
+    # print("building char grid for ")
+    for char in lang.symbols[::char_stride]:
         one_class = []
-        print(u"generating sample for char %s" % char)
-        for i in range(n_samples):
-            font = rng.choice(lang.fonts)
+        # print("generating sample for char: %s" % char.encode('utf-8'))  # TODO find how to print this.
+        for font in lang.fonts[::font_stride]:
             attributes = Attributes(lang, char, font, resolution=(width, height), rng=rng)
             x = attributes.make_image()
             one_class.append(x)
