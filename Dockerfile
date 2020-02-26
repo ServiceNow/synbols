@@ -9,13 +9,13 @@ RUN apt-get update && \
     pip3 install --upgrade pip
 
 # Install system dependencies
-RUN apt-get install -y fonts-cantarell fontconfig git libcairo2-dev pkg-config ttf-ubuntu-font-family unzip wget
+RUN apt-get install -y fonts-cantarell fontconfig git icu-devtools ipython3 libcairo2-dev pyicu-binary pkg-config ttf-ubuntu-font-family unzip wget
 
 # Install all python requirements
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-# Install all Google fonts and extract their metadata
+## Install all Google fonts and extract their metadata
 RUN wget https://github.com/google/fonts/archive/master.zip && \
     unzip master.zip && \
     mkdir -p /usr/share/fonts/truetype/google-fonts && \
