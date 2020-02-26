@@ -9,8 +9,11 @@ import numpy as np
 class Trainer(torch.nn.Module):
     def __init__(self, num_classes, exp_dict):
         super().__init__()
-        self.backbone = models.resnet18(pretrained=False, 
-                                        num_classes=num_classes).cuda()
+        self.backbone = models.resnet18(pretrained=exp_dict["imagenet_pretraining"], progress=True)
+        num_ftrs = self.backbone.fc.in_features
+        self.backbone.fc = torch.nn.Linear(num_ftrs, num_classes) 
+        self.backbone.cuda()
+        
         self.optimizer = torch.optim.SGD(self.backbone.parameters(),
                                             lr=exp_dict['lr'],
                                             weight_decay=5e-4,

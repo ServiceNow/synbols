@@ -8,6 +8,7 @@ from haven import haven_chk as hc
 from torch.utils.data import DataLoader
 import torchvision.transforms as tt
 from datasets.synbols import Synbols
+from scripts.baselines import EXP_GROUPS
 from models import get_model
 import pandas as pd
 
@@ -99,20 +100,6 @@ def trainval(exp_dict, savedir_base, reset=False):
         print("Checkpoint Saved: %s" % savedir)
 
     print('experiment completed')
-
-# Define exp groups for parameter search
-EXP_GROUPS = {'font':
-                hu.cartesian_exp_group({
-                    'lr':[0.1],
-                    'batch_size':[256],
-                    'model': "trainer",
-                    'backbone': "resnet18",
-                    'max_epoch': 100,
-                    'dataset': {'path':'/mnt/datasets/public/research/synbols/latin_res=32x32_n=100000.npz',
-                                'name': 'synbols',
-                                'task': 'font'}
-                    })
-                }
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
