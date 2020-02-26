@@ -1,7 +1,9 @@
 import torch
 import torch.nn.functional as F
 import torchvision.models as models
+from sklearn.metrics import confusion_matrix
 from tqdm import tqdm
+import numpy as np
 
 
 class Trainer(torch.nn.Module):
@@ -40,17 +42,24 @@ class Trainer(torch.nn.Module):
         _accuracy = 0
         _total = 0
         _loss = 0
+        _logits = []
+        _targets = []
         for x, y in tqdm(loader):
             y = y.cuda(non_blocking=True)
             x = x.cuda(non_blocking=False)
             logits = self.backbone(x)
+            preds = logits.data.max(-1)[1]
             loss = F.cross_entropy(logits, y)
             _loss += float(loss)
-            _accuracy += float((logits.data.max(-1)[1] == y).float().sum())
+            _accuracy += float((preds == y).float().sum())
             _total += x.size(0)
+            _logits.append(logits.data.cpu().numpy())
+            _targets.append(y.data.cpu().numpy())
         self.scheduler.step(_loss / _total)
         return {"val_loss": _loss / _total, 
-                "val_accuracy": _accuracy / _total}
+                "val_accuracy": _accuracy / _total,
+                "logits": np.concatenate(_logits, 0),
+                "targets": np.concatenate(_targets, 0)}
 
     def get_state_dict(self):
         state = {}
