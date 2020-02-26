@@ -49,7 +49,7 @@ SYMBOL_MAP = {
     'vietnamese': list(LocaleData("vi").getExemplarSet()),
     'arabic': list(LocaleData("ar").getExemplarSet()),
     'hebrew': list(LocaleData("iw_IL").getExemplarSet()),
-    # 'khmer': list(LocaleData("km").getExemplarSet()),
+    # 'khmer': list(LocaleData("km").getExemplarSet()),  # XXX: see note above
     'tamil': list(LocaleData("ta").getExemplarSet()),
     'gujarati': list(LocaleData("gu").getExemplarSet()),
     'bengali': list(LocaleData("bn").getExemplarSet()),
