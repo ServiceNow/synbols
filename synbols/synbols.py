@@ -2,10 +2,11 @@ import cairo
 import numpy as np
 import json
 
+
 from google_fonts import ALPHABET_MAP
 
 
-def draw_image(ctxt, attributes):
+def draw_symbol(ctxt, attributes):
     """Core function drawing the characters as described in `attributes`
 
     Args:
@@ -16,7 +17,7 @@ def draw_image(ctxt, attributes):
         extent: rectangle containing the text in the coordinate of the context
         extent_main_char: rectangle containing the central character in the coordinate of the context
     """
-    make_background(ctxt)
+    make_background(ctxt, attributes.background)
 
     weight = cairo.FONT_WEIGHT_BOLD if attributes.is_bold else cairo.FONT_WEIGHT_NORMAL
 
@@ -50,8 +51,10 @@ def draw_image(ctxt, attributes):
         ctxt.translate(-extent.width / 2., extent.height / 2)
         ctxt.translate(*attributes.translation)
 
-    pat = random_pattern(0.8, (0.2, 1), patern_types=('linear',))
-    ctxt.set_source(pat)
+    if attributes.foreground is not None:
+        pat = random_pattern(0.8, (0.2, 1), patern_types=('linear',))
+        ctxt.set_source(pat)
+
     ctxt.show_text(char)
 
     return extent, extent_main_char
@@ -91,44 +94,20 @@ class Attributes:
 
     """
 
-    def __init__(self, alphabet, char=None, font=None, background=None,
+    def __init__(self, alphabet=None, char=None, font=None, background='gradient', foreground='gradient',
                  slant=None, is_bold=None, rotation=None, scale=None, translation=None, inverse_color=None,
                  pixel_noise_scale=0.01, resolution=(32, 32), rng=np.random.RandomState(42)):
         self.alphabet = alphabet
-
-        if char is None:
-            char = rng.choice(alphabet.symbols)
-        self.char = char
-
-        if font is None:
-            font = rng.choice(alphabet.fonts)
-        self.font = font
-
-        if is_bold is None:
-            is_bold = rng.choice([True, False])
-        self.is_bold = is_bold
-
-        if slant is None:
-            slant = rng.choice((cairo.FONT_SLANT_ITALIC, cairo.FONT_SLANT_NORMAL, cairo.FONT_SLANT_OBLIQUE))
-        self.slant = slant
-
+        self.char = rng.choice(alphabet.symbols) if char is None else char
+        self.font = rng.choice(alphabet.fonts) if font is None else font
+        self.is_bold = rng.choice([True, False]) if is_bold is None else is_bold
+        self.slant = rng.choice(list(SLANT_MAP.keys())) if slant is None else slant
         self.background = background
-
-        if rotation is None:
-            rotation = rng.randn() * 0.2
-        self.rotation = rotation
-
-        if scale is None:
-            scale = tuple(np.exp(rng.randn(2) * 0.1))
-        self.scale = scale
-
-        if translation is None:
-            translation = tuple(rng.rand(2) * 0.2 - 0.1)
-        self.translation = translation
-
-        if inverse_color is None:
-            inverse_color = rng.choice([True, False])
-        self.inverse_color = inverse_color
+        self.foreground = foreground
+        self.rotation = rng.randn() * 0.2 if rotation is None else rotation
+        self.scale = tuple(np.exp(rng.randn(2) * 0.1)) if scale is None else scale
+        self.translation = tuple(rng.rand(2) * 0.2 - 0.1) if translation is None else translation
+        self.inverse_color = rng.choice([True, False]) if inverse_color is None else inverse_color
 
         self.resolution = resolution
         self.pixel_noise_scale = pixel_noise_scale
@@ -143,7 +122,7 @@ class Attributes:
         surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
         ctxt = cairo.Context(surface)
         ctxt.scale(width, height)  # Normalizing the canvas
-        self.text_rectangle, self.main_char_rectangle = draw_image(ctxt, self)
+        self.text_rectangle, self.main_char_rectangle = draw_symbol(ctxt, self)
         buf = surface.get_data()
         img = np.ndarray(shape=(width, height, 4), dtype=np.uint8, buffer=buf)
         img = img.astype(np.float32) / 256.
@@ -151,13 +130,13 @@ class Attributes:
         if self.inverse_color:
             img = 1 - img
 
-        min, max = np.min(img), np.max(img)
-        img = (img - min) / (max - min)
+        mn, mx = np.min(img), np.max(img)
+        img = (img - mn) / (mx - mn)
 
         img += self.rng.randn(*img.shape) * self.pixel_noise_scale
         img = np.clip(img, 0., 1.)
 
-        img = (img*255).astype(np.uint8)
+        img = (img * 255).astype(np.uint8)
         return img
 
     def to_json(self):
@@ -211,13 +190,14 @@ def solid_pattern(alpha=0.8, brightness_range=(0, 1), rng=np.random):
     return cairo.SolidPattern(r, g, b, alpha)
 
 
-def make_background(ctxt, rng=np.random):
+def make_background(ctxt, style, rng=np.random):
     """Random background combining various patterns."""
-    for i in range(5):
-        pat = random_pattern(0.4, (0, 0.8), rng=rng)
-        ctxt.rectangle(0, 0, 1, 1)  # Rectangle(x0, y0, x1, y1)
-        ctxt.set_source(pat)
-        ctxt.fill()
+    if style is not None:
+        for i in range(5):
+            pat = random_pattern(0.4, (0, 0.8), rng=rng)
+            ctxt.rectangle(0, 0, 1, 1)  # Rectangle(x0, y0, x1, y1)
+            ctxt.set_source(pat)
+            ctxt.fill()
 
 
 def _split(set_, ratios, rng=np.random.RandomState(42)):
