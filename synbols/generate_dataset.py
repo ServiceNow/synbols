@@ -1,16 +1,21 @@
 import numpy as np
 import synbols
-import h5py
+import time as t
 
 
 def make_alphabet_specific_dataset(alphabet, resolution=(32, 32), n_samples=100000, rng=np.random):
     def generator():
         for i in range(n_samples):
-            if i % 100 == 0:
-                print("generating sample %d." % i)
+
             attributes = synbols.Attributes(alphabet, resolution=resolution, rng=rng)
+            t0 = t.time()
             x = attributes.make_image()
+            dt = t.time() - t0
             y = attributes.to_json()
+
+            if i % 100 == 0:
+                print("generating sample %d (%.3gs / image)" % (i, dt))
+
             yield x, y
 
     return generator
