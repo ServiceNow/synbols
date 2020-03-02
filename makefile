@@ -12,5 +12,5 @@ explore-fonts:
 view-dataset:
 	$(SYNBOLS_RUN) sh -c "cd /local; python ../synbols/view_dataset.py"
 	open dataset.png
-generate_dataset:
+dataset:
 	$(SYNBOLS_RUN) sh -c "cd /local; python ../synbols/generate_dataset.py"
