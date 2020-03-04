@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import synbols
-import google_fonts
 
 
 def plot_dataset(ds, name="dataset", class_stride=1, save_path="."):
@@ -15,8 +14,7 @@ def plot_dataset(ds, name="dataset", class_stride=1, save_path="."):
     plt.imshow(img_grid)
 
     fig.tight_layout()
-    plt.savefig("%s/%s.png" % (save_path, name), dpi=600)
-    print ("%s/%s.png" % (save_path, name))
+    plt.savefig("%s/%s.png" % (save_path, name), dpi=1000)
 
 
 if __name__ == "__main__":
@@ -25,18 +23,19 @@ if __name__ == "__main__":
     for alphabet_name, alphabet in synbols.ALPHABET_MAP.items():
         print("%s : %d fonts" % (alphabet_name, len(alphabet.fonts)))
 
+    # TODO: need to check 100% of the fonts for missing characters or things that dont render properly
     # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['latin'], 64, 64, 1, 20)  # TODO missing upper cases
-    dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['telugu'], 64, 64, 1, 1)  # TODO some chars are really off centered and out of cells
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['thai'], 64, 64, 1, 1)   # TODO some chars are really off centered and out of cells
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['vietnamese'], 64, 64, 1, 4)  # mostly latin with accents
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['arabic'], 64, 64, 1, 1)
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['hebrew'], 64, 64, 1, 1)
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['khmer'], 64, 64, 3, 1)
+    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['telugu'], 64, 64, 1, 1)  # TODO the circle in some chars is not rendered. (bottom ones)
+    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['thai'], 64, 64, 1, 1)
+    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['vietnamese'], 64, 64, 1, 4)
+    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['arabic'], 64, 64, 1, 1)  # TODO: missing chars in fonts
+    dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['hebrew'], 64, 64, 1, 1)
+    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['khmer'], 64, 64, 3, 1)  # TODO: see comment in googlefonts
     # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['tamil'], 64, 64, 3, 1)
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['gujarati'], 64, 64, 3, 1)
+    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['gujarati'], 64, 64, 3, 1)  # TODO: one font to remove and one blank in another font
     # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['bengali'], 64, 64, 3, 1)
     # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['malayalam'], 64, 64, 3, 1)
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['korean'], 64, 64, 10, 1)  # TODO: empty cells
+    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['korean'], 64, 64, 1000, 1)  # TODO: huge amount of missing chars
     # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['chinese-simplified'], 64, 64, 10, 1)
     # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['greek'], 64, 64, 3, 2)
     # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['cyrillic'], 64, 64, 2, 4)

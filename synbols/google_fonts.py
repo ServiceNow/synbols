@@ -59,6 +59,7 @@ SYMBOL_MAP = {
     'korean': list(LocaleData("ko_KR").getExemplarSet()),
     'chinese-simplified': list(LocaleData("zh-CN").getExemplarSet())
 }
+FONT_BLACKLIST = ["rubik", "podkova", "baloochettan2"]
 
 
 def parse_metadata(file_path):
@@ -91,6 +92,12 @@ def build_alphabet_map():
     alphabet_map = {}
 
     for alphabet_name, font_list in language_map.items():
+        for font in FONT_BLACKLIST:
+            try:
+                font_list.remove(font)
+            except:
+                pass
+
         if alphabet_name in SYMBOL_MAP.keys():
             alphabet_map[alphabet_name] = Alphabet(alphabet_name, font_list, SYMBOL_MAP[alphabet_name])
 
