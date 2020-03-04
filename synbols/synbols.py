@@ -221,6 +221,7 @@ def random_pattern(alpha=0.8, brightness_range=(0, 1),
 
 
 def solid_pattern(alpha=0.8, brightness_range=(0, 1), rng=np.random):
+    """Generate a solid pattern of a random color."""
     def random_color():
         b_delta = brightness_range[1] - brightness_range[0]
         return rng.rand(3) * b_delta + brightness_range[0]
@@ -232,7 +233,7 @@ def solid_pattern(alpha=0.8, brightness_range=(0, 1), rng=np.random):
 def make_background(ctxt, style, rng=np.random):
     """Random background combining various patterns."""
     if style is not None:
-        for i in range(5):
+        for _ in range(5):
             pat = random_pattern(0.4, (0, 0.8), rng=rng)
             ctxt.rectangle(0, 0, 1, 1)  # Rectangle(x0, y0, x1, y1)
             ctxt.set_source(pat)
