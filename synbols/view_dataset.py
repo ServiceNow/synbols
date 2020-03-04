@@ -16,6 +16,7 @@ def plot_dataset(ds, name="dataset", class_stride=1, save_path="."):
 
     fig.tight_layout()
     plt.savefig("%s/%s.png" % (save_path, name), dpi=600)
+    print ("%s/%s.png" % (save_path, name))
 
 
 if __name__ == "__main__":
@@ -24,8 +25,8 @@ if __name__ == "__main__":
     for alphabet_name, alphabet in synbols.ALPHABET_MAP.items():
         print("%s : %d fonts" % (alphabet_name, len(alphabet.fonts)))
 
-    dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['latin'], 64, 64, 1, 20)  # TODO missing upper cases
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['telugu'], 64, 64, 1, 1)  # TODO some chars are really off centered and out of cells
+    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['latin'], 64, 64, 1, 20)  # TODO missing upper cases
+    dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['telugu'], 64, 64, 1, 1)  # TODO some chars are really off centered and out of cells
     # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['thai'], 64, 64, 1, 1)   # TODO some chars are really off centered and out of cells
     # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['vietnamese'], 64, 64, 1, 4)  # mostly latin with accents
     # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['arabic'], 64, 64, 1, 1)

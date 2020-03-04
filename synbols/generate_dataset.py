@@ -3,11 +3,12 @@ import synbols
 import time as t
 
 
-def make_alphabet_specific_dataset(alphabet, resolution=(32, 32), n_samples=100000, rng=np.random):
+def make_alphabet_specific_dataset(alphabet, resolution=(32, 32),
+                                   n_samples=100000, rng=np.random):
     def generator():
         for i in range(n_samples):
-
-            attributes = synbols.Attributes(alphabet, resolution=resolution, rng=rng)
+            attributes = synbols.Attributes(alphabet, resolution=resolution,
+                                            rng=rng)
             t0 = t.time()
             x = attributes.make_image()
             dt = t.time() - t0
@@ -30,9 +31,11 @@ def write_numpy(file_path, generator):
 
 
 if __name__ == "__main__":
-    n_samples = 100000
+    n_samples = 10000
     alphabet = 'latin'
     resolution = (32, 32)
-    file_name = '%s_res=%dx%d_n=%d.npz' % (alphabet, resolution[0], resolution[1], n_samples)
-    generator = make_alphabet_specific_dataset(synbols.ALPHABET_MAP[alphabet], n_samples=n_samples)
+    file_name = ('%s_res=%dx%d_n=%d.npz' %
+        (alphabet, resolution[0], resolution[1], n_samples))
+    generator = make_alphabet_specific_dataset(synbols.ALPHABET_MAP[alphabet],
+                                               n_samples=n_samples)
     write_numpy(file_name, generator)
