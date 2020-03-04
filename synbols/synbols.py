@@ -1,9 +1,17 @@
 import cairo
-import numpy as np
 import json
+import numpy as np
 
+from sys import stdout
 
 from google_fonts import ALPHABET_MAP
+
+
+SLANT_MAP = {
+    cairo.FONT_SLANT_ITALIC: 'italic',
+    cairo.FONT_SLANT_NORMAL: 'normal',
+    cairo.FONT_SLANT_OBLIQUE: 'oblique',
+}
 
 
 def draw_symbol(ctxt, attributes):
@@ -24,9 +32,12 @@ def draw_symbol(ctxt, attributes):
     char = attributes.char
 
     ctxt.set_font_size(0.7)
+    # print(attributes.font)
     ctxt.select_font_face(attributes.font, attributes.slant, weight)
     extent = ctxt.text_extents(char)
+
     if len(char) == 3:
+        raise NotImplementedError() # TODO: support multi-part character languages
         extent_main_char = ctxt.text_extents(char[1])
     elif len(char) == 1:
         extent_main_char = extent
@@ -34,7 +45,8 @@ def draw_symbol(ctxt, attributes):
         raise Exception("Unexpected length of string: %d. Should be either 3 or 1" % len(char))
 
     if extent_main_char.width == 0. or extent_main_char.height == 0:
-        # print(char, attributes.font)  # TODO fix printing of unicode in docker
+        stdout.buffer.write(char.encode("utf-8"))
+        print("   Font:", attributes.font, "<-- ERROR needs attention")
         return None, None
 
     ctxt.translate(0.5, 0.5)
@@ -45,10 +57,11 @@ def draw_symbol(ctxt, attributes):
     ctxt.rotate(attributes.rotation)
 
     if len(char) == 3:
+        raise NotImplementedError()  # TODO: support multi-part character languages
         ctxt.translate(-ctxt.text_extents(char[0]).x_advance - extent_main_char.width / 2., extent_main_char.height / 2)
         ctxt.translate(*attributes.translation)
     else:
-        ctxt.translate(-extent.width / 2., extent.height / 2)
+        ctxt.translate(-extent.x_bearing - extent.width / 2, -extent.y_bearing - extent.height / 2)
         ctxt.translate(*attributes.translation)
 
     if attributes.foreground is not None:
@@ -58,13 +71,6 @@ def draw_symbol(ctxt, attributes):
     ctxt.show_text(char)
 
     return extent, extent_main_char
-
-
-SLANT_MAP = {
-    cairo.FONT_SLANT_ITALIC: 'italic',
-    cairo.FONT_SLANT_NORMAL: 'normal',
-    cairo.FONT_SLANT_OBLIQUE: 'oblique',
-}
 
 
 class Attributes:
@@ -123,6 +129,15 @@ class Attributes:
         ctxt = cairo.Context(surface)
         ctxt.scale(width, height)  # Normalizing the canvas
         self.text_rectangle, self.main_char_rectangle = draw_symbol(ctxt, self)
+        if self.text_rectangle is None:
+            # XXX: for debugging
+            from copy import deepcopy
+            attr = deepcopy(self)
+            attr.font = ""
+            attr.char = "X"
+            attr.background = None
+            print(attr.foreground)
+            self.text_rectangle, self.main_char_rectangle = draw_symbol(ctxt, attr)
         buf = surface.get_data()
         img = np.ndarray(shape=(width, height, 4), dtype=np.uint8, buffer=buf)
         img = img.astype(np.float32) / 256.
@@ -217,9 +232,11 @@ def make_char_grid_from_lang(lang, width, height, char_stride=1, font_stride=1, 
     """Temporary high level interface for making a dataset"""
     dataset = []
     # print("building char grid for ")
+    # print(len(lang.symbols)); exit()
     for char in lang.symbols[::char_stride]:
         one_class = []
-        # print("generating sample for char: %s" % char.encode('utf-8'))  # TODO find how to print this.
+        stdout.buffer.write(char.encode("utf-8"))
+        print(" generating samples")
         for font in lang.fonts[::font_stride]:
             attributes = Attributes(lang, char, font, resolution=(width, height), rng=rng)
             x = attributes.make_image()
