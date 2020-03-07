@@ -134,7 +134,7 @@ class Attributes:
             from copy import deepcopy
             attr = deepcopy(self)
             attr.font = ""
-            attr.char = "X"
+            attr.char = "#"
             attr.background = None
             print(attr.foreground)
             self.text_rectangle, self.main_char_rectangle = draw_symbol(ctxt, attr)
