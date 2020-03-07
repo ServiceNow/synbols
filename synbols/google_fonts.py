@@ -3,9 +3,14 @@
 
 from collections import defaultdict
 from icu import LocaleData
+from os.path import join
+
+from font_utils import check_font
 
 
-METADATA = "/usr/share/fonts/truetype/google-fonts/google_fonts_metadata"
+FONT_PATH = "/usr/share/fonts/truetype/google-fonts/"
+METADATA = join(FONT_PATH, "google_fonts_metadata")
+FONT_BLACKLIST = ["rubik", "podkova", "baloochettan2"]  # Fonts with known rendering issues
 
 # Number of fonts per alphabet
 # ----------------------------
@@ -59,7 +64,6 @@ SYMBOL_MAP = {
     'korean': list(LocaleData("ko_KR").getExemplarSet()),
     'chinese-simplified': list(LocaleData("zh-CN").getExemplarSet())
 }
-FONT_BLACKLIST = ["rubik", "podkova", "baloochettan2"]
 
 
 def parse_metadata(file_path):
@@ -92,13 +96,14 @@ def build_alphabet_map():
     alphabet_map = {}
 
     for alphabet_name, font_list in language_map.items():
-        for font in FONT_BLACKLIST:
-            try:
-                font_list.remove(font)
-            except:
-                pass
-
         if alphabet_name in SYMBOL_MAP.keys():
+            # TODO: after filtering many languages have less fonts. It's expected that all languages with 3-part chars
+            #       will fail because it's not currently supported by check_font (e.g., bengali language). However,
+            #       even after filtering fonts that don't contain all characters some images fail to render properly.
+            #       Use view-dataset on arabic language for an example (bottom row, 4th image from the right). Chars
+            #       that fail to render are displayed as # (added this to facilitate spotting them). But be careful,
+            #       that # trick doesn't always work and sometimes the image is left blank...
+            font_list = [f for f in font_list if f not in FONT_BLACKLIST and check_font(f, SYMBOL_MAP[alphabet_name])]
             alphabet_map[alphabet_name] = Alphabet(alphabet_name, font_list, SYMBOL_MAP[alphabet_name])
 
     return alphabet_map
