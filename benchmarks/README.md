@@ -1,19 +1,26 @@
 # Synbols benchmarks
+The entry point is in `trainval.py`. It takes care of checkpointing and calling the training and validation loops
 
-## Set-up
-
-Most machine learning projects require a codebase and a workflow to  create, manage, and visualize experiments. This framework helps in achieving this setup while focusing on simplicity, readability, reliability, and flexibility. 
-
-* [Install](#install)
-* [Getting Started](#getting-started)
-* [Examples](#examples)
-* [Extras](#extras)
-* [Contributing](#contributing)
-
-### Install
+## Requirements
 ```
 $ pip install --upgrade git+https://github.com/ElementAI/haven
 ```
+
+## Add benchmark
+Individual benchmarks should be placed into `models`.
+
+
+## Current benchmarks
+
+### Classification
+
+### Detection
+
+### Few-shot
+
+### Active learning
+
+
 ### Getting Started
 
 To setup a machine learning project for large-scale experimentation, we can follow these 4 steps.
