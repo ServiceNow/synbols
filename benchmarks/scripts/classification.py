@@ -5,7 +5,7 @@ EXP_GROUPS = {'font':
                 hu.cartesian_exp_group({
                     'lr':[0.1],
                     'batch_size':[256],
-                    'model': "trainer",
+                    'model': "classification",
                     'backbone': "resnet18",
                     'max_epoch': 100,
                     'imagenet_pretraining': False,
@@ -15,7 +15,7 @@ EXP_GROUPS = {'font':
                 'font_pretrained': hu.cartesian_exp_group({
                     'lr':[0.01],
                     'batch_size':[256],
-                    'model': "trainer",
+                    'model': "classification",
                     'backbone': "resnet18",
                     'max_epoch': 100,
                     'imagenet_pretraining': [True],

@@ -7,7 +7,7 @@ from haven import haven_chk as hc
 
 from torch.utils.data import DataLoader
 import torchvision.transforms as tt
-from datasets.synbols import Synbols
+from datasets import get_dataset
 from scripts import EXP_GROUPS
 from models import get_model
 import pandas as pd
@@ -33,15 +33,8 @@ def trainval(exp_dict, savedir_base, reset=False):
 
     # Dataset
     # -----------
-    transform = tt.Compose([tt.ToPILImage(), tt.ToTensor()])
-    train_dataset = Synbols(exp_dict['dataset']['path'], 
-                            split='train', 
-                            key=exp_dict['dataset']['task'], 
-                            transform=transform)
-    val_dataset = Synbols(exp_dict['dataset']['path'], 
-                            split='val', 
-                            key=exp_dict['dataset']['task'], 
-                            transform=transform)
+    train_dataset = get_dataset('train', exp_dict['dataset'])
+    val_dataset = get_dataset('val', exp_dict['dataset'])
 
     # train and val loader
     train_loader = DataLoader(train_dataset,
