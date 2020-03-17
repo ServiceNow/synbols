@@ -6,7 +6,7 @@ from tqdm import tqdm
 import numpy as np
 
 
-class Trainer(torch.nn.Module):
+class Classification(torch.nn.Module):
     def __init__(self, num_classes, exp_dict):
         super().__init__()
         self.backbone = models.resnet18(pretrained=exp_dict["imagenet_pretraining"], progress=True)

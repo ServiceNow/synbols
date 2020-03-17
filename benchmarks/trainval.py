@@ -8,7 +8,7 @@ from haven import haven_chk as hc
 from torch.utils.data import DataLoader
 import torchvision.transforms as tt
 from datasets.synbols import Synbols
-from scripts.baselines import EXP_GROUPS
+from scripts import EXP_GROUPS
 from models import get_model
 import pandas as pd
 
