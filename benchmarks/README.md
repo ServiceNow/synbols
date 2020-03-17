@@ -13,6 +13,8 @@ Individual benchmarks should be placed into `models`.
 ## Current benchmarks
 
 ### Classification
+*Resnet-18 on fonts*
+`python3 trainval.py --savedir_base /mnt/projects/vision_prototypes/synbols/logs --experiment font`
 
 ### Detection
 
