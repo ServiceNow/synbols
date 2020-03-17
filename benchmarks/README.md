@@ -15,11 +15,14 @@ Individual benchmarks should be placed into `models`.
 ### Classification
 **Resnet-18 on fonts**
 
-`python3 trainval.py --savedir_base /mnt/projects/vision_prototypes/synbols/logs --experiment font`
+`python3 trainval.py --savedir_base <experiments directory> --exp_group_list font`
 
 ### Detection
 
 ### Few-shot
+**Resnet-18 prototypical on char**
+
+`python3 trainval.py --savedir_base <experiments directory> --exp_group_list fewshot_char`
 
 ### Active learning
 

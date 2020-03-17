@@ -1,5 +1,10 @@
 from .classification import Classification
+from .fewshot import FewShot
 
-def get_model(num_classes, exp_dict):
+def get_model(exp_dict):
     if exp_dict["model"] == 'classification':
-        return Classification(num_classes, exp_dict) 
+        return Classification(exp_dict["num_classes"]) 
+    elif exp_dict["model"] == 'fewshot':
+        return FewShot(exp_dict) 
+    else:
+        raise ValueError("Model %s not found" %exp_dict["model"])

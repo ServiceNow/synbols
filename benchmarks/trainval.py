@@ -5,9 +5,10 @@ from haven import haven_utils as hu
 from haven import haven_results as hr
 from haven import haven_chk as hc
 
-from torch.utils.data import DataLoader
-import torchvision.transforms as tt
 from datasets import get_dataset
+from torch.utils.data import DataLoader
+from torch.utils.data._utils.collate import default_collate
+import torchvision.transforms as tt
 from scripts import EXP_GROUPS
 from models import get_model
 import pandas as pd
@@ -40,15 +41,17 @@ def trainval(exp_dict, savedir_base, reset=False):
     train_loader = DataLoader(train_dataset,
                                 batch_size=exp_dict['batch_size'],
                                 shuffle=True,
+                                collate_fn=lambda x: x if exp_dict['batch_size'] == 1 else default_collate, # to handle episodes
                                 num_workers=args.num_workers) 
     val_loader = DataLoader(val_dataset,
                                 batch_size=exp_dict['batch_size'],
+                                collate_fn=lambda x: x if exp_dict['batch_size'] == 1 else default_collate,
                                 shuffle=True,
                                 num_workers=args.num_workers) 
    
     # Model
     # -----------
-    model = get_model(train_dataset.num_classes, exp_dict)
+    model = get_model(exp_dict)
 
     # Checkpoint
     # -----------
