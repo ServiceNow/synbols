@@ -154,8 +154,8 @@ class Attributes:
         img = (img * 255).astype(np.uint8)
         return img
 
-    def to_json(self):
-        data = dict(
+    def to_dict(self):
+        return dict(
             alphabet=self.alphabet.name,
             char=self.char,
             font=self.font,
@@ -170,6 +170,8 @@ class Attributes:
             main_char_rectangle=self.main_char_rectangle,
         )
 
+    def to_json(self):
+        data = self.to_dict()
         return json.dumps(data)
 
 

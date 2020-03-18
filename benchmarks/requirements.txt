@@ -1,1 +1,2 @@
 havenai
+git+https://github.com/ElementAI/baal.git

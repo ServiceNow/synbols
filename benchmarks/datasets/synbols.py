@@ -34,9 +34,9 @@ class Synbols(Dataset):
             start = int(0.9 * len(self.x))
             end = len(self.x) 
         rng = np.random.RandomState(seed)
-        indices = rng.permutation(len(self.x))
-        self.x = self.x[indices[start:end]]
-        self.y = self.y[indices[start:end]]
+        self.indices = rng.permutation(len(self.x))
+        self.x = self.x[self.indices[start:end]]
+        self.y = self.y[self.indices[start:end]]
 
     def __getitem__(self, item):
         return self.transform(self.x[item]), self.y[item]
