@@ -1,6 +1,8 @@
+SHELL=/bin/bash
+userid := $(shell id -u)
 versiontag = $(shell date +%Y-%m-%d)
 
-SYNBOLS_RUN = docker run -it -v $(CURDIR)/synbols:/synbols -v $(CURDIR):/local synbols
+SYNBOLS_RUN = docker run --user $(userid) -it -v $(CURDIR)/synbols:/synbols -v $(CURDIR):/local synbols
 
 all: docker explore-fonts view-dataset
 
