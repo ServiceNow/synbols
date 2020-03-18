@@ -9,7 +9,7 @@ from datasets import get_dataset
 from torch.utils.data import DataLoader
 from torch.utils.data._utils.collate import default_collate
 import torchvision.transforms as tt
-from scripts import EXP_GROUPS
+from exp_configs import EXP_GROUPS
 from models import get_model
 import pandas as pd
 
