@@ -6,7 +6,6 @@ from sys import stdout
 
 from google_fonts import ALPHABET_MAP
 
-
 SLANT_MAP = {
     cairo.FONT_SLANT_ITALIC: 'italic',
     cairo.FONT_SLANT_NORMAL: 'normal',
@@ -32,12 +31,11 @@ def draw_symbol(ctxt, attributes):
     char = attributes.char
 
     ctxt.set_font_size(0.7)
-    # print(attributes.font)
     ctxt.select_font_face(attributes.font, attributes.slant, weight)
     extent = ctxt.text_extents(char)
 
     if len(char) == 3:
-        raise NotImplementedError() # TODO: support multi-part character languages
+        raise NotImplementedError()  # TODO: support multi-part character languages
         extent_main_char = ctxt.text_extents(char[1])
     elif len(char) == 1:
         extent_main_char = extent
@@ -102,8 +100,8 @@ class Attributes:
 
     def __init__(self, alphabet=None, char=None, font=None, background='gradient', foreground='gradient',
                  slant=None, is_bold=None, rotation=None, scale=None, translation=None, inverse_color=None,
-                 pixel_noise_scale=0.01, resolution=(32, 32), rng=np.random.RandomState(42)):
-        self.alphabet = alphabet
+                 pixel_noise_scale=0.01, resolution=(32, 32), rng=np.random):
+        self.alphabet = alphabet  # TODO handle None
         self.char = rng.choice(alphabet.symbols) if char is None else char
         self.font = rng.choice(alphabet.fonts) if font is None else font
         self.is_bold = rng.choice([True, False]) if is_bold is None else is_bold
@@ -213,6 +211,9 @@ def make_background(ctxt, style, rng=np.random):
             ctxt.rectangle(0, 0, 1, 1)  # Rectangle(x0, y0, x1, y1)
             ctxt.set_source(pat)
             ctxt.fill()
+    else:
+        ctxt.set_source_rgb(1, 1, 1)
+        ctxt.fill()
 
 
 def _split(set_, ratios, rng=np.random.RandomState(42)):
