@@ -33,6 +33,7 @@ EXP_GROUPS = {'font':
                         'max_epoch': 100,
                         'imagenet_pretraining': False,
                         'episodic': False,
+                        'num_classes': 982,
                         'dataset': {'path':'/mnt/datasets/public/research/synbols/plain_n=1000000.npz',
                                     'name': 'synbols',
                                     'task': 'font'}}),

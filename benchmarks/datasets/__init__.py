@@ -8,7 +8,7 @@ def get_dataset(split, exp_dict):
     if dataset_dict["name"] == "synbols":
         transform = tt.Compose([tt.ToPILImage(), tt.ToTensor()])
         ret = Synbols(dataset_dict["path"], split, dataset_dict["task"], transform)
-        exp_dict["num_classes"] = ret.num_classes # FIXME: this is hacky
+        # exp_dict["num_classes"] = ret.num_classes # FIXME: this is hacky
         return ret
     elif dataset_dict["name"] == "fewshot_synbols":
         transform = tt.Compose([tt.ToPILImage(), tt.ToTensor()])
