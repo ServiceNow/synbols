@@ -146,10 +146,25 @@ if __name__ == "__main__":
 
     elif args.run_jobs:
         # launch jobs
-        from haven import haven_jobs as hj
-        hj.run_exp_list_jobs(exp_list, 
-                       savedir_base=args.savedir_base, 
-                       workdir=os.path.dirname(os.path.realpath(__file__)))
+        # TODO: define experiment-wise
+        from haven import haven_jobs as hjb
+        run_command = ('python trainval.py -ei <exp_id> -sb %s -nw 1' %  (args.savedir_base))
+        job_config = {
+            'volume': '/mnt:/mnt',
+            'image': 'images.borgy.elementai.net/pau/pytorch:1.3.1py3-cuda10-cudnn7',
+            'gpu': '1',
+            'mem': '16',
+            'bid': '1',
+            'restartable': '1',
+            'gpu': '1',
+            'mem': '20',
+            'cpu': '4'}
+        workdir = os.path.dirname(os.path.realpath(__file__))
+        hjb.run_exp_list_jobs(exp_list, 
+                            savedir_base=args.savedir_base, 
+                            workdir=workdir,
+                            run_command=run_command,
+                            job_config=job_config)
 
     else:
         # run experiments
