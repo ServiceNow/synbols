@@ -13,7 +13,7 @@ class EpisodicDataLoader(_DataLoader):
         else:
             pass    
         return super().__iter__()
-torch.utils.data.DataLoader = EpisodicDataLoader
+# torch.utils.data.DataLoader = EpisodicDataLoader
 
 class FewShotSampler():
     FewShotTask = collections.namedtuple("FewShotTask", ["nclasses", "support_size", "query_size", "unlabeled_size"])
