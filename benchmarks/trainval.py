@@ -100,7 +100,7 @@ def trainval(exp_dict, savedir_base, reset=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-e', '--exp_group_list', nargs="+")
+    parser.add_argument('-e', '--exp_group_list', nargs="*")
     parser.add_argument('-sb', '--savedir_base', required=True)
     parser.add_argument("-r", "--reset",  default=0, type=int)
     parser.add_argument("-ei", "--exp_id", default=None)
@@ -135,9 +135,22 @@ if __name__ == "__main__":
     elif args.run_jobs:
         # launch jobs
         from haven import haven_jobs as hj
-        hj.run_exp_list_jobs(exp_list, 
+        command = f'python trainval.py -ei <exp_id> -sb {args.savedir_base} -nw 1'
+        job_config = {'volume': [
+            '/mnt/datasets/public:/mnt/datasets/public',
+            f'{args.savedir_base}:{args.savedir_base}'
+        ],
+                    'image': 'images.borgy.elementai.net/synbols/active-learning:latest',
+                    'bid': '1',
+                    'restartable': '1',
+                    'gpu': '1',
+                    'mem': '16',
+                    'cpu': '4'}
+        hj.run_exp_list_jobs(exp_list,
                        savedir_base=args.savedir_base, 
-                       workdir=os.path.dirname(os.path.realpath(__file__)))
+                       workdir=os.path.dirname(os.path.realpath(__file__)),
+                             run_command=command,
+                             job_config=job_config)
 
     else:
         # run experiments

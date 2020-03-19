@@ -1,2 +1,2 @@
-havenai
+git+https://github.com/ElementAI/haven.git
 git+https://github.com/ElementAI/baal.git

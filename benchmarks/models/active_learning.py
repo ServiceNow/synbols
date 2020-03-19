@@ -57,16 +57,21 @@ class ActiveLearning(torch.nn.Module):
     @torch.no_grad()
     def val_on_loader(self, loader, savedir=None):
         val_data = loader.dataset
-        self.wrapper.test_on_dataset(val_data)
+        self.wrapper.test_on_dataset(val_data, batch_size=self.batch_size, use_cuda=True)
         metrics = self.wrapper.metrics
         self.scheduler.step(metrics['test_loss'].value)
         self.loop.step()
         return self._format_metrics(metrics, 'test')
 
     def _format_metrics(self, metrics, step):
-        mets = {k: v.value for k, v in metrics if step in k}
-        mets = {k: v if isinstance(v, float) else np.mean(v) for k, v in mets.items()}
-        return mets
+        mets = {k: v.value for k, v in metrics.items() if step in k}
+        mets_unpacked = {}
+        for k, v in mets.items():
+            if isinstance(v, float):
+                mets_unpacked[k] = v
+            else:
+                mets_unpacked.update({f"{k}_{ki}": np.mean(vi) for ki, vi in v.items()})
+        return mets_unpacked
 
     def get_state_dict(self):
         state = {}
