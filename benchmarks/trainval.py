@@ -9,7 +9,7 @@ from datasets import get_dataset
 from torch.utils.data import DataLoader
 from torch.utils.data._utils.collate import default_collate
 import torchvision.transforms as tt
-from scripts import EXP_GROUPS
+from exp_configs import EXP_GROUPS
 from models import get_model
 import pandas as pd
 
@@ -34,20 +34,32 @@ def trainval(exp_dict, savedir_base, reset=False):
 
     # Dataset
     # -----------
-    train_dataset = get_dataset('train', exp_dict['dataset'])
-    val_dataset = get_dataset('val', exp_dict['dataset'])
+    train_dataset = get_dataset('train', exp_dict)
+    val_dataset = get_dataset('val', exp_dict)
 
     # train and val loader
-    train_loader = DataLoader(train_dataset,
-                                batch_size=exp_dict['batch_size'],
-                                shuffle=True,
-                                collate_fn=lambda x: x if exp_dict['batch_size'] == 1 else default_collate, # to handle episodes
-                                num_workers=args.num_workers) 
-    val_loader = DataLoader(val_dataset,
-                                batch_size=exp_dict['batch_size'],
-                                collate_fn=lambda x: x if exp_dict['batch_size'] == 1 else default_collate,
-                                shuffle=True,
-                                num_workers=args.num_workers) 
+    if exp_dict["episodic"] == False:
+        train_loader = DataLoader(train_dataset,
+                                    batch_size=exp_dict['batch_size'],
+                                    shuffle=True,
+                                    num_workers=args.num_workers) 
+        val_loader = DataLoader(val_dataset,
+                                    batch_size=exp_dict['batch_size'],
+                                    shuffle=True,
+                                    num_workers=args.num_workers) 
+    else: # to support episodes TODO: move inside each model
+        from datasets.episodic_dataset import EpisodicDataLoader
+        train_loader = EpisodicDataLoader(train_dataset,
+                                    batch_size=exp_dict['batch_size'],
+                                    shuffle=True,
+                                    collate_fn=lambda x: x,
+                                    num_workers=args.num_workers) 
+        val_loader = EpisodicDataLoader(val_dataset,
+                                    batch_size=exp_dict['batch_size'],
+                                    shuffle=True,
+                                    collate_fn=lambda x: x,
+                                    num_workers=args.num_workers) 
+                
    
     # Model
     # -----------

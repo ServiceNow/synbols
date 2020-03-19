@@ -9,6 +9,7 @@ EXP_GROUPS = {'fewshot_char':
                     'backbone': "resnet18",
                     'max_epoch': 100,
                     'imagenet_pretraining': False,
+                    'episodic': True,
                     'dataset': {'path':'/mnt/datasets/public/research/synbols/latin_res=32x32_n=100000.npz',
                                 'name': 'fewshot_synbols',
                                 'task': 'char',

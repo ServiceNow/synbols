@@ -1,9 +1,10 @@
-from .synbols import Synbols
-from .episodic_synbols import EpisodicSynbols
-from .episodic_dataset import FewShotSampler
 from torchvision import transforms as tt
+from .synbols import Synbols
+from .episodic_dataset import FewShotSampler # should be imported here because it changes the dataloader to be episodic
+from .episodic_synbols import EpisodicSynbols 
 
-def get_dataset(split, dataset_dict):
+def get_dataset(split, exp_dict):
+    dataset_dict = exp_dict["dataset"]
     if dataset_dict["name"] == "synbols":
         transform = tt.Compose([tt.ToPILImage(), tt.ToTensor()])
         ret = Synbols(dataset_dict["path"], split, dataset_dict["task"], transform)
