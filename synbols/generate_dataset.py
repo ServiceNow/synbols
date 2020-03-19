@@ -1,26 +1,19 @@
 #!/usr/bin/python
 
 
-import numpy as np
 import synbols
 import time as t
 import cairo
 import argparse
-from PIL import Image
-from os import path
-import zipfile
+from data_io import write_jpg_zip
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', help='name of the predefined dataset', default='default')
-parser.add_argument('--n_samples', help='number of samples to generate', type=int, default=1000000)
-
-
-# def alphabet_specific_generator(alphabet, resolution=(32, 32), n_samples=100000, rng=np.random):
-#     def generator():
-#         for i in range(n_samples):
-#             yield synbols.Attributes(alphabet, resolution=resolution, rng=rng)
-#
-#     return generator
+parser.add_argument('--n_samples', help='number of samples to generate', type=int, default=100000)
 
 
 def attribute_generator(n_samples, **kwargs):
@@ -34,6 +27,7 @@ def attribute_generator(n_samples, **kwargs):
 
 
 def dataset_generator(attr_generator, n_samples):
+    """High level function generating the dataset from an attribute generator."""
     def generator():
         t0 = t.time()
         for i, attributes in enumerate(attr_generator()):
@@ -46,28 +40,11 @@ def dataset_generator(attr_generator, n_samples):
                 eta = (n_samples - i) * dt
                 eta_str = t.strftime("%Hh%Mm%Ss", t.gmtime(eta))
 
-                print("generating sample %4d / %d (%.3g s/image) ETA: %s" % (i, n_samples, dt, eta_str))
+                logging.info("generating sample %4d / %d (%.3g s/image) ETA: %s", i, n_samples, dt, eta_str)
                 t0 = t.time()
             yield x, y
 
     return generator
-
-
-def write_numpy(file_path, generator):
-    x, y = zip(*list(generator()))
-    x = np.stack(x)
-
-    print("Saving dataset in %s." % file_path)
-    np.savez(file_path, x=x, y=y)
-
-
-def write_jpg_zip(directory, generator):
-    with zipfile.ZipFile(directory + '.zip', 'w') as zip:
-        for i, (x, y) in enumerate(generator()):
-            name = "%s/%07d" % (directory, i)
-            with zip.open(name + '.jpeg', 'w') as fd:
-                Image.fromarray(x).save(fd, 'jpeg')
-            zip.writestr(name + '.json', y)
 
 
 def generate_plain_dataset(n_samples):
