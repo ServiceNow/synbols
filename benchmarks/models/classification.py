@@ -28,6 +28,7 @@ class Classification(torch.nn.Module):
     def train_on_loader(self, loader):
         _loss = 0
         _total = 0
+        self.backbone.train()
         for x, y in tqdm(loader):
             self.optimizer.zero_grad()
             y = y.cuda(non_blocking=True)
@@ -42,11 +43,10 @@ class Classification(torch.nn.Module):
 
     @torch.no_grad()
     def val_on_loader(self, loader, savedir=None):
+        self.backbone.eval()
         _accuracy = 0
         _total = 0
         _loss = 0
-        _logits = []
-        _targets = []
         for x, y in tqdm(loader):
             y = y.cuda(non_blocking=True)
             x = x.cuda(non_blocking=False)
@@ -56,13 +56,9 @@ class Classification(torch.nn.Module):
             _loss += float(loss)
             _accuracy += float((preds == y).float().sum())
             _total += x.size(0)
-            _logits.append(logits.data.cpu().numpy())
-            _targets.append(y.data.cpu().numpy())
         self.scheduler.step(_loss / _total)
         return {"val_loss": _loss / _total, 
-                "val_accuracy": _accuracy / _total,
-                "logits": np.concatenate(_logits, 0),
-                "targets": np.concatenate(_targets, 0)}
+                "val_accuracy": _accuracy / _total}
 
     def get_state_dict(self):
         state = {}

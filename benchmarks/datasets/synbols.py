@@ -3,9 +3,12 @@ import numpy as np
 import json
 
 class Synbols(Dataset):
-    def __init__(self, path, split, key='font', transform=None):
+    def __init__(self, path, split, key='font', transform=None, train_fraction=0.6, val_fraction=0.4):
         self.path = path
         self.split = split
+        self.train_fraction = train_fraction
+        self.val_fraction = val_fraction
+        self.test_fraction = 1 - train_fraction - val_fraction
         data = np.load(path) 
         self.x = data['x']
         self.y = data['y']
@@ -26,12 +29,12 @@ class Synbols(Dataset):
     def make_splits(self, seed=42):
         if self.split == 'train':
             start = 0
-            end = int(0.8 * len(self.x))
+            end = int(self.train_fraction * len(self.x))
         elif self.split == 'val':
-            start = int(0.8 * len(self.x))
-            end = int(0.9 * len(self.x))
+            start = int(self.train_fraction * len(self.x))
+            end = int((self.train_fraction +self.val_fraction) * len(self.x))
         elif self.split == 'test':
-            start = int(0.9 * len(self.x))
+            start = int((self.train_fraction + self.val_fraction) * len(self.x))
             end = len(self.x) 
         rng = np.random.RandomState(seed)
         indices = rng.permutation(len(self.x))
