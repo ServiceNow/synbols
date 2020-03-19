@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 import torch
 from baal import ModelWrapper
@@ -14,7 +16,9 @@ class ActiveLearning(torch.nn.Module):
         self.backbone = models.vgg16(pretrained=exp_dict["imagenet_pretraining"], progress=True)
         num_ftrs = self.backbone.classifier[-1].in_features
         self.backbone.classifier[-1] = torch.nn.Linear(num_ftrs, exp_dict["num_classes"])
+        self.initial_weights = deepcopy(self.backbone.state_dict())
         self.backbone.cuda()
+
 
         self.batch_size = exp_dict['batch_size']
         self.learning_epoch = exp_dict['learning_epoch']
@@ -42,6 +46,7 @@ class ActiveLearning(torch.nn.Module):
         self.active_dataset_settings = None
 
     def train_on_loader(self, loader: DataLoader):
+        self.wrapper.load_state_dict(self.initial_weights)
         if self.active_dataset is None:
             self.active_dataset = loader.dataset
             if self.active_dataset_settings is not None:
