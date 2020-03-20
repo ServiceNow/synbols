@@ -72,7 +72,8 @@ def draw_symbol(ctxt, attributes):
                        extent_main_char.height / 2)
         ctxt.translate(*attributes.translation)
     else:
-        ctxt.translate(-extent.x_bearing - extent.width / 2, -extent.y_bearing - extent.height / 2)
+        ctxt.translate(-extent.x_bearing - extent.width / 2,
+                       -extent.y_bearing - extent.height / 2)
         ctxt.translate(*attributes.translation)
 
     # ??
@@ -256,6 +257,7 @@ def make_background(ctxt, style, rng=np.random):
             ctxt.fill()
 
 
+# TODO: Not used?
 def _split(set_, ratios, rng=np.random.RandomState(42)):
     n = len(set_)
     counts = np.round(np.array(ratios) * n).astype(np.int)
@@ -275,10 +277,16 @@ def make_char_grid_from_lang(lang, width, height, char_stride=1, font_stride=1,
     dataset = []
     # print("building char grid for ")
     # print(len(lang.symbols)); exit()
+    print("Generating samples...")
+    for i, char in enumerate(lang.symbols[::char_stride]):
+        print(i, char.encode("utf-8"))
+        stdout.buffer.write(char.encode("utf-8"))
+        input()
+
     for char in lang.symbols[::char_stride]:
         one_class = []
         stdout.buffer.write(char.encode("utf-8"))
-        print(" generating samples")
+        # print(" generating samples")
         for font in lang.fonts[::font_stride]:
             attributes = Attributes(lang, char, font,
                                     resolution=(width, height), rng=rng)
