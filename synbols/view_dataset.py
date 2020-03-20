@@ -1,44 +1,56 @@
-import matplotlib.pyplot as plt
 import numpy as np
-import synbols
+import matplotlib.pyplot as plt
+from collections import defaultdict
+from data_io import load_dataset_jpeg_sequential, pack_dataset
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
-def plot_dataset(ds, name="dataset", class_stride=1, save_path="."):
+def _extract_axis(y, h_axis, v_axis):
+    h_values = np.unique([attr[h_axis] for attr in y])
+    v_values = np.unique([attr[v_axis] for attr in y])
+
+    map = defaultdict(list)
+
+    for i, attr in enumerate(y):
+        map[(attr[h_axis], attr[v_axis])].append(i)
+
+    return map, h_values, v_values
+
+
+def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n_col=30, rng=np.random):
     fig = plt.figure(name)
-    plt.axis('off')
+    # plt.axis('off')
+
+    attr_map, h_values, v_values = _extract_axis(y, h_axis, v_axis)
+    h_values = rng.choice(h_values, np.minimum(n_col, len(h_values)), replace=False)
+    v_values = rng.choice(v_values, np.minimum(n_row, len(v_values)), replace=False)
 
     img_grid = []
-    for one_class in ds[::class_stride]:
-        img_grid.append(np.hstack([x for x in one_class]))
+    blank_image = np.zeros(x.shape[1:], dtype=x.dtype)
+
+    for v_value in v_values:
+        img_row = []
+        for h_value in h_values:
+            if (h_value, v_value) in attr_map.keys():
+
+                idx = attr_map[(h_value, v_value)][0]
+                img_row.append(x[idx])
+            else:
+                img_row.append(blank_image)
+
+        img_grid.append(np.hstack(img_row))
+
     img_grid = np.vstack(img_grid)
     plt.imshow(img_grid)
+    plt.xlabel(h_axis)
+    plt.ylabel(v_axis)
 
     fig.tight_layout()
-    plt.savefig("%s/%s.png" % (save_path, name), dpi=1000)
+    plt.show()
 
 
 if __name__ == "__main__":
-
-    print("Alphabets:")
-    for alphabet_name, alphabet in synbols.ALPHABET_MAP.items():
-        print("%s : %d fonts" % (alphabet_name, len(alphabet.fonts)))
-
-    # TODO: The TODOs next to each language are possibly out of date now that char centering works well and we check
-    #       fonts for missing chars. Need to check 100% of the languages and fonts for chars that don't render properly
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['latin'], 64, 64, 1, 20)  # TODO missing upper cases
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['telugu'], 64, 64, 1, 1)  # TODO the circle in some chars is not rendered. (bottom ones)
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['thai'], 64, 64, 1, 1)
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['vietnamese'], 64, 64, 1, 1)
-    dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['arabic'], 64, 64, 1, 1)  # TODO: missing chars in fonts
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['hebrew'], 64, 64, 1, 1)
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['khmer'], 64, 64, 3, 1)  # TODO: see comment in googlefonts
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['tamil'], 64, 64, 1, 1)
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['gujarati'], 64, 64, 3, 1)  # TODO: one font to remove and one blank in another font
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['bengali'], 64, 64, 3, 1)
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['malayalam'], 64, 64, 3, 1)
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['korean'], 64, 64, 1000, 1)  # TODO: huge amount of missing chars
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['chinese-simplified'], 64, 64, 10, 1)
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['greek'], 64, 64, 1, 1)
-    # dataset = synbols.make_char_grid_from_lang(synbols.ALPHABET_MAP['cyrillic'], 64, 64, 1, 1)
-
-    plot_dataset(dataset)
+    x, y = pack_dataset(load_dataset_jpeg_sequential('../camouflage_n=10000.zip'))
+    plot_dataset(x, y)

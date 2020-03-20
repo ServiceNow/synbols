@@ -151,13 +151,11 @@ if __name__ == "__main__":
         run_command = ('python trainval.py -ei <exp_id> -sb %s -nw 1' %  (args.savedir_base))
         job_config = {
             'volume': '/mnt:/mnt',
-            'image': 'images.borgy.elementai.net/pau/pytorch:1.3.1py3-cuda10-cudnn7',
+            'image': 'images.borgy.elementai.net/issam/main',
             'gpu': '1',
             'mem': '16',
             'bid': '1',
             'restartable': '1',
-            'gpu': '1',
-            'mem': '20',
             'cpu': '4'}
         workdir = os.path.dirname(os.path.realpath(__file__))
         hjb.run_exp_list_jobs(exp_list, 

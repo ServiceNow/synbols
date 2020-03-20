@@ -24,7 +24,9 @@ def draw_symbol(ctxt, attributes):
         extent: rectangle containing the text in the coordinate of the context
         extent_main_char: rectangle containing the central character in the coordinate of the context
     """
-    make_background(ctxt, attributes.background)
+    _make_background(ctxt, attributes.background)
+
+    _make_foreground(ctxt, attributes.foreground)
 
     weight = cairo.FONT_WEIGHT_BOLD if attributes.is_bold else cairo.FONT_WEIGHT_NORMAL
 
@@ -62,13 +64,83 @@ def draw_symbol(ctxt, attributes):
         ctxt.translate(-extent.x_bearing - extent.width / 2, -extent.y_bearing - extent.height / 2)
         ctxt.translate(*attributes.translation)
 
-    if attributes.foreground is not None:
-        pat = random_pattern(0.8, (0.2, 1), patern_types=('linear',))
-        ctxt.set_source(pat)
-
     ctxt.show_text(char)
 
+    ctxt.clip()
+    ctxt.paint()
+
     return extent, extent_main_char
+
+
+def _make_foreground(ctxt, style):
+    if style == 'gradient':
+        pat = random_pattern(0.8, (0.2, 1), patern_types=('linear',))
+        ctxt.set_source(pat)
+    elif isinstance(style, Camouflage):
+        style.set_as_source(ctxt)
+    elif style is None:
+        ctxt.set_source_rgb(1, 1, 1)
+    else:
+        raise Exception("Unknown foreground style %s" % style)
+
+
+def _make_background(ctxt, style, rng=np.random):
+    """Random background combining various patterns."""
+    if style is None:
+        ctxt.set_source_rgb(1, 1, 1)
+        ctxt.fill()
+    elif isinstance(style, Camouflage):
+        style.draw(ctxt)
+    elif style == "gradient":
+        for i in range(5):
+            pat = random_pattern(0.4, (0, 0.8), rng=rng)
+            ctxt.rectangle(0, 0, 1, 1)  # Rectangle(x0, y0, x1, y1)
+            ctxt.set_source(pat)
+            ctxt.fill()
+    else:
+        raise Exception("Unknown background style %s" % style)
+
+
+class Camouflage:
+    def __init__(self, stroke_length=0.4, stroke_width=0.05, stroke_angle=np.pi / 4, stroke_noise=0.02, n_stroke=500,
+                 rng=np.random):
+        self.stroke_length = stroke_length
+        self.stroke_width = stroke_width
+        self.n_stroke = n_stroke
+        self.stroke_angle = stroke_angle
+        self.stroke_noise = stroke_noise
+        self.rng = rng
+
+    def draw(self, ctxt):
+        stroke_vector = self.stroke_length * np.array([np.cos(self.stroke_angle), np.sin(self.stroke_angle)])
+
+        for i in range(self.n_stroke):
+            start = (self.rng.rand(2) * 1.2 - 0.1) * (1 - stroke_vector)
+            stop = start + stroke_vector + self.rng.randn(2) * self.stroke_noise
+            ctxt.move_to(*start)
+            ctxt.line_to(*stop)
+            ctxt.set_line_width(self.stroke_width)
+
+            b, g, r = self.rng.rand(3)
+
+            ctxt.set_source_rgba(b, g, r, 0.8)
+            ctxt.stroke()
+
+    def surface(self, width, height):
+        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
+        surface.set_device_scale(width, height)
+        ctxt_bg = cairo.Context(surface)
+        self.draw(ctxt_bg)
+        return surface
+
+    def set_as_source(self, ctxt):
+        surface = ctxt.get_group_target()
+        width, height = surface.get_width(), surface.get_height()
+        source_surface = self.surface(width, height)
+        ctxt.set_source_surface(source_surface)
+
+    def to_json(self):
+        pass
 
 
 class Attributes:
@@ -101,7 +173,8 @@ class Attributes:
     def __init__(self, alphabet=None, char=None, font=None, background='gradient', foreground='gradient',
                  slant=None, is_bold=None, rotation=None, scale=None, translation=None, inverse_color=None,
                  pixel_noise_scale=0.01, resolution=(32, 32), rng=np.random):
-        self.alphabet = alphabet  # TODO handle None
+
+        self.alphabet = rng.choice(ALPHABET_MAP.values()) if alphabet is None else alphabet
         self.char = rng.choice(alphabet.symbols) if char is None else char
         self.font = rng.choice(alphabet.fonts) if font is None else font
         self.is_bold = rng.choice([True, False]) if is_bold is None else is_bold
@@ -152,8 +225,8 @@ class Attributes:
         img = (img * 255).astype(np.uint8)
         return img
 
-    def to_json(self):
-        data = dict(
+    def attribute_dict(self):
+        return dict(
             alphabet=self.alphabet.name,
             char=self.char,
             font=self.font,
@@ -167,8 +240,6 @@ class Attributes:
             text_rectangle=self.text_rectangle,
             main_char_rectangle=self.main_char_rectangle,
         )
-
-        return json.dumps(data)
 
 
 def random_pattern(alpha=0.8, brightness_range=(0, 1), patern_types=('linear', 'radial'), rng=np.random):
@@ -203,19 +274,6 @@ def solid_pattern(alpha=0.8, brightness_range=(0, 1), rng=np.random):
     return cairo.SolidPattern(r, g, b, alpha)
 
 
-def make_background(ctxt, style, rng=np.random):
-    """Random background combining various patterns."""
-    if style is not None:
-        for i in range(5):
-            pat = random_pattern(0.4, (0, 0.8), rng=rng)
-            ctxt.rectangle(0, 0, 1, 1)  # Rectangle(x0, y0, x1, y1)
-            ctxt.set_source(pat)
-            ctxt.fill()
-    else:
-        ctxt.set_source_rgb(1, 1, 1)
-        ctxt.fill()
-
-
 def _split(set_, ratios, rng=np.random.RandomState(42)):
     n = len(set_)
     counts = np.round(np.array(ratios) * n).astype(np.int)
@@ -227,21 +285,3 @@ def _split(set_, ratios, rng=np.random.RandomState(42)):
         sets.append(set_[idx:(idx + count)])
         idx += count
     return sets
-
-
-def make_char_grid_from_lang(lang, width, height, char_stride=1, font_stride=1, rng=np.random.RandomState(42)):
-    """Temporary high level interface for making a dataset"""
-    dataset = []
-    # print("building char grid for ")
-    # print(len(lang.symbols)); exit()
-    for char in lang.symbols[::char_stride]:
-        one_class = []
-        stdout.buffer.write(char.encode("utf-8"))
-        print(" generating samples")
-        for font in lang.fonts[::font_stride]:
-            attributes = Attributes(lang, char, font, resolution=(width, height), rng=rng)
-            x = attributes.make_image()
-            one_class.append(x)
-
-        dataset.append(np.stack(one_class))
-    return dataset
