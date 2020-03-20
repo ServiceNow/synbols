@@ -86,6 +86,8 @@ DATASET_GENERATOR_MAP = {
 
 if __name__ == "__main__":
     args = parser.parse_args()
+
+    logging.info("Generating %d samples from %s dataset", args.n_samples, args.dataset)
     ds_generator = DATASET_GENERATOR_MAP[args.dataset](args.n_samples)
 
     directory = '%s_n=%d' % (args.dataset, args.n_samples)
