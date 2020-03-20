@@ -9,7 +9,8 @@ RUN apt-get update && \
     pip3 install --upgrade pip
 
 # Install system dependencies
-RUN apt-get install -y fonts-cantarell fontconfig git icu-devtools ipython3 libcairo2-dev libhdf5-dev pkg-config ttf-ubuntu-font-family unzip wget
+RUN apt-get update && \
+    apt-get install -y fonts-cantarell fontconfig git icu-devtools ipython3 libcairo2-dev libhdf5-dev pkg-config ttf-ubuntu-font-family unzip wget
 
 # Install all python requirements
 COPY requirements.txt .

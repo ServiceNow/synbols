@@ -6,7 +6,6 @@ from sys import stdout
 
 from google_fonts import ALPHABET_MAP
 
-
 SLANT_MAP = {
     cairo.FONT_SLANT_ITALIC: 'italic',
     cairo.FONT_SLANT_NORMAL: 'normal',
@@ -38,14 +37,13 @@ def draw_symbol(ctxt, attributes):
 
     # Set the font size, font type, italic and bold attributes. TODO: Fix size?
     ctxt.set_font_size(0.7)
-    # print(attributes.font)
     ctxt.select_font_face(attributes.font, attributes.slant, weight)
 
     # Control the size. TODO: Why 1 or 3?
     extent = ctxt.text_extents(char)
 
     if len(char) == 3:
-        raise NotImplementedError() # TODO: support multi-part character languages
+        raise NotImplementedError()  # TODO: support multi-part character languages
         extent_main_char = ctxt.text_extents(char[1])
     elif len(char) == 1:
         extent_main_char = extent
@@ -119,13 +117,10 @@ class Attributes:
 
     """
 
-    def __init__(self, alphabet=None, char=None, font=None,
-                 background='gradient', foreground='gradient', slant=None,
-                 is_bold=None, rotation=None, scale=None, translation=None,
-                 inverse_color=None, pixel_noise_scale=0.01,
-                 resolution=(32, 32), rng=np.random.RandomState(42)):
-        # Initialize attributes
-        self.alphabet = alphabet
+    def __init__(self, alphabet=None, char=None, font=None, background='gradient', foreground='gradient',
+                 slant=None, is_bold=None, rotation=None, scale=None, translation=None, inverse_color=None,
+                 pixel_noise_scale=0.01, resolution=(32, 32), rng=np.random):
+        self.alphabet = alphabet  # TODO handle None
         self.char = rng.choice(alphabet.symbols) if char is None else char
         self.font = rng.choice(alphabet.fonts) if font is None else font
         self.is_bold = rng.choice([True, False]) if is_bold is None else is_bold
@@ -159,7 +154,7 @@ class Attributes:
             from copy import deepcopy
             attr = deepcopy(self)
             attr.font = ""
-            attr.char = "X"
+            attr.char = "#"
             attr.background = None
             print(attr.foreground)
             self.text_rectangle, self.main_char_rectangle = draw_symbol(ctxt, attr)
@@ -255,6 +250,9 @@ def make_background(ctxt, style, rng=np.random):
             ctxt.rectangle(0, 0, 1, 1)  # Rectangle(x0, y0, x1, y1)
             ctxt.set_source(pat)
             ctxt.fill()
+    else:
+        ctxt.set_source_rgb(1, 1, 1)
+        ctxt.fill()
 
 
 # TODO: Not used?
