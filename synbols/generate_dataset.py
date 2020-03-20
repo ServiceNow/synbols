@@ -13,17 +13,13 @@ logging.basicConfig(level=logging.INFO)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', help='name of the predefined dataset', default='camouflage')
-parser.add_argument('--n_samples', help='number of samples to generate', type=int, default=100000)
+parser.add_argument('--n_samples', help='number of samples to generate', type=int, default=10000)
 
 
 def attribute_generator(n_samples, **kwargs):
     """Generic attribute generator. kwargs is directly passed to the Attributes constructor."""
-
-    def generator():
-        for i in range(n_samples):
-            yield synbols.Attributes(**kwargs)
-
-    return generator
+    for i in range(n_samples):
+        yield synbols.Attributes(**kwargs)
 
 
 def dataset_generator(attr_generator, n_samples):
@@ -43,7 +39,6 @@ def dataset_generator(attr_generator, n_samples):
             logging.info("generating sample %4d / %d (%.3g s/image) ETA: %s", i, n_samples, dt, eta_str)
             t0 = t.time()
         yield x, y
-
 
 
 def generate_char_grid(alphabet_name, n_char, n_font, rng=np.random, **kwargs):
