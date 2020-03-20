@@ -59,7 +59,7 @@ def write_numpy(file_path, generator):
     x, y = zip(*list(generator))
     x = np.stack(x)
 
-    print("Saving dataset in %s." % file_path)
+    logging.info("Saving dataset in %s.", file_path)
     np.savez(file_path, x=x, y=y)
 
 

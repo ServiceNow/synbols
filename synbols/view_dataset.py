@@ -22,11 +22,14 @@ if __name__ == "__main__":
     # alphabet = 'cyrillic'
 
 
-    fg = synbols.Camouflage(stroke_noise=0, stroke_angle=0.1, stroke_width=0.05, n_stroke=1000)
-    bg = synbols.Camouflage(stroke_noise=0, stroke_angle=1., stroke_width=0.05, n_stroke=1000)
+    fg = synbols.Camouflage(stroke_angle=0.5)
+    bg = synbols.Camouflage(stroke_angle=1.)
 
-    ## Un comment to remove background
+    ## Uncomment to remove background
     # fg, bg = None, None
+
+    ## Uncomment for a smoother background
+    fg, bg = 'gradient', 'gradient'
 
     kwargs = dict(foreground=fg, background=bg, is_bold=True, scale=(1.3, 1.3),
                   resolution=(32, 32), rng=np.random.RandomState(42))

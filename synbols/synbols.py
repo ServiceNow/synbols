@@ -102,7 +102,7 @@ def _make_background(ctxt, style, rng=np.random):
 
 
 class Camouflage:
-    def __init__(self, stroke_length=0.4, stroke_width=0.1, stroke_angle=np.pi / 4, stroke_noise=0.1, n_stroke=400,
+    def __init__(self, stroke_length=0.4, stroke_width=0.05, stroke_angle=np.pi / 4, stroke_noise=0.02, n_stroke=500,
                  rng=np.random):
         self.stroke_length = stroke_length
         self.stroke_width = stroke_width

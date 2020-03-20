@@ -12,8 +12,8 @@ import numpy as np
 logging.basicConfig(level=logging.INFO)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', help='name of the predefined dataset', default='camouflage')
-parser.add_argument('--n_samples', help='number of samples to generate', type=int, default=10000)
+parser.add_argument('--dataset', help='name of the predefined dataset', default='default')
+parser.add_argument('--n_samples', help='number of samples to generate', type=int, default=100000)
 
 
 def attribute_generator(n_samples, **kwargs):
@@ -71,9 +71,10 @@ def generate_default_dataset(n_samples):
 
 def generate_camouflage_dataset(n_samples):
     alphabet = synbols.ALPHABET_MAP['latin']
-    camouflage = synbols.Camouflage()
-    attr_generator = attribute_generator(n_samples, alphabet=alphabet, slant=cairo.FontSlant.NORMAL, is_bold=True,
-                                         foreground=camouflage, background=camouflage)
+    fg = synbols.Camouflage(stroke_angle=0.5)
+    bg = synbols.Camouflage(stroke_angle=1.)
+    attr_generator = attribute_generator(n_samples, alphabet=alphabet, is_bold=True, foreground=fg, background=bg,
+                                         scale=(1.3, 1.3))
     return dataset_generator(attr_generator, n_samples)
 
 
