@@ -19,6 +19,7 @@ EXP_GROUPS = {'active_font':
                     'task': 'font',
                     'p': 0.0,
                     'initial_pool': 2000,
+                    'seed': 1337,
                     'uncertainty_config': {'is_bold': {}}}}),
     'active_font_noise':
         hu.cartesian_exp_group({
@@ -39,5 +40,6 @@ EXP_GROUPS = {'active_font':
                 'task': 'font',
                 'p': 0.1,
                 'initial_pool': 2000,
+                'seed': 1337,
                 'uncertainty_config': {'is_bold': {}}}}),
 }

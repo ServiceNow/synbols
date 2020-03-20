@@ -66,7 +66,9 @@ class ActiveLearning(torch.nn.Module):
         metrics = self.wrapper.metrics
         self.scheduler.step(metrics['test_loss'].value)
         self.loop.step()
-        return self._format_metrics(metrics, 'test')
+        mets = self._format_metrics(metrics, 'test')
+        mets.update({'num_samples': len(self.active_dataset)})
+        return mets
 
     def _format_metrics(self, metrics, step):
         mets = {k: v.value for k, v in metrics.items() if step in k}
@@ -94,3 +96,6 @@ class ActiveLearning(torch.nn.Module):
         self.optimizer.load_state_dict(state_dict["optimizer"])
         self.scheduler.load_state_dict(state_dict["scheduler"])
         self.active_dataset_settings = state_dict["dataset"]
+        if self.active_dataset is not None:
+            self.active_dataset.load_state_dict(self.active_dataset_settings)
+
