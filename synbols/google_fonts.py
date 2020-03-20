@@ -4,6 +4,7 @@
 from collections import defaultdict
 from icu import LocaleData
 from os.path import join, exists
+import logging
 
 from font_utils import check_font
 
@@ -90,6 +91,7 @@ class Alphabet:
 
 
 def build_alphabet_map():
+    logging.info("Build alphabet map")
     if exists(METADATA):
 
         language_map, font_map = parse_metadata(METADATA)
@@ -97,6 +99,7 @@ def build_alphabet_map():
         alphabet_map = {}
 
         for alphabet_name, font_list in language_map.items():
+            logging.info("Check fonts for alphabet %s.", alphabet_name)
             if alphabet_name in SYMBOL_MAP.keys():
                 # TODO: after filtering many languages have less fonts. It's expected that all languages with 3-part chars
                 #       will fail because it's not currently supported by check_font (e.g., bengali language). However,
