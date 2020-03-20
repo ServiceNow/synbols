@@ -19,13 +19,13 @@ def _extract_axis(y, h_axis, v_axis):
     return map, h_values, v_values
 
 
-def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n_col=30):
+def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n_col=30, rng=np.random):
     fig = plt.figure(name)
     # plt.axis('off')
 
     attr_map, h_values, v_values = _extract_axis(y, h_axis, v_axis)
-    h_values = np.random.choice(h_values, np.minimum(n_col, len(h_values)), replace=False)
-    v_values = np.random.choice(v_values, np.minimum(n_row, len(v_values)), replace=False)
+    h_values = rng.choice(h_values, np.minimum(n_col, len(h_values)), replace=False)
+    v_values = rng.choice(v_values, np.minimum(n_row, len(v_values)), replace=False)
 
     img_grid = []
     blank_image = np.zeros(x.shape[1:], dtype=x.dtype)
@@ -51,8 +51,6 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
     plt.show()
 
 
-# x, y = load_dataset_npz('../plain_n=100000.npz')
-# plot_dataset(x, y)
-
-x, y = pack_dataset(load_dataset_jpeg_sequential('../default_n=20000.zip'))
-plot_dataset(x, y)
+if __name__ == "__main__":
+    x, y = pack_dataset(load_dataset_jpeg_sequential('../camouflage_n=100000.zip'))
+    plot_dataset(x, y)
