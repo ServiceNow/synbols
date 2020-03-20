@@ -6,12 +6,30 @@ from os import path
 import logging
 
 
-def load_dataset_npz(file_path):
+def write_npz(file_path, generator):
+    x, y = zip(*list(generator))
+    x = np.stack(x)
+
+    logging.info("Saving dataset in %s.", file_path)
+    np.savez(file_path, x=x, y=y)
+
+
+def load_npz(file_path):
     """Load the dataset from compressed numpy format (npz)."""
     dataset = np.load(file_path)
     y = dataset['y']
     y = [json.loads(attr) for attr in y]
     return dataset['x'], y
+
+
+def write_jpg_zip(directory, generator):
+    """Write the dataset in a zipped directory using jpeg and json for each image."""
+    with zipfile.ZipFile(directory + '.zip', 'w') as zf:
+        for i, (x, y) in enumerate(generator):
+            name = "%s/%07d" % (directory, i)
+            with zf.open(name + '.jpeg', 'w') as fd:
+                Image.fromarray(x).save(fd, 'jpeg', quality=90)
+            zf.writestr(name + '.json', json.dumps(y))
 
 
 def load_dataset_jpeg_sequential(file_path, max_samples=None):
@@ -53,21 +71,3 @@ def pack_dataset(generator):
     """Turn a the output of a generator of (x,y) pairs into a numpy array containing the full dataset"""
     x, y = zip(*generator)
     return np.stack(x), y
-
-
-def write_numpy(file_path, generator):
-    x, y = zip(*list(generator))
-    x = np.stack(x)
-
-    logging.info("Saving dataset in %s.", file_path)
-    np.savez(file_path, x=x, y=y)
-
-
-def write_jpg_zip(directory, generator):
-    """Write the dataset in a zipped directory using jpeg and json for each image."""
-    with zipfile.ZipFile(directory + '.zip', 'w') as zf:
-        for i, (x, y) in enumerate(generator):
-            name = "%s/%07d" % (directory, i)
-            with zf.open(name + '.jpeg', 'w') as fd:
-                Image.fromarray(x).save(fd, 'jpeg', quality=90)
-            zf.writestr(name + '.json', json.dumps(y))
