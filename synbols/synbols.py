@@ -173,7 +173,8 @@ class Attributes:
     def __init__(self, alphabet=None, char=None, font=None, background='gradient', foreground='gradient',
                  slant=None, is_bold=None, rotation=None, scale=None, translation=None, inverse_color=None,
                  pixel_noise_scale=0.01, resolution=(32, 32), rng=np.random):
-        self.alphabet = alphabet  # TODO handle None
+
+        self.alphabet = rng.choice(ALPHABET_MAP.values()) if alphabet is None else alphabet
         self.char = rng.choice(alphabet.symbols) if char is None else char
         self.font = rng.choice(alphabet.fonts) if font is None else font
         self.is_bold = rng.choice([True, False]) if is_bold is None else is_bold
