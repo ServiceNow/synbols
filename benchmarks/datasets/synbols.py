@@ -1,32 +1,47 @@
 from torch.utils.data import Dataset
 import numpy as np
 import json
+import os
 
 class Synbols(Dataset):
     def __init__(self, path, split, key='font', transform=None, train_fraction=0.6, val_fraction=0.4):
         self.path = path
         self.split = split
+        self.task = key
         self.train_fraction = train_fraction
         self.val_fraction = val_fraction
         self.test_fraction = 1 - train_fraction - val_fraction
-        data = np.load(path) 
+        if transform is None:
+            self.transform = lambda x: x
+        else:
+            self.transform = transform
+        self.save_load_cache()
+
+    def save_load_cache(self):
+        path = "/tmp/%s_%s_%s.npz" %(os.path.basename(self.path), self.task, self.split) 
+        if os.path.isfile(path):
+            print("Loading %s split from %s..." %(self.split, path))
+            data = np.load(path, allow_pickle=True)['arr_0'].item()
+            self.x = data['x']
+            self.y = data['y']
+            print("Done.")
+        else:
+            print("Saving %s split to %s..." %(self.split, path))
+            self.make_splits()
+            np.savez(path, {'x': self.x, 'y': self.y})
+            print("Done...")
+
+    def make_splits(self, seed=42):
+        data = np.load(self.path) 
         self.x = data['x']
         self.y = data['y']
         del(data)
         _y = []
         for y in self.y:
-            _y.append(json.loads(y)[key])
+            _y.append(json.loads(y)[self.task])
         self.y = _y
         self.labelset = list(sorted(set(self.y)))
         self.y = np.array([self.labelset.index(y) for y in self.y])
-        if transform is None:
-            self.transform = lambda x: x
-        else:
-            self.transform = transform
-        self.num_classes = len(self.labelset)
-        self.make_splits()
-
-    def make_splits(self, seed=42):
         if self.split == 'train':
             start = 0
             end = int(self.train_fraction * len(self.x))
