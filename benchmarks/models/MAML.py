@@ -95,7 +95,7 @@ class MAML(torch.nn.Module):
         qry_accs = []
         
         # TDOO: if I put the model in eval(), the model explods...
-        # self.backbone.eval()
+        #self.backbone.eval()
         self.backbone.train()
         for episode in tqdm(loader):
             episode = episode[0] # undo collate
