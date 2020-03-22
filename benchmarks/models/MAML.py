@@ -26,8 +26,14 @@ class MAML(torch.nn.Module):
                                                                     verbose=True)
 
     def train_on_loader(self, loader):
-        _loss = 0
-        _total = 0
+        
+        ## for now, one task at a time
+        task_num = 1
+        n_inner_iter = 5
+        
+        qry_losses = []
+        qry_accs = []
+        
         self.backbone.train()
         for episode in tqdm(loader):
             episode = episode[0] # undo collate
@@ -46,13 +52,8 @@ class MAML(torch.nn.Module):
             query_relative_labels = torch.arange(episode['nclasses']).view(1, -1).repeat(
                 episode['query_size'], 1).cuda().view(-1)
             
-            ## for now, one task at a time
-            task_num = 1
-            n_inner_iter = 5
             inner_opt = torch.optim.SGD(self.backbone.parameters(), lr=1e-1)
             
-            qry_losses = []
-            qry_accs = []
             querysz = query_relative_labels.size()[0]
 
             self.optimizer.zero_grad()
@@ -75,21 +76,27 @@ class MAML(torch.nn.Module):
 
                     qry_loss.backward()
 
-        self.optimizer.step()
-        qry_losses = sum(qry_losses) / task_num
-        qry_accs = 100. * sum(qry_accs) / task_num
+            self.optimizer.step()
 
-        # return {"train_loss": float(_loss) / _total}
+        qry_losses = sum(qry_losses) / len(qry_losses)
+        qry_accs = 100. * sum(qry_accs) / len(qry_accs)
+
         return {"train_loss": qry_losses.item(), "train_acc":qry_accs}
 
     #@torch.no_grad()
     def val_on_loader(self, loader, savedir=None):
-        _accuracy = 0
-        _total = 0
-        _loss = 0
-        _logits = []
-        _targets = []
-        self.backbone.eval()
+        
+
+        ## for now, one task at a time
+        task_num = 1
+        n_inner_iter = 5
+
+        qry_losses = []
+        qry_accs = []
+        
+        # TDOO: if I put the model in eval(), the model explods...
+        # self.backbone.eval()
+        self.backbone.train()
         for episode in tqdm(loader):
             episode = episode[0] # undo collate
             support_set = episode["support_set"].cuda(non_blocking=False)
@@ -109,23 +116,20 @@ class MAML(torch.nn.Module):
             query_relative_labels = torch.arange(episode['nclasses']).view(1, -1).repeat(
                 episode['query_size'], 1).cuda().view(-1)
 
-            ## for now, one task at a time
-            task_num = 1
-            n_inner_iter = 5
             inner_opt = torch.optim.SGD(self.backbone.parameters(), lr=1e-1)
             
-            qry_losses = []
-            qry_accs = []
             querysz = query_relative_labels.size()[0]
 
             for i in range(task_num):
                 with higher.innerloop_ctx(self.backbone, inner_opt,
-                    copy_initial_weights=False) as (fnet, diffopt):
+                    track_higher_grads=False) as (fnet, diffopt):
                     
                     for _ in range(n_inner_iter):
                         ## for now only one task at a time
                         spt_logits = fnet(support_set.view(ss * nclasses, c, h, w)).view(ss * nclasses, -1)
                         spt_loss = F.cross_entropy(spt_logits, support_relative_labels)
+                        # print(spt_logits)
+                        # print(spt_loss)
                         diffopt.step(spt_loss)
 
                     qry_logits = fnet(query_set.view(qs * nclasses, c, h, w))
@@ -134,13 +138,12 @@ class MAML(torch.nn.Module):
                     qry_acc = (qry_logits.argmax(
                         dim=1) == query_relative_labels).sum().item() / querysz
                     qry_accs.append(qry_acc)
+        
+        qry_losses = sum(qry_losses) / len(qry_losses)
+        qry_accs = 100. * sum(qry_accs) / len(qry_accs)
 
-        qry_losses = sum(qry_losses) / task_num
-        qry_accs = 100. * sum(qry_accs) / task_num
-
-        #self.scheduler.step(_loss / _total)
         self.scheduler.step(qry_losses)
-        return {"val_loss": qry_losses, 
+        return {"val_loss": qry_losses.item(), 
                 "val_accuracy": qry_accs}
 
     def get_state_dict(self):
