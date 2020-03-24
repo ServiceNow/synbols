@@ -29,4 +29,4 @@ RUN wget -O google_fonts.zip https://github.com/google/fonts/archive/${GOOGLE_FO
     fc-cache -f > /dev/null && \
     find fonts-${GOOGLE_FONTS_COMMIT} -name "METADATA.pb" | xargs -I{} bash -c "dirname {} | cut -d'/' -f3 | xargs printf; printf ","; grep -i 'subset' {} | cut -d':' -f2 | paste -sd "," - | sed 's/\"//g'" > /usr/share/fonts/truetype/google-fonts/google_fonts_metadata
 
-ENV PYTHONPATH "${PYTHONPATH}:/synbols"
+ENV PYTHONPATH "${PYTHONPATH}:/generator"
