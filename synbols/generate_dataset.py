@@ -65,6 +65,17 @@ def cairo_surface_to_image(surface, resolution, rng, inverse_color, pixel_noise_
     return img
 
 
+def cairo_surface_to_GT(surface, resolution, rng, inverse_color, pixel_noise_scale):
+    # Cairo to img
+    buf = surface.get_data()
+    width, height = resolution
+    img = np.ndarray(shape=(width, height, 4), dtype=np.uint8, buffer=buf)
+    img = img[:, :, 0:3]
+
+    return img
+
+
+
 def dataset_generator(attr_generator, n_samples, n_synbols_per_image=1):
     """High level function generating the dataset from an attribute generator."""
     t0 = t.time()
@@ -95,14 +106,16 @@ def dataset_generator(attr_generator, n_samples, n_synbols_per_image=1):
                 ctxt.save()
                 ctxtGT.save()
                 attrib.draw_synbol(ctxt, select_background=False, select_foreground=True)
-                ctxtGT.set_source_rgb(128*(i+1)/255.0, 128*(i+1)/255.0, 128*(i+1)/255.0)
+                #ctxtGT.set_source_rgb(128*(i+1)/255.0, 128*(i+1)/255.0, 128*(i+1)/255.0)
+                ctxtGT.set_source_rgb((i+1)/255.0, (i+1)/255.0, (i+1)/255.0)
                 attrib.draw_synbol(ctxtGT, select_background=False, select_foreground=False)
                 ctxt.restore()
                 ctxtGT.restore()
                 y.append(attrib.attribute_dict())
             # Convert cairo surface into an image
             x = cairo_surface_to_image(surface, attributes[0].resolution, attributes[0].rng, attributes[0].inverse_color, attributes[0].pixel_noise_scale)
-            x2 = cairo_surface_to_image(surfaceGT, attributes[0].resolution, attributes[0].rng, attributes[0].inverse_color, attributes[0].pixel_noise_scale)
+            x2 = cairo_surface_to_GT(surfaceGT, attributes[0].resolution, attributes[0].rng, attributes[0].inverse_color, attributes[0].pixel_noise_scale)
+            # print(x2.min(), x2.max())
 
         if i % 100 == 0 and i != 0:
             dt = (t.time() - t0) / 100.
@@ -154,7 +167,7 @@ def generate_camouflage_dataset(n_samples, n_synbols_per_image=1):
 def generate_segmentation_dataset(n_samples, n_synbols_per_image=2):
     alphabet = synbols.ALPHABET_MAP['latin']
     attr_generator = attribute_generator(n_samples, n_synbols_per_image, alphabet=alphabet, slant=cairo.FontSlant.NORMAL,
-        is_bold=False, resolution=(128, 128), background='gradient', n_symbols_per_image=2)
+        is_bold=False, resolution=(128, 128), background='gradient', n_symbols_per_image=2, inverse_color=False)
     return dataset_generator(attr_generator, n_samples, n_synbols_per_image)
 
 
