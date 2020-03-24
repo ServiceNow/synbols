@@ -30,7 +30,7 @@ EXP_GROUPS = {'fewshot_char_protonet':
                                 'test_iters': 50}}),
                 'fewshot_char_maml':hu.cartesian_exp_group({
                     'benchmark':'fewshot',
-                    'lr':[0.01],
+                    'lr':[0.01, 0.1],
                     'batch_size':[1],
                     'model': "MAML",
                     'backbone': "conv",
