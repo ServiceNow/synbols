@@ -66,8 +66,11 @@ def write_numpy(file_path, generator):
 def write_jpg_zip(directory, generator):
     """Write the dataset in a zipped directory using jpeg and json for each image."""
     with zipfile.ZipFile(directory + '.zip', 'w') as zf:
-        for i, (x, y) in enumerate(generator):
+        for i, (x, x2, y) in enumerate(generator):
             name = "%s/%07d" % (directory, i)
             with zf.open(name + '.jpeg', 'w') as fd:
                 Image.fromarray(x).save(fd, 'jpeg', quality=90)
+            if x2 is not None:
+                with zf.open(name + '_gt.jpeg', 'w') as fd:
+                    Image.fromarray(x2).save(fd, 'jpeg', quality=90)
             zf.writestr(name + '.json', json.dumps(y))
