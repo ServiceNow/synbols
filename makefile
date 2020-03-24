@@ -9,6 +9,10 @@ all: docker explore-fonts view-dataset
 docker:
 	docker build -t synbols:latest .
 	docker tag synbols:latest synbols:$(versiontag)
+font-cache:
+	$(SYNBOLS_RUN) sh -c "cd /local; python -c 'from synbols.fonts import ALPHABET_MAP'"
+
+
 explore-fonts:
 	$(SYNBOLS_RUN) sh -c "cd /local; python ../synbols/explore_fonts.py"
 view-dataset:
@@ -16,3 +20,5 @@ view-dataset:
 	open dataset.png
 dataset:
 	$(SYNBOLS_RUN) sh -c "cd /local; python ../synbols/generate_dataset.py"
+test:
+	$(SYNBOLS_RUN) sh -c "cd /local; python ../synbols/view_generator.py"

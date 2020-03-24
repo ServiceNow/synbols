@@ -5,9 +5,10 @@ import argparse
 import logging
 import numpy as np
 
-from synbols.data_io import write_jpg_zip
-from synbols.drawing import Attributes, Camouflage
-from synbols.fonts import ALPHABET_MAP
+from .data_io import write_jpg_zip
+from .drawing import Attributes, Camouflage
+from .fonts import ALPHABET_MAP
+from .utils import _check_random_state
 
 logging.basicConfig(level=logging.INFO)
 
@@ -41,7 +42,7 @@ def dataset_generator(attr_generator, n_samples):
         yield x, y
 
 
-def generate_char_grid(alphabet_name, n_char, n_font, rng=np.random, **kwargs):
+def generate_char_grid(alphabet_name, n_char, n_font, rng=None, **kwargs):
     def _attr_generator():
         alphabet = ALPHABET_MAP[alphabet_name]
 
@@ -52,6 +53,7 @@ def generate_char_grid(alphabet_name, n_char, n_font, rng=np.random, **kwargs):
             for font in fonts:
                 yield Attributes(alphabet, char, font, rng=rng, **kwargs)
 
+    rng = _check_random_state(rng)
     return dataset_generator(_attr_generator(), n_char * n_font)
 
 

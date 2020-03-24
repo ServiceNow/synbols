@@ -1,5 +1,6 @@
-from data_io import pack_dataset
-from generate_dataset import generate_char_grid
+from synbols.data_io import pack_dataset
+from synbols.drawing import Camouflage
+from synbols.generate import generate_char_grid
 from view_dataset import plot_dataset
 import synbols
 import numpy as np
@@ -22,8 +23,8 @@ if __name__ == "__main__":
     # alphabet = 'cyrillic'
 
 
-    fg = synbols.Camouflage(stroke_angle=0.5)
-    bg = synbols.Camouflage(stroke_angle=1.)
+    fg = Camouflage(stroke_angle=0.5)
+    bg = Camouflage(stroke_angle=1.)
 
     ## Uncomment to remove background
     # fg, bg = None, None
@@ -32,7 +33,7 @@ if __name__ == "__main__":
     fg, bg = 'gradient', 'gradient'
 
     kwargs = dict(foreground=fg, background=bg, is_bold=True, scale=(1.3, 1.3),
-                  resolution=(32, 32), rng=np.random.RandomState(42))
+                  resolution=(32, 32), rng=42)
 
-    x, y = pack_dataset(generate_char_grid('latin', n_font=15, n_char=10, **kwargs))
+    x, y = pack_dataset(generate_char_grid('latin', n_font=2, n_char=10, **kwargs))
     plot_dataset(x, y, name=alphabet, h_axis='char', v_axis='font', rng=np.random.RandomState(42))
