@@ -3,6 +3,7 @@ import pickle
 
 from .filters import filter_fonts
 
+
 CACHE_FILE = "alphabet_fonts.cache"
 
 
