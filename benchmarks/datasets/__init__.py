@@ -34,7 +34,8 @@ def get_dataset(split, dataset_dict):
                                    key=dataset_dict["task"],
                                    transform=transform,
                                    p=dataset_dict.get('p', 0.05),
-                                   seed=dataset_dict.get('seed'))
+                                   seed=dataset_dict.get('seed'),
+                                   n_classes=dataset_dict.get('n_classes'))
         if split == 'train':
             dataset = ActiveLearningDataset(dataset, pool_specifics={'transform': transform})
             dataset.label_randomly(dataset_dict['initial_pool'])

@@ -3,7 +3,7 @@ from typing import Dict
 
 import numpy as np
 
-from .synbols import Synbols
+from datasets.synbols import Synbols
 
 SLANT_MAP = {
     'italic',
@@ -50,11 +50,12 @@ class Attributes:
 
 class AleatoricSynbols(Synbols):
     def __init__(self, uncertainty_config: Dict, path, split, key='font', transform=None, p=0.5,
-                 seed=None):
+                 seed=None, n_classes=None):
         super().__init__(path=path, split=split, key=key, transform=transform)
         self.uncertainty_config = uncertainty_config
         self.p = p
         self.seed = seed
+        self.noise_classes = n_classes
         self.rng = np.random.RandomState(self.seed)
         if split == 'train':
             self._create_aleatoric_noise()
@@ -66,6 +67,10 @@ class AleatoricSynbols(Synbols):
 
     def _create_aleatoric_noise(self):
         self._latent_space = self._get_latent_space()
+        if self.noise_classes is not None:
+            clss = self.rng.choice(self.num_classes, self.noise_classes)
+        else:
+            clss = np.arange(self.num_classes)
         data = np.load(self.path)
         y = data['y']
         del data
@@ -79,8 +84,9 @@ class AleatoricSynbols(Synbols):
         assert len(y_flag) == len(self.y)
         print(f"{sum(y_flag)} items are in the latent space out of {len(y_flag)}.")
         y_flag = [True if yi and self.rng.rand() < self.p else False for yi in y_flag]
-        print(f"{sum(y_flag)} items will be shuffled")
+        y_flag = np.logical_and(y_flag, np.isin(self.y, clss))
         targets = self.y[y_flag]
+        print(f"{len(targets)} items will be shuffled in {len(clss)} classes.")
         print(f"Classes with some elements shuffled: {np.unique(targets)}")
         self.rng.shuffle(targets)
         self.y[y_flag] = targets
@@ -110,5 +116,7 @@ class AleatoricSynbols(Synbols):
 if __name__ == '__main__':
     synbols = AleatoricSynbols(uncertainty_config={'is_bold': {}},
                                p=0.05,
-                               path='/mnt/datasets/public/research/synbols/latin_res=32x32_n=100000.npz',
+                               key='char',
+                               n_classes=5,
+                               path='/mnt/datasets/public/research/synbols/old/latin_res=32x32_n=100000.npz',
                                split='train')

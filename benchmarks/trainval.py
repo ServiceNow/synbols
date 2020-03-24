@@ -144,8 +144,8 @@ if __name__ == "__main__":
                     'bid': '1',
                     'restartable': '1',
                     'gpu': '1',
-                    'mem': '16',
-                    'cpu': '4'}
+                    'mem': '32',
+                    'cpu': '6'}
         hj.run_exp_list_jobs(exp_list,
                        savedir_base=args.savedir_base, 
                        workdir=os.path.dirname(os.path.realpath(__file__)),
