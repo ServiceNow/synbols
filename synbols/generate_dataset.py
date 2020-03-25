@@ -116,7 +116,7 @@ def dataset_generator(attr_generator, n_samples, n_synbols_per_image=1):
                 attrib.draw_synbol(ctxtGT, select_background=False, select_foreground=False)
                 xGT = cairo_surface_to_GT(surfaceGT, attributes[0].resolution, attributes[0].rng, attributes[0].inverse_color, attributes[0].pixel_noise_scale)
                 xGT_mask = np.sum(xGT, axis=2) > 0
-                x2[xGT_mask] = (i+1)*255/6.
+                x2[xGT_mask] = (i+1)  # *255/6.
                 y.append(attrib.attribute_dict())
 
             # Convert cairo surface into an image
