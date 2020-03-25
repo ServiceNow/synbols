@@ -104,35 +104,23 @@ def dataset_generator(attr_generator, n_samples, n_synbols_per_image=1):
             x2 = np.zeros((attributes[0].resolution), dtype=np.uint8)
             # Draw each character
             for i, attrib in enumerate(attributes):
+                # Draw synbol
                 ctxt.save()
-                # ctxtGT.save()
                 attrib.draw_synbol(ctxt, select_background=False, select_foreground=True)
-                #ctxtGT.set_source_rgb(128*(i+1)/255.0, 128*(i+1)/255.0, 128*(i+1)/255.0)
-                #ctxtGT.set_source_rgb((i+1.1)/256.0, (i+1.1)/256.0, (i+1.1)/256.0)
-                # Create the segmentation mask image with zeros
+                ctxt.restore()
+
+                # Create the segmentation mask image
                 surfaceGT, ctxtGT = create_cairo_surface_and_ctxt(attributes[0].resolution)
                 synbols._make_background(ctxtGT, None)
                 synbols._make_foreground(ctxtGT, None)
-                # DRAW GT
                 attrib.draw_synbol(ctxtGT, select_background=False, select_foreground=False)
                 xGT = cairo_surface_to_GT(surfaceGT, attributes[0].resolution, attributes[0].rng, attributes[0].inverse_color, attributes[0].pixel_noise_scale)
                 xGT_mask = np.sum(xGT, axis=2) > 0
-                x2[xGT_mask] = (i+1)
-                ctxt.restore()
-                # ctxtGT.restore()
+                x2[xGT_mask] = (i+1)*255/6.
                 y.append(attrib.attribute_dict())
+
             # Convert cairo surface into an image
             x = cairo_surface_to_image(surface, attributes[0].resolution, attributes[0].rng, attributes[0].inverse_color, attributes[0].pixel_noise_scale)
-            # x2 = cairo_surface_to_GT(surfaceGT, attributes[0].resolution, attributes[0].rng, attributes[0].inverse_color, attributes[0].pixel_noise_scale)
-
-            # x1_ = (x2 == 1) * 255
-            # x2_ = (x2 == 2) * 255
-            # from PIL import Image
-            # Image.fromarray(x1_.astype(np.uint8)).save('x1_gt.jpeg', quality=90)
-            # Image.fromarray(x2_.astype(np.uint8)).save('x2_gt.jpeg', quality=90)
-            # Image.fromarray(x2*128).save('xx2_gt.jpeg', quality=90)
-
-            # print(x2.min(), x2.max(), np.unique(x2))
 
         if i % 100 == 0 and i != 0:
             dt = (t.time() - t0) / 100.
@@ -181,7 +169,7 @@ def generate_camouflage_dataset(n_samples, n_synbols_per_image=1):
     return dataset_generator(attr_generator, n_samples, n_synbols_per_image)
 
 
-def generate_segmentation_dataset(n_samples, n_synbols_per_image=2):
+def generate_segmentation_dataset(n_samples, n_synbols_per_image=5):
     alphabet = synbols.ALPHABET_MAP['latin']
     attr_generator = attribute_generator(n_samples, n_synbols_per_image, alphabet=alphabet, slant=cairo.FontSlant.NORMAL,
         is_bold=False, resolution=(128, 128), background='gradient', n_symbols_per_image=2, inverse_color=False)
