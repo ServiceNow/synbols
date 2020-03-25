@@ -69,7 +69,7 @@ def draw_symbol(ctxt, attributes):
     ctxt.clip()
     ctxt.paint()
 
-    return extent, extent_main_char
+    return extent, extent_main_char  # TODO verify that the extent is the final extent and not the one before translate
 
 
 def _make_foreground(ctxt, style):
@@ -234,6 +234,7 @@ class Attributes:
             slant=SLANT_MAP[self.slant],
             scale=self.scale,
             translation=self.translation,
+            rotation=self.rotation,
             inverse_color=str(self.inverse_color),
             resolution=self.resolution,
             pixel_noise_scale=self.pixel_noise_scale,
