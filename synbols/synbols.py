@@ -13,7 +13,7 @@ SLANT_MAP = {
 }
 
 
-def draw_symbol(ctxt, attributes):
+def draw_symbol(ctxt, attributes, select_background=True, select_foreground=True):
     """Core function drawing the characters as described in `attributes`
 
     Args:
@@ -24,9 +24,11 @@ def draw_symbol(ctxt, attributes):
         extent: rectangle containing the text in the coordinate of the context
         extent_main_char: rectangle containing the central character in the coordinate of the context
     """
-    _make_background(ctxt, attributes.background)
+    if select_background:
+        _make_background(ctxt, attributes.background)
 
-    _make_foreground(ctxt, attributes.foreground)
+    if select_foreground:
+        _make_foreground(ctxt, attributes.foreground)
 
     weight = cairo.FONT_WEIGHT_BOLD if attributes.is_bold else cairo.FONT_WEIGHT_NORMAL
 
@@ -69,7 +71,7 @@ def draw_symbol(ctxt, attributes):
     ctxt.clip()
     ctxt.paint()
 
-    return extent, extent_main_char
+    return extent, extent_main_char  # TODO verify that the extent is the final extent and not the one before translate
 
 
 def _make_foreground(ctxt, style):
@@ -172,7 +174,7 @@ class Attributes:
 
     def __init__(self, alphabet=None, char=None, font=None, background='gradient', foreground='gradient',
                  slant=None, is_bold=None, rotation=None, scale=None, translation=None, inverse_color=None,
-                 pixel_noise_scale=0.01, resolution=(32, 32), rng=np.random):
+                 pixel_noise_scale=0.01, resolution=(32, 32), rng=np.random, n_symbols_per_image=1):
 
         self.alphabet = rng.choice(ALPHABET_MAP.values()) if alphabet is None else alphabet
         self.char = rng.choice(alphabet.symbols) if char is None else char
@@ -182,10 +184,14 @@ class Attributes:
         self.background = background
         self.foreground = foreground
         self.rotation = rng.randn() * 0.2 if rotation is None else rotation
-        self.scale = tuple(np.exp(rng.randn(2) * 0.1)) if scale is None else scale
-        self.translation = tuple(rng.rand(2) * 0.2 - 0.1) if translation is None else translation
+        if n_symbols_per_image == 1:
+            self.scale = tuple(np.exp(rng.randn(2) * 0.1)) if scale is None else scale
+            self.translation = tuple(rng.rand(2) * 0.2 - 0.1) if translation is None else translation
+        else:
+            self.scale = tuple(np.exp(rng.randn(2) * 0.1)*0.2) if scale is None else scale    
+            self.translation = tuple(rng.rand(2) * 1.8 - 0.9) if translation is None else translation
         self.inverse_color = rng.choice([True, False]) if inverse_color is None else inverse_color
-
+        
         self.resolution = resolution
         self.pixel_noise_scale = pixel_noise_scale
         self.rng = rng
@@ -193,6 +199,10 @@ class Attributes:
         # populated by make_image
         self.text_rectangle = None
         self.main_char_rectangle = None
+
+    def draw_synbol(self, ctxt, select_background=True, select_foreground=True):
+        self.text_rectangle, self.main_char_rectangle = draw_symbol(
+            ctxt, self, select_background, select_foreground)
 
     def make_image(self):
         width, height = self.resolution
@@ -234,6 +244,7 @@ class Attributes:
             slant=SLANT_MAP[self.slant],
             scale=self.scale,
             translation=self.translation,
+            rotation=self.rotation,
             inverse_color=str(self.inverse_color),
             resolution=self.resolution,
             pixel_noise_scale=self.pixel_noise_scale,
