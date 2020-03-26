@@ -32,6 +32,12 @@ def trainval(exp_dict, savedir_base, reset=False):
     print(exp_dict)
     print("Experiment saved in %s" % savedir)
 
+    if 'wandb' in exp_dict:
+        # https://docs.wandb.com/quickstart
+        import wandb
+        wandb.init(project=exp_dict['wandb'])
+        wandb.config.update(exp_dict)
+
     # Dataset
     # -----------
     train_dataset = get_dataset('train', exp_dict)
@@ -106,6 +112,9 @@ def trainval(exp_dict, savedir_base, reset=False):
         hu.torch_save(model_path, model.get_state_dict())
         hu.save_pkl(score_list_path, score_list)
         print("Checkpoint Saved: %s" % savedir)
+        if wandb is not None:
+            for key, values in score_dict.items():
+                wandb.log({key:values})
 
     print('experiment completed')
 
@@ -156,13 +165,16 @@ if __name__ == "__main__":
             'mem': '16',
             'bid': '1',
             'restartable': '1',
-            'cpu': '4'}
+            'cpu': '4',
+        }
+
         workdir = os.path.dirname(os.path.realpath(__file__))
         hjb.run_exp_list_jobs(exp_list, 
                             savedir_base=args.savedir_base, 
                             workdir=workdir,
                             run_command=run_command,
-                            job_config=job_config)
+                            job_config=job_config,
+                            username='optimass')
 
     else:
         # run experiments
