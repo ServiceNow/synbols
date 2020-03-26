@@ -51,7 +51,7 @@ def load_dataset_jpeg_sequential(file_path, max_samples=None):
 
 def pack_dataset(generator):
     """Turn a the output of a generator of (x,y) pairs into a numpy array containing the full dataset"""
-    x, y = zip(*generator)
+    x, mask, y = zip(*generator)
     return np.stack(x), y
 
 
