@@ -10,7 +10,7 @@ EXP_GROUPS = {'fewshot_char':
                     'max_epoch': 100,
                     'imagenet_pretraining': False,
                     'episodic': True,
-                    'dataset': {'path':'/mnt/datasets/public/research/synbols/latin_res=32x32_n=100000.npz',
+                    'dataset': {'path':'/mnt/datasets/public/research/synbols/plain_n=1000000.npz',
                                 'name': 'fewshot_synbols',
                                 'task': 'char',
                                 # start 5-way 5-shot 15-query

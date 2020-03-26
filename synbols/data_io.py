@@ -6,15 +6,7 @@ from os import path
 import logging
 
 
-def write_npz(file_path, generator):
-    x, y = zip(*list(generator))
-    x = np.stack(x)
-
-    logging.info("Saving dataset in %s.", file_path)
-    np.savez(file_path, x=x, y=y)
-
-
-def load_npz(file_path):
+def load_dataset_npz(file_path):
     """Load the dataset from compressed numpy format (npz)."""
     dataset = np.load(file_path)
     y = dataset['y']
@@ -22,17 +14,7 @@ def load_npz(file_path):
     return dataset['x'], y
 
 
-def write_jpg_zip(directory, generator):
-    """Write the dataset in a zipped directory using jpeg and json for each image."""
-    with zipfile.ZipFile(directory + '.zip', 'w') as zf:
-        for i, (x, y) in enumerate(generator):
-            name = "%s/%07d" % (directory, i)
-            with zf.open(name + '.jpeg', 'w') as fd:
-                Image.fromarray(x).save(fd, 'jpeg', quality=90)
-            zf.writestr(name + '.json', json.dumps(y))
-
-
-def load_dataset_jpeg_sequential(file_path, max_samples=None, only_label=False):
+def load_dataset_jpeg_sequential(file_path, max_samples=None):
     logging.info("openning %s" % file_path)
     with zipfile.ZipFile(file_path) as zf:
 
@@ -47,16 +29,12 @@ def load_dataset_jpeg_sequential(file_path, max_samples=None, only_label=False):
 
                 prefix, ext = path.splitext(name)
                 if ext == '.jpeg':
+                    img = Image.open(fd)
+                    x = np.array(img)
                     prefix_jpeg = prefix
 
-                    if only_label:
-                        x = 0
-                    else:
-                        img = Image.open(fd)
-                        x = np.array(img)
-
-                        if n_samples % 1000 == 0:
-                            logging.info("loading sample %d" % n_samples)
+                    if n_samples % 1000 == 0:
+                        logging.info("loading sample %d" % n_samples)
 
                 if ext == '.json':
                     y = json.load(fd)
@@ -64,11 +42,7 @@ def load_dataset_jpeg_sequential(file_path, max_samples=None, only_label=False):
 
                 if x is not None and y is not None:
                     assert prefix_jpeg == prefix_json
-
-                    if only_label:
-                        yield y
-                    else:
-                        yield x, y
+                    yield x, y
                     x, y = None, None
                     n_samples += 1
                     if max_samples is not None and n_samples >= max_samples:
@@ -79,3 +53,24 @@ def pack_dataset(generator):
     """Turn a the output of a generator of (x,y) pairs into a numpy array containing the full dataset"""
     x, y = zip(*generator)
     return np.stack(x), y
+
+
+def write_numpy(file_path, generator):
+    x, y = zip(*list(generator))
+    x = np.stack(x)
+
+    logging.info("Saving dataset in %s.", file_path)
+    np.savez(file_path, x=x, y=y)
+
+
+def write_jpg_zip(directory, generator):
+    """Write the dataset in a zipped directory using jpeg and json for each image."""
+    with zipfile.ZipFile(directory + '.zip', 'w') as zf:
+        for i, (x, x2, y) in enumerate(generator):
+            name = "%s/%07d" % (directory, i)
+            with zf.open(name + '.jpeg', 'w') as fd:
+                Image.fromarray(x).save(fd, 'jpeg', quality=90)
+            if x2 is not None:
+                with zf.open(name + '_gt.jpeg', 'w') as fd:
+                    Image.fromarray(x2).save(fd, 'jpeg', quality=90)
+            zf.writestr(name + '.json', json.dumps(y))
