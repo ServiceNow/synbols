@@ -14,7 +14,7 @@ from models import get_model
 import pandas as pd
 
 
-def trainval(exp_dict, savedir_base, reset=False):
+def trainval(exp_dict, savedir_base, reset=False, wandb=None):
     # bookkeeping
     # ---------------
 
@@ -32,11 +32,11 @@ def trainval(exp_dict, savedir_base, reset=False):
     print(exp_dict)
     print("Experiment saved in %s" % savedir)
 
-    if 'wandb' in exp_dict:
+    if wandb is not None:
         # https://docs.wandb.com/quickstart
-        import wandb
-        wandb.init(project=exp_dict['wandb'])
-        wandb.config.update(exp_dict)
+        import wandb as logger
+        logger.init(project=wandb)
+        logger.config.update(exp_dict)
 
     # Dataset
     # -----------
@@ -114,7 +114,7 @@ def trainval(exp_dict, savedir_base, reset=False):
         print("Checkpoint Saved: %s" % savedir)
         if wandb is not None:
             for key, values in score_dict.items():
-                wandb.log({key:values})
+                logger.log({key:values})
 
     print('experiment completed')
 
@@ -128,6 +128,7 @@ if __name__ == "__main__":
     parser.add_argument("-v", "--view_experiments", default=None)
     parser.add_argument("-j", "--run_jobs", default=None)
     parser.add_argument("-nw", "--num_workers", type=int, default=0)
+    parser.add_argument("-wb", "--wandb", type=str, default=None)
 
     args = parser.parse_args()
 
@@ -182,4 +183,5 @@ if __name__ == "__main__":
             # do trainval
             trainval(exp_dict=exp_dict,
                     savedir_base=args.savedir_base,
-                    reset=args.reset)
+                    reset=args.reset,
+                    wandb=args.wandb)
