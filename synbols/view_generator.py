@@ -32,8 +32,10 @@ if __name__ == "__main__":
     fg = synbols.Gradient(types=('radial',), random_color=synbols.color_sampler(brightness_range=(0.1, 0.9)))
     # fg = synbols.NoPattern()
 
-    kwargs = dict(foreground=fg, background=bg, is_bold=True, scale=(0.2, 0.2),
-                  resolution=(32, 32), rng=np.random.RandomState(42), n_symbols=20)
+    # kwargs = dict(foreground=fg, background=bg, is_bold=True, scale=(0.2, 0.2),
+    #               resolution=(32, 32), rng=np.random.RandomState(42), n_symbols=20)
+
+    kwargs = dict()
 
     x, y = pack_dataset(generate_char_grid('latin', n_font=15, n_char=20, **kwargs))
     plot_dataset(x, y, name=alphabet, h_axis='char', v_axis='font', rng=np.random.RandomState(42))

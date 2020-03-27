@@ -3,6 +3,8 @@ import numpy as np
 import warnings
 
 from sys import stdout
+
+
 #
 # SLANT_MAP = {
 #     cairo.FONT_SLANT_ITALIC: 'italic',
@@ -46,8 +48,6 @@ def draw_symbol(ctxt, attributes):
         stdout.buffer.write(char.encode("utf-8"))
         print("   Font:", attributes.font, "<-- ERROR needs attention")
         return None, None
-
-
 
     if len(char) == 3:
         raise NotImplementedError()  # TODO: support multi-part character languages
@@ -273,7 +273,7 @@ class Image:
             pixel_noise_scale=self.pixel_noise_scale,
             background=self.background.attribute_dict()
         )
-        data.update(symbols[0])
+        data.update(symbols[0])  # hack to allow flatten access
         data['symbols'] = symbols
 
         return data
@@ -331,12 +331,6 @@ class Symbol:
         img = _surface_to_array(surface)
         return np.mean(img, axis=2, keepdims=True)
 
-    # def make_image(self):
-    #     surface, ctxt = _make_surface(*self.resolution)
-    #     draw_symbol(ctxt, self)
-    #     img = _surface_to_array(surface)
-    #     return _image_transform(img, self.inverse_color, self.pixel_noise_scale, self.rng)
-
     def attribute_dict(self):
         return dict(
             alphabet=self.alphabet.name,
@@ -349,24 +343,3 @@ class Symbol:
             rotation=self.rotation,
             foreground=self.foreground.attribute_dict(),
         )
-
-# def solid_pattern(alpha=0.8, brightness_range=(0, 1), rng=np.random):
-#     def random_color():
-#         b_delta = brightness_range[1] - brightness_range[0]
-#         return rng.rand(3) * b_delta + brightness_range[0]
-#
-#     r, g, b = random_color()
-#     return cairo.SolidPattern(r, g, b, alpha)
-#
-#
-# def _split(set_, ratios, rng=np.random.RandomState(42)):
-#     n = len(set_)
-#     counts = np.round(np.array(ratios) * n).astype(np.int)
-#     counts[0] = n - np.sum(counts[1:])
-#     set_ = rng.permutation(set_)
-#     idx = 0
-#     sets = []
-#     for count in counts:
-#         sets.append(set_[idx:(idx + count)])
-#         idx += count
-#     return sets

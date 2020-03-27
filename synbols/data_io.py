@@ -6,12 +6,21 @@ from os import path
 import logging
 
 
-def load_dataset_npz(file_path):
+def load_npz(file_path):
     """Load the dataset from compressed numpy format (npz)."""
     dataset = np.load(file_path)
     y = dataset['y']
-    y = [json.loads(attr) for attr in y]
-    return dataset['x'], y
+    # y = [json.loads(attr) for attr in y]
+    return dataset['x'], dataset['mask'], y
+
+
+def write_npz(file_path, generator):
+    x, mask, y = zip(*list(generator))
+    x = np.stack(x)
+    mask = np.stack(mask)
+
+    logging.info("Saving dataset in %s.", file_path)
+    np.savez(file_path, x=x, y=y, mask=mask)
 
 
 def load_dataset_jpeg_sequential(file_path, max_samples=None):
@@ -53,14 +62,6 @@ def pack_dataset(generator):
     """Turn a the output of a generator of (x,y) pairs into a numpy array containing the full dataset"""
     x, mask, y = zip(*generator)
     return np.stack(x), y
-
-
-def write_numpy(file_path, generator):
-    x, y = zip(*list(generator))
-    x = np.stack(x)
-
-    logging.info("Saving dataset in %s.", file_path)
-    np.savez(file_path, x=x, y=y)
 
 
 def write_jpg_zip(directory, generator):
