@@ -5,6 +5,7 @@ from view_dataset import plot_dataset
 import synbols
 import numpy as np
 
+
 if __name__ == "__main__":
     alphabet = 'latin'  # TODO missing upper cases
     # alphabet = 'telugu'  # TODO the circle in some chars is not rendered. (bottom ones)
@@ -22,18 +23,20 @@ if __name__ == "__main__":
     # alphabet = 'greek'
     # alphabet = 'cyrillic'
 
+    # bg = synbols.Camouflage(stroke_angle=1.5)
+    # bg = synbols.NoPattern()
+    bg = synbols.MultiGradient(alpha=0.5, n_gradients=2, types=('linear', 'radial'))
+    # bg = synbols.Gradient(types=('linear',), random_color=synbols.color_sampler(brightness_range=(0.1, 0.9)))
 
-    fg = Camouflage(stroke_angle=0.5)
-    bg = Camouflage(stroke_angle=1.)
+    # fg = synbols.Camouflage(stroke_angle=0.5)
+    # fg = synbols.SolidColor((1, 0, 0))
+    fg = synbols.Gradient(types=('radial',), random_color=synbols.color_sampler(brightness_range=(0.1, 0.9)))
+    # fg = synbols.NoPattern()
 
-    ## Uncomment to remove background
-    # fg, bg = None, None
+    # kwargs = dict(foreground=fg, background=bg, is_bold=True, scale=(0.2, 0.2),
+    #               resolution=(32, 32), rng=np.random.RandomState(42), n_symbols=20)
 
-    ## Uncomment for a smoother background
-    fg, bg = 'gradient', 'gradient'
+    kwargs = dict()
 
-    kwargs = dict(foreground=fg, background=bg, is_bold=True, scale=(1.3, 1.3),
-                  resolution=(32, 32), rng=42)
-
-    x, y = pack_dataset(generate_char_grid('latin', n_font=2, n_char=10, **kwargs))
+    x, y = pack_dataset(generate_char_grid('latin', n_font=15, n_char=20, **kwargs))
     plot_dataset(x, y, name=alphabet, h_axis='char', v_axis='font', rng=np.random.RandomState(42))

@@ -1,16 +1,17 @@
 import cairo
-import json
 import numpy as np
+import warnings
 
 from sys import stdout
 
 from .utils import _check_random_state
 
-SLANT_MAP = {
-    cairo.FONT_SLANT_ITALIC: 'italic',
-    cairo.FONT_SLANT_NORMAL: 'normal',
-    cairo.FONT_SLANT_OBLIQUE: 'oblique',
-}
+#
+# SLANT_MAP = {
+#     cairo.FONT_SLANT_ITALIC: 'italic',
+#     cairo.FONT_SLANT_NORMAL: 'normal',
+#     cairo.FONT_SLANT_OBLIQUE: 'oblique',
+# }
 
 
 def draw_symbol(ctxt, attributes):
@@ -24,19 +25,19 @@ def draw_symbol(ctxt, attributes):
         extent: rectangle containing the text in the coordinate of the context
         extent_main_char: rectangle containing the central character in the coordinate of the context
     """
-    _make_background(ctxt, attributes.background)
+    # attributes.background.draw(ctxt)
 
-    _make_foreground(ctxt, attributes.foreground)
+    attributes.foreground.set_as_source(ctxt)
 
-    weight = cairo.FONT_WEIGHT_BOLD if attributes.is_bold else cairo.FONT_WEIGHT_NORMAL
-
+    weight = cairo.FontWeight.BOLD if attributes.is_bold else cairo.FontWeight.NORMAL
+    slant = cairo.FontSlant.OBLIQUE if attributes.is_slant else cairo.FontSlant.NORMAL
     char = attributes.char
 
     ctxt.set_font_size(0.7)
     ctxt.select_font_face(attributes.font, cairo.FONT_SLANT_NORMAL, weight)
 
     # Artificial italics
-    if attributes.slant != cairo.FONT_SLANT_NORMAL:
+    if slant != cairo.FONT_SLANT_NORMAL:
         mtx = cairo.Matrix(1, 0.2,
                            0., 1)
         ctxt.set_font_matrix(ctxt.get_font_matrix().multiply(mtx))
@@ -56,13 +57,6 @@ def draw_symbol(ctxt, attributes):
         print("   Font:", attributes.font, "<-- ERROR needs attention")
         return None, None
 
-    ctxt.translate(0.5, 0.5)
-    scale = 0.6 / np.maximum(extent_main_char.width, extent_main_char.height)
-    ctxt.scale(scale, scale)
-    ctxt.scale(*attributes.scale)
-
-    ctxt.rotate(attributes.rotation)
-
     if len(char) == 3:
         raise NotImplementedError()  # TODO: support multi-part character languages
         ctxt.translate(-ctxt.text_extents(char[0]).x_advance - extent_main_char.width / 2., extent_main_char.height / 2)
@@ -71,45 +65,128 @@ def draw_symbol(ctxt, attributes):
         ctxt.translate(-extent.x_bearing - extent.width / 2, -extent.y_bearing - extent.height / 2)
         ctxt.translate(*attributes.translation)
 
+    ctxt.translate(0.5, 0.5)
+    scale = 0.6 / np.maximum(extent_main_char.width, extent_main_char.height)
+    ctxt.scale(scale, scale)
+    ctxt.scale(*attributes.scale)
+
+    ctxt.rotate(attributes.rotation)
+
     ctxt.show_text(char)
 
     ctxt.clip()
     ctxt.paint()
 
-    return extent, extent_main_char
+    return extent, extent_main_char  # TODO verify that the extent is the final extent and not the one before translate
 
 
-def _make_foreground(ctxt, style):
-    if style == 'gradient':
-        pat = random_pattern(0.8, (0.2, 1), patern_types=('linear',))
-        ctxt.set_source(pat)
-    elif isinstance(style, Camouflage):
-        style.set_as_source(ctxt)
-    elif style is None:
-        ctxt.set_source_rgb(1, 1, 1)
-    else:
-        raise Exception("Unknown foreground style %s" % style)
+class Pattern(object):
+    def surface(self, width, height):
+        surface, ctxt = _make_surface(width, height)
+        self.draw(ctxt)
+        return surface
 
-
-def _make_background(ctxt, style, rng=None):
-    """Random background combining various patterns."""
-    rng = _check_random_state(rng)
-    if style is None:
-        ctxt.set_source_rgb(1, 1, 1)
+    def draw(self, ctxt):
+        ctxt.rectangle(0, 0, 1, 1)  # Rectangle(x0, y0, x1, y1)
+        self.set_as_source(ctxt)
         ctxt.fill()
-    elif isinstance(style, Camouflage):
-        style.draw(ctxt)
-    elif style == "gradient":
-        for i in range(5):
-            pat = random_pattern(0.4, (0, 0.8), rng=rng)
+
+    def set_as_source(self, ctxt):
+        raise NotImplementedError()
+
+    def attribute_dict(self):
+        return {'style': self.__class__.__name__}
+
+
+class NoPattern(Pattern):
+    def draw(self, ctxt):
+        pass
+
+    def set_as_source(self, ctxt):
+        ctxt.set_source_rgba(1, 1, 1, 0)
+
+
+class SolidColor(Pattern):
+    def __init__(self, color=None):
+        self.color = color
+
+    def draw(self, ctxt):
+        self.set_as_source(ctxt)
+        ctxt.fill()
+
+    def set_as_source(self, ctxt):
+        ctxt.set_source_rgb(*self.color)
+
+
+# There is a plan to make to color sampler a bit more fancy.
+def color_sampler(rng=np.random, brightness_range=(0, 1)):
+    def sampler():
+        b_delta = brightness_range[1] - brightness_range[0]
+        return rng.rand(3) * b_delta + brightness_range[0]
+
+    return sampler
+
+
+class Gradient(Pattern):
+    def __init__(self, alpha=1, types=('radial', 'linear'), random_color=color_sampler(), rng=np.random):
+        self.random_color = random_color
+        self.rng = rng
+        self.types = types
+        self.alpha = alpha
+
+    def set_as_source(self, ctxt):
+        pat = _random_pattern(self.alpha, self.random_color, rng=self.rng, patern_types=self.types)
+        ctxt.set_source(pat)
+
+
+class MultiGradient(Pattern):
+    def __init__(self, alpha=0.5, n_gradients=2, types=('radial', 'linear'), random_color=color_sampler(),
+                 rng=np.random):
+        self.random_color = random_color
+        self.rng = rng
+        self.types = types
+        self.alpha = alpha
+        self.n_gradients = n_gradients
+
+    def draw(self, ctxt):
+        for i in range(self.n_gradients):
+            if i == 0:
+                alpha = self.alpha
+            else:
+                alpha = self.alpha
+            pat = _random_pattern(alpha, self.random_color, rng=self.rng, patern_types=self.types)
             ctxt.rectangle(0, 0, 1, 1)  # Rectangle(x0, y0, x1, y1)
             ctxt.set_source(pat)
             ctxt.fill()
-    else:
-        raise Exception("Unknown background style %s" % style)
+
+    def set_as_source(self, ctxt):
+        raise NotImplemented()
 
 
-class Camouflage:
+def _random_pattern(alpha=0.8, random_color=color_sampler(), patern_types=('linear', 'radial'), rng=np.random):
+    """"Select a random pattern with either radioal or linear gradient."""
+    pattern_type = rng.choice(patern_types)
+    if pattern_type == 'linear':
+        x1, y1 = rng.rand(2)
+        theta = rng.rand() * 2 * np.pi
+        r = rng.randn() * 0.2 + 1
+        x2 = x1 + r * np.cos(theta)
+        y2 = y1 + r * np.sin(theta)
+        pat = cairo.LinearGradient(x1, y1, x2, y2)
+    if pattern_type == 'radial':
+        x1, y1, x2, y2 = rng.rand(4)
+        pat = cairo.RadialGradient(x1, y1, 2, x2, y2, 0.1)
+
+    r, g, b = random_color()
+    pat.add_color_stop_rgba(1, r, g, b, alpha)
+    r, g, b = random_color()
+    pat.add_color_stop_rgba(0.5, r, g, b, alpha)
+    r, g, b = random_color()
+    pat.add_color_stop_rgba(0, r, g, b, alpha)
+    return pat
+
+
+class Camouflage(Pattern):
     def __init__(self, stroke_length=0.4, stroke_width=0.05, stroke_angle=np.pi / 4, stroke_noise=0.02, n_stroke=500,
                  rng=None):
         self.rng = _check_random_state(rng)
@@ -134,13 +211,6 @@ class Camouflage:
             ctxt.set_source_rgba(b, g, r, 0.8)
             ctxt.stroke()
 
-    def surface(self, width, height):
-        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
-        surface.set_device_scale(width, height)
-        ctxt_bg = cairo.Context(surface)
-        self.draw(ctxt_bg)
-        return surface
-
     def set_as_source(self, ctxt):
         surface = ctxt.get_group_target()
         width, height = surface.get_width(), surface.get_height()
@@ -151,7 +221,73 @@ class Camouflage:
         pass
 
 
-class Attributes:
+def _surface_to_array(surface):
+    buf = surface.get_data()
+    img = np.ndarray(shape=(surface.get_height(), surface.get_width(), 4), dtype=np.uint8, buffer=buf)
+    return img[:, :, :3]
+
+
+def _make_surface(width, height):
+    surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
+    surface.set_device_scale(width, height)
+    ctxt = cairo.Context(surface)
+    return surface, ctxt
+
+
+def _image_transform(img, inverse_color, pixel_noise_scale, rng):
+    img = img.astype(np.float32) / 256.
+    if inverse_color:
+        img = 1 - img
+
+    mn, mx = np.min(img), np.max(img)
+    img = (img - mn) / (mx - mn)
+
+    img += rng.randn(*img.shape) * pixel_noise_scale
+    img = np.clip(img, 0., 1.)
+
+    return (img * 255).astype(np.uint8)
+
+
+class Image:
+    def __init__(self, symbols, resolution=(32, 32), background=NoPattern(), inverse_color=False,
+                 pixel_noise_scale=0.01, rng=np.random):
+        self.symbols = symbols
+        self.resolution = resolution
+        self.inverse_color = inverse_color
+        self.pixel_noise_scale = pixel_noise_scale
+        self.background = background
+        self.rng = rng
+
+    def make_mask(self):
+        mask_list = []
+        for symbol in self.symbols:
+            mask_list.append(symbol.make_mask(self.resolution))
+        return np.concatenate(mask_list, axis=2)
+
+    def make_image(self):
+        surface, ctxt = _make_surface(*self.resolution)
+        self.background.draw(ctxt)
+        for symbol in self.symbols:
+            ctxt.save()
+            symbol.draw(ctxt)
+            ctxt.restore()
+        img = _surface_to_array(surface)
+        return _image_transform(img, self.inverse_color, self.pixel_noise_scale, self.rng)
+
+    def attribute_dict(self):
+        symbols = [symbol.attribute_dict() for symbol in self.symbols]
+        data = dict(
+            resolution=self.resolution,
+            pixel_noise_scale=self.pixel_noise_scale,
+            background=self.background.attribute_dict()
+        )
+        data.update(symbols[0])  # hack to allow flatten access
+        data['symbols'] = symbols
+
+        return data
+
+
+class Symbol:
     """Class containing attributes describing the image
 
     Attributes:
@@ -178,62 +314,30 @@ class Attributes:
 
     """
 
-    def __init__(self, alphabet=None, char=None, font=None, background='gradient', foreground='gradient',
-                 slant=None, is_bold=None, rotation=None, scale=None, translation=None, inverse_color=None,
-                 pixel_noise_scale=0.01, resolution=(32, 32), rng=None):
-        self.rng = _check_random_state(rng)
-        # TODO: Alex D had to disabled this because it creates circular imports
-        # self.alphabet = rng.choice(ALPHABET_MAP.values()) if alphabet is None else alphabet
-        self.char = self.rng.choice(alphabet.symbols) if char is None else char
-        self.font = self.rng.choice(alphabet.fonts) if font is None else font
-        self.is_bold = self.rng.choice([True, False]) if is_bold is None else is_bold
-        self.slant = self.rng.choice(list(SLANT_MAP.keys())) if slant is None else slant
-        self.background = background
+    def __init__(self, alphabet, char, font, foreground, is_slant, is_bold, rotation, scale, translation,
+                 rng=np.random):
+        self.alphabet = alphabet
+        self.char = char
+        self.font = font
+        self.is_bold = is_bold
+        self.is_slant = is_slant
         self.foreground = foreground
-        self.rotation = self.rng.randn() * 0.2 if rotation is None else rotation
-        self.scale = tuple(np.exp(self.rng.randn(2) * 0.1)) if scale is None else scale
-        self.translation = tuple(self.rng.rand(2) * 0.2 - 0.1) if translation is None else translation
-        self.inverse_color = self.rng.choice([True, False]) if inverse_color is None else inverse_color
+        self.rotation = rotation
+        self.scale = scale
+        self.translation = translation
+        self.rng = rng
 
-        self.resolution = resolution
-        self.pixel_noise_scale = pixel_noise_scale
+    def draw(self, ctxt):
+        draw_symbol(ctxt, self)
 
-        # populated by make_image
-        self.text_rectangle = None
-        self.main_char_rectangle = None
-
-    def make_image(self):
-        width, height = self.resolution
-        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
-        ctxt = cairo.Context(surface)
-        ctxt.scale(width, height)  # Normalizing the canvas
-        self.text_rectangle, self.main_char_rectangle = draw_symbol(ctxt, self)
-        # TODO: this has been disabled since we now have a programmatic way to test for empty canvases instead of
-        #       visual inspection. Remove when fully satisfied.
-        # if self.text_rectangle is None:
-        #     # XXX: for debugging
-        #     from copy import deepcopy
-        #     attr = deepcopy(self)
-        #     attr.font = ""
-        #     attr.char = "#"
-        #     attr.background = None
-        #     attr.foreground = None
-        #     self.text_rectangle, self.main_char_rectangle = draw_symbol(ctxt, attr)
-        buf = surface.get_data()
-        img = np.ndarray(shape=(width, height, 4), dtype=np.uint8, buffer=buf)
-        img = img.astype(np.float32) / 256.
-        img = img[:, :, 0:3]
-        if self.inverse_color:
-            img = 1 - img
-
-        mn, mx = np.min(img), np.max(img)
-        img = (img - mn) / (mx - mn)
-
-        img += self.rng.randn(*img.shape) * self.pixel_noise_scale
-        img = np.clip(img, 0., 1.)
-
-        img = (img * 255).astype(np.uint8)
-        return img
+    def make_mask(self, resolution):
+        fg = self.foreground
+        self.foreground = SolidColor((1, 1, 1))
+        surface, ctxt = _make_surface(*resolution)
+        draw_symbol(ctxt, self)
+        self.foreground = fg
+        img = _surface_to_array(surface)
+        return np.mean(img, axis=2, keepdims=True)
 
     def attribute_dict(self):
         return dict(
@@ -241,59 +345,9 @@ class Attributes:
             char=self.char,
             font=self.font,
             is_bold=str(self.is_bold),
-            slant=SLANT_MAP[self.slant],
+            is_slant=str(self.is_slant),
             scale=self.scale,
             translation=self.translation,
-            inverse_color=str(self.inverse_color),
-            resolution=self.resolution,
-            pixel_noise_scale=self.pixel_noise_scale,
-            text_rectangle=self.text_rectangle,
-            main_char_rectangle=self.main_char_rectangle,
+            rotation=self.rotation,
+            foreground=self.foreground.attribute_dict(),
         )
-
-
-def random_pattern(alpha=0.8, brightness_range=(0, 1), patern_types=('linear', 'radial'), rng=None):
-    """"Select a random pattern with either radioal or linear gradient."""
-    rng = _check_random_state(rng)
-    pattern_type = rng.choice(patern_types)
-    if pattern_type == 'linear':
-        y1, y2 = rng.rand(2)
-        pat = cairo.LinearGradient(-1, y1, 2, y2)
-    if pattern_type == 'radial':
-        x1, y1, x2, y2 = rng.randn(4) * 0.5
-        pat = cairo.RadialGradient(x1 * 2, y1 * 2, 2, x2, y2, 0.2)
-
-    def random_color():
-        b_delta = brightness_range[1] - brightness_range[0]
-        return rng.rand(3) * b_delta + brightness_range[0]
-
-    r, g, b = random_color()
-    pat.add_color_stop_rgba(1, r, g, b, alpha)
-    r, g, b = random_color()
-    pat.add_color_stop_rgba(0.5, r, g, b, alpha)
-    r, g, b = random_color()
-    pat.add_color_stop_rgba(0, r, g, b, alpha)
-    return pat
-
-
-def solid_pattern(alpha=0.8, brightness_range=(0, 1), rng=None):
-    def random_color():
-        b_delta = brightness_range[1] - brightness_range[0]
-        return rng.rand(3) * b_delta + brightness_range[0]
-
-    rng = _check_random_state(rng)
-    r, g, b = random_color()
-    return cairo.SolidPattern(r, g, b, alpha)
-
-
-def _split(set_, ratios, rng=np.random.RandomState(42)):
-    n = len(set_)
-    counts = np.round(np.array(ratios) * n).astype(np.int)
-    counts[0] = n - np.sum(counts[1:])
-    set_ = rng.permutation(set_)
-    idx = 0
-    sets = []
-    for count in counts:
-        sets.append(set_[idx:(idx + count)])
-        idx += count
-    return sets
