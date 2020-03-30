@@ -21,4 +21,4 @@ view-dataset:
 dataset:
 	$(SYNBOLS_RUN) sh -c "cd /local; python ../synbols/generate_dataset.py"
 test:
-	$(SYNBOLS_RUN) sh -c "cd /local; python ../synbols/view_generator.py"
+	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/view_generator.py"
