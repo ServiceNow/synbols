@@ -92,8 +92,9 @@ def filter_fonts(alphabet):
         print("--> Supports italic.", end=" ")
         filter(check_rendering_slant_italic, font, alphabet)
 
-        print("--> Supports oblique.", end=" ")
-        filter(check_rendering_slant_oblique, font, alphabet)
+        # TODO: Same as italics right now. Disabled
+        # print("--> Supports oblique.", end=" ")
+        # filter(check_rendering_slant_oblique, font, alphabet)
 
     whitelist = set(alphabet.fonts).difference(blacklist)
 
