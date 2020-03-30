@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict
-from data_io import load_npz
+from synbols.data_io import load_npz
 import logging
 
 logging.basicConfig(level=logging.INFO)
