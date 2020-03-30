@@ -1,14 +1,13 @@
-import cairo
 import numpy as np
 
-from functools import partial
-
-from ..drawing import Attributes
+from ..drawing import Image, SolidColor, Symbol
 
 
-StableAttribute = partial(Attributes, alphabet="foo", font="bar", background=None, foreground=None,
-                          slant=cairo.FONT_SLANT_NORMAL, is_bold=False, rotation=0, scale=(1, 1),
-                          translation=(0, 0), inverse_color=False, pixel_noise_scale=0.01, resolution=(32, 32), rng=42)
+def make_test_symbol(char, font, is_slant=False, is_bold=False):
+    symbol = Symbol(alphabet="foo", char=char, font=font, foreground=SolidColor((1, 1, 1,)), is_slant=is_slant,
+                    is_bold=is_bold, rotation=0, scale=(1, 1), translation=(0, 0), rng=np.random.RandomState(42))
+    return Image([symbol], background=SolidColor((0, 0, 0,)), inverse_color=False, resolution=(64, 64),
+                 pixel_noise_scale=0.01)
 
 
 def check_empty_canvas(font, alphabet):
@@ -17,50 +16,33 @@ def check_empty_canvas(font, alphabet):
 
     """
     for char in alphabet.symbols:
-        a = StableAttribute(alphabet=alphabet, font=font, char=char, is_bold=False,
-                            slant=cairo.FONT_SLANT_NORMAL).make_image()
+        a = make_test_symbol(font=font, char=char, is_bold=False).make_image()
         if a.sum() == 0:
             return False
     return True
 
 
-# TODO: maybe check for combinations that fail (e.g., bold/italic)
 def check_rendering_bold(font, alphabet):
     """
     Checks if the appearance of characters changes from normal to bold face for a given alphabet and font
 
     """
     for char in alphabet.symbols:
-        a1 = StableAttribute(alphabet=alphabet, font=font, char=char, is_bold=False).make_image()
-        a2 = StableAttribute(alphabet=alphabet, font=font, char=char, is_bold=True).make_image()
+        a1 = make_test_symbol(font=font, char=char, is_bold=False).make_image()
+        a2 = make_test_symbol(font=font, char=char, is_bold=True).make_image()
         if np.abs(a1 - a2).sum() == 0:
             return False
     return True
 
 
-def check_rendering_slant_italic(font, alphabet):
+def check_rendering_slant(font, alphabet):
     """
-    Checks if the appearance of characters changes when changing the slant from normal to italic for a given alphabet
-    and font
+    Checks if the appearance of characters changes when changing the slant for a given alphabet and font
 
     """
     for char in alphabet.symbols:
-        a1 = StableAttribute(alphabet=alphabet, font=font, char=char, slant=cairo.FONT_SLANT_NORMAL).make_image()
-        a2 = StableAttribute(alphabet=alphabet, font=font, char=char, slant=cairo.FONT_SLANT_ITALIC).make_image()
-        if np.abs(a1 - a2).sum() == 0:
-            return False
-    return True
-
-
-def check_rendering_slant_oblique(font, alphabet):
-    """
-    Checks if the appearance of characters changes when changing the slant from normal to oblique for a given alphabet
-    and font
-
-    """
-    for char in alphabet.symbols:
-        a1 = StableAttribute(alphabet=alphabet, font=font, char=char, slant=cairo.FONT_SLANT_NORMAL).make_image()
-        a2 = StableAttribute(alphabet=alphabet, font=font, char=char, slant=cairo.FONT_SLANT_OBLIQUE).make_image()
+        a1 = make_test_symbol(font=font, char=char, is_slant=False).make_image()
+        a2 = make_test_symbol(font=font, char=char, is_slant=True).make_image()
         if np.abs(a1 - a2).sum() == 0:
             return False
     return True
@@ -84,17 +66,14 @@ def filter_fonts(alphabet):
         print("Checking font %s for alphabet %s" % (font, alphabet.name))
 
         print("--> Supports all characters.", end=" ")
+        # TODO: Somethimes glyphs fail to render and produce a square with a X inside. Would be good to detect that.
         filter(check_empty_canvas, font, alphabet)
 
         print("--> Supports bold.", end=" ")
         filter(check_rendering_bold, font, alphabet)
 
-        print("--> Supports italic.", end=" ")
-        filter(check_rendering_slant_italic, font, alphabet)
-
-        # TODO: Same as italics right now. Disabled
-        # print("--> Supports oblique.", end=" ")
-        # filter(check_rendering_slant_oblique, font, alphabet)
+        print("--> Supports slant.", end=" ")
+        filter(check_rendering_slant, font, alphabet)
 
     whitelist = set(alphabet.fonts).difference(blacklist)
 
