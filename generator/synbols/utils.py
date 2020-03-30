@@ -8,10 +8,10 @@ class Alphabet:
         self.name = name
         self.symbols = symbols
         self.fonts = fonts
-
-
-def _check_random_state(rng):
-    if isinstance(rng, np.random.RandomState):
-        return rng
-    else:
-        return np.random.RandomState(rng)
+#
+#
+# def _check_random_state(rng):
+#     if isinstance(rng, np.random.RandomState):
+#         return rng
+#     else:
+#         return np.random.RandomState(rng)
