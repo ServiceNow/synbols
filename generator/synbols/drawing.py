@@ -33,7 +33,14 @@ def draw_symbol(ctxt, attributes):
     char = attributes.char
 
     ctxt.set_font_size(0.7)
-    ctxt.select_font_face(attributes.font, attributes.slant, weight)
+    ctxt.select_font_face(attributes.font, cairo.FONT_SLANT_NORMAL, weight)
+
+    # Artificial italics
+    if attributes.slant != cairo.FONT_SLANT_NORMAL:
+        mtx = cairo.Matrix(1, 0.2,
+                           0., 1)
+        ctxt.set_font_matrix(ctxt.get_font_matrix().multiply(mtx))
+
     extent = ctxt.text_extents(char)
 
     if len(char) == 3:
