@@ -4,6 +4,7 @@ import warnings
 
 from sys import stdout
 
+# from .utils import _check_random_state
 
 #
 # SLANT_MAP = {
@@ -33,7 +34,14 @@ def draw_symbol(ctxt, attributes):
     char = attributes.char
 
     ctxt.set_font_size(0.7)
-    ctxt.select_font_face(attributes.font, slant, weight)
+    ctxt.select_font_face(attributes.font, cairo.FONT_SLANT_NORMAL, weight)
+
+    # Artificial italics
+    if slant != cairo.FONT_SLANT_NORMAL:
+        mtx = cairo.Matrix(1, 0.2,
+                           0., 1)
+        ctxt.set_font_matrix(ctxt.get_font_matrix().multiply(mtx))
+
     extent = ctxt.text_extents(char)
 
     if len(char) == 3:
@@ -181,12 +189,12 @@ def _random_pattern(alpha=0.8, random_color=color_sampler(), patern_types=('line
 class Camouflage(Pattern):
     def __init__(self, stroke_length=0.4, stroke_width=0.05, stroke_angle=np.pi / 4, stroke_noise=0.02, n_stroke=500,
                  rng=np.random):
+        self.rng = rng
         self.stroke_length = stroke_length
         self.stroke_width = stroke_width
         self.n_stroke = n_stroke
         self.stroke_angle = stroke_angle
         self.stroke_noise = stroke_noise
-        self.rng = rng
 
     def draw(self, ctxt):
         stroke_vector = self.stroke_length * np.array([np.cos(self.stroke_angle), np.sin(self.stroke_angle)])
@@ -333,7 +341,7 @@ class Symbol:
 
     def attribute_dict(self):
         return dict(
-            alphabet=self.alphabet.name,
+            # alphabet=self.alphabet.name,
             char=self.char,
             font=self.font,
             is_bold=str(self.is_bold),

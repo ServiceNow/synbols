@@ -1,14 +1,13 @@
 #!/usr/bin/python
-
-
 import time as t
 import cairo
 import argparse
-from data_io import write_jpg_zip, write_npz
 import logging
 import numpy as np
-import synbols
-from google_fonts import ALPHABET_MAP
+
+from .data_io import write_jpg_zip, write_npz
+from .drawing import Camouflage, Gradient, Image, NoPattern, SolidColor, Symbol
+from .fonts import ALPHABET_MAP
 
 logging.basicConfig(level=logging.INFO)
 
@@ -36,18 +35,17 @@ def basic_image_sampler(alphabet=None, char=None, font=None, background=None, fo
             _translation = tuple(rng.rand(2) * 0.6 - 0.3 ) if translation is None else translation
             # _translation = 0.3 * rng.choice([-1, 1], 2) + (0.1, -.1)
 
-            _foreground = synbols.Gradient() if foreground is None else foreground
+            _foreground = Gradient() if foreground is None else foreground
 
-            symbols.append(synbols.Symbol(
-                alphabet=_alphabet, char=_char, font=_font, foreground=_foreground, is_slant=_is_slant,
-                is_bold=_is_bold,
-                rotation=_rotation, scale=_scale, translation=_translation, rng=rng))
+            symbols.append(Symbol(alphabet=_alphabet, char=_char, font=_font, foreground=_foreground,
+                                  is_slant=_is_slant, is_bold=_is_bold, rotation=_rotation, scale=_scale,
+                                  translation=_translation, rng=rng))
 
-        _background = synbols.Gradient() if background is None else background
+        _background = Gradient() if background is None else background
         _inverse_color = rng.choice([True, False]) if inverse_color is None else inverse_color
 
-        return synbols.Image(symbols, background=_background, inverse_color=_inverse_color, resolution=resolution,
-                             pixel_noise_scale=pixel_noise_scale)
+        return Image(symbols, background=_background, inverse_color=_inverse_color, resolution=resolution,
+                     pixel_noise_scale=pixel_noise_scale)
 
     return sampler
 
@@ -93,7 +91,7 @@ def generate_char_grid(alphabet_name, n_char, n_font, rng=np.random, **kwargs):
 def generate_plain_dataset(n_samples):
     alphabet = ALPHABET_MAP['latin']
     attr_sampler = basic_image_sampler(
-        alphabet=alphabet, background=synbols.NoPattern(), foreground=synbols.SolidColor((1, 1, 1,)), is_slant=False,
+        alphabet=alphabet, background=NoPattern(), foreground=SolidColor((1, 1, 1,)), is_slant=False,
         is_bold=False, rotation=0, scale=(1., 1.), translation=(0., 0.), inverse_color=False, pixel_noise_scale=0.)
     return dataset_generator(attr_sampler, n_samples)
 
@@ -106,8 +104,8 @@ def generate_default_dataset(n_samples):
 
 def generate_camouflage_dataset(n_samples, n_synbols_per_image=1):
     alphabet = ALPHABET_MAP['latin']
-    fg = synbols.Camouflage(stroke_angle=0.5)
-    bg = synbols.Camouflage(stroke_angle=1.)
+    fg = Camouflage(stroke_angle=0.5)
+    bg = Camouflage(stroke_angle=1.)
     attr_generator = attribute_generator(n_samples, n_synbols_per_image, alphabet=alphabet, is_bold=True, foreground=fg,
                                          background=bg,
                                          scale=(1.3, 1.3))

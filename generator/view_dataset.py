@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict
-from data_io import load_npz
+from synbols.data_io import load_npz
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -48,9 +48,10 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
     plt.ylabel(v_axis)
 
     fig.tight_layout()
-    plt.show()
+    plt.savefig("dataset.png")
+    # plt.show()
 
 
 if __name__ == "__main__":
-    x, mask, y = load_npz('../default_n=10000.npz')
+    x, mask, y = load_npz('./default_n=10000.npz')
     plot_dataset(x, y)
