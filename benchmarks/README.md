@@ -1,9 +1,9 @@
 # Synbols benchmarks
-The entry point is in `trainval.py`. It takes care of checkpointing and calling the training and validation loops
+
 
 ## Requirements
 ```
-$ pip install --upgrade git+https://github.com/ElementAI/haven
+$ pip install -r requirements.txt
 ```
 
 ## Add benchmark
