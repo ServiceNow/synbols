@@ -57,12 +57,26 @@ class AleatoricSynbols(Synbols):
         self.seed = seed
         self.noise_classes = n_classes
         self.rng = np.random.RandomState(self.seed)
-        if split == 'train':
+        if split in ['train', 'calib']:
             self._create_aleatoric_noise()
 
+    def get_splits(self, source):
+        if self.split == 'train':
+            start = 0
+            end = int(0.7 * len(source))
+        if self.split == 'calib':
+            start = int(0.7 * len(source))
+            end = int(0.8 * len(source))
+        elif self.split == 'val':
+            start = int(0.8 * len(source))
+            end = int(0.9 * len(source))
+        elif self.split == 'test':
+            start = int(0.9 * len(source))
+            end = len(source)
+        return start, end
+
     def get_train_values(self, y):
-        start = 0
-        end = int(0.8 * len(y))
+        start, end = self.get_splits(source=y)
         return y[self.indices[start:end]]
 
     def _create_aleatoric_noise(self):

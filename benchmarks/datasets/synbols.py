@@ -24,19 +24,23 @@ class Synbols(Dataset):
         self.make_splits()
 
     def make_splits(self, seed=42):
-        if self.split == 'train':
-            start = 0
-            end = int(0.8 * len(self.x))
-        elif self.split == 'val':
-            start = int(0.8 * len(self.x))
-            end = int(0.9 * len(self.x))
-        elif self.split == 'test':
-            start = int(0.9 * len(self.x))
-            end = len(self.x) 
+        start, end = self.get_splits(self.x)
         rng = np.random.RandomState(seed)
         self.indices = rng.permutation(len(self.x))
         self.x = self.x[self.indices[start:end]]
         self.y = self.y[self.indices[start:end]]
+
+    def get_splits(self, source):
+        if self.split == 'train':
+            start = 0
+            end = int(0.8 * len(source))
+        elif self.split == 'val':
+            start = int(0.8 * len(source))
+            end = int(0.9 * len(source))
+        elif self.split == 'test':
+            start = int(0.9 * len(source))
+            end = len(source)
+        return start, end
 
     def __getitem__(self, item):
         return self.transform(self.x[item]), self.y[item]
@@ -45,4 +49,4 @@ class Synbols(Dataset):
         return len(self.x)
 
 if __name__ == '__main__':
-    synbols = Synbols('/mnt/datasets/public/research/synbols/latin_res=32x32_n=100000.npz', 'val')
+    synbols = Synbols('/mnt/datasets/public/research/synbols/old/latin_res=32x32_n=100000.npz', 'val')

@@ -4,10 +4,13 @@ import numpy as np
 import torch
 from baal import ModelWrapper
 from baal.active import ActiveLearningLoop, get_heuristic
+from baal.calibration import DirichletCalibrator
 from baal.utils.metrics import ClassificationReport
 from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader
 from torchvision import models
+
+from datasets import get_dataset
 
 
 class ActiveLearning(torch.nn.Module):
@@ -19,8 +22,8 @@ class ActiveLearning(torch.nn.Module):
         self.initial_weights = deepcopy(self.backbone.state_dict())
         self.backbone.cuda()
 
-
         self.batch_size = exp_dict['batch_size']
+        self.calibrate = exp_dict['calibrate']
         self.learning_epoch = exp_dict['learning_epoch']
         self.optimizer = torch.optim.SGD(self.backbone.parameters(),
                                          lr=exp_dict['lr'],
@@ -42,6 +45,11 @@ class ActiveLearning(torch.nn.Module):
                                        batch_size=self.batch_size,
                                        iterations=exp_dict['iterations'],
                                        use_cuda=True)
+        if self.calibrate:
+            self.calib_set = get_dataset('calib', exp_dict['dataset'])
+            self.valid_set = get_dataset('val', exp_dict['dataset'])
+            self.calibrator = DirichletCalibrator(self.wrapper, exp_dict["num_classes"],
+                                                  lr=0.001, reg_factor=1e-3, mu=1e-3)
         self.active_dataset = None
         self.active_dataset_settings = None
 
@@ -61,6 +69,16 @@ class ActiveLearning(torch.nn.Module):
 
     @torch.no_grad()
     def val_on_loader(self, loader, savedir=None):
+        if self.calibrate:
+            self.calibrator.calibrate(
+                train_set=self.calib_set,
+                test_set=self.valid_set,
+                epoch=10,
+                batch_size=self.batch_size,
+                double_fit=True, patience=5,
+                workers=4, use_cuda=True)
+            self.loop.get_probabilities = ModelWrapper(self.calibrator.calibrated_model).predict_on_dataset
+
         val_data = loader.dataset
         self.wrapper.test_on_dataset(val_data, batch_size=self.batch_size, use_cuda=True)
         metrics = self.wrapper.metrics
@@ -76,6 +94,8 @@ class ActiveLearning(torch.nn.Module):
         for k, v in mets.items():
             if isinstance(v, float):
                 mets_unpacked[k] = v
+            elif isinstance(v, np.ndarray):
+                mets_unpacked[k] = v.mean()
             else:
                 mets_unpacked.update({f"{k}_{ki}": np.mean(vi) for ki, vi in v.items()})
         return mets_unpacked
@@ -98,4 +118,3 @@ class ActiveLearning(torch.nn.Module):
         self.active_dataset_settings = state_dict["dataset"]
         if self.active_dataset is not None:
             self.active_dataset.load_state_dict(self.active_dataset_settings)
-

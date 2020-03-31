@@ -35,7 +35,7 @@ def trainval(exp_dict, savedir_base, reset=False):
     # Dataset
     # -----------
     train_dataset = get_dataset('train', exp_dict['dataset'])
-    val_dataset = get_dataset('val', exp_dict['dataset'])
+    val_dataset = get_dataset('test', exp_dict['dataset'])
 
     # train and val loader
     train_loader = DataLoader(train_dataset,
