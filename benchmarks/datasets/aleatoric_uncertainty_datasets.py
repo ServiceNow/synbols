@@ -75,7 +75,7 @@ class AleatoricSynbols(Synbols):
             end = len(source)
         return start, end
 
-    def get_train_values(self, y):
+    def get_values_split(self, y):
         start, end = self.get_splits(source=y)
         return y[self.indices[start:end]]
 
@@ -94,7 +94,7 @@ class AleatoricSynbols(Synbols):
             _y.append({key: j[key] for key in self.uncertainty_config.keys()})
 
         y_flag = [self._isin_latent(yi) for yi in _y]
-        y_flag = self.get_train_values(np.array(y_flag))
+        y_flag = self.get_values_split(np.array(y_flag))
         assert len(y_flag) == len(self.y)
         print(f"{sum(y_flag)} items are in the latent space out of {len(y_flag)}.")
         y_flag = [True if yi and self.rng.rand() < self.p else False for yi in y_flag]

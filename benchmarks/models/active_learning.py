@@ -49,7 +49,8 @@ class ActiveLearning(torch.nn.Module):
             self.calib_set = get_dataset('calib', exp_dict['dataset'])
             self.valid_set = get_dataset('val', exp_dict['dataset'])
             self.calibrator = DirichletCalibrator(self.wrapper, exp_dict["num_classes"],
-                                                  lr=0.001, reg_factor=1e-3, mu=1e-3)
+                                                  lr=0.001, reg_factor=exp_dict['reg_factor'],
+                                                  mu=exp_dict['mu'])
         self.active_dataset = None
         self.active_dataset_settings = None
 
@@ -67,7 +68,6 @@ class ActiveLearning(torch.nn.Module):
         metrics = self.wrapper.metrics
         return self._format_metrics(metrics, 'train')
 
-    @torch.no_grad()
     def val_on_loader(self, loader, savedir=None):
         if self.calibrate:
             self.calibrator.calibrate(
@@ -75,9 +75,10 @@ class ActiveLearning(torch.nn.Module):
                 test_set=self.valid_set,
                 epoch=10,
                 batch_size=self.batch_size,
-                double_fit=True, patience=5,
+                double_fit=True,
                 workers=4, use_cuda=True)
-            self.loop.get_probabilities = ModelWrapper(self.calibrator.calibrated_model).predict_on_dataset
+            self.loop.get_probabilities = ModelWrapper(self.calibrator.calibrated_model,
+                                                       None).predict_on_dataset
 
         val_data = loader.dataset
         self.wrapper.test_on_dataset(val_data, batch_size=self.batch_size, use_cuda=True)
