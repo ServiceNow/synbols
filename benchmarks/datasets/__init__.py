@@ -1,14 +1,19 @@
 from torchvision import transforms as tt
-from .synbols import Synbols
+from .synbols import SynbolsFolder, SynbolsNpz
 from .episodic_dataset import FewShotSampler # should be imported here because it changes the dataloader to be episodic
 from .episodic_synbols import EpisodicSynbols 
 
 def get_dataset(split, exp_dict):
     dataset_dict = exp_dict["dataset"]
-    if dataset_dict["name"] == "synbols":
+    if dataset_dict["name"] == "synbols_folder":
+        transform = tt.Compose([tt.ToTensor()])
+        ret = SynbolsFolder(dataset_dict["path"], split, dataset_dict["task"], transform)
+        exp_dict["num_classes"] = len(ret.labelset) # FIXME: this is hacky
+        return ret
+    elif dataset_dict["name"] == "synbols_npz":
         transform = tt.Compose([tt.ToPILImage(), tt.ToTensor()])
-        ret = Synbols(dataset_dict["path"], split, dataset_dict["task"], transform)
-        # exp_dict["num_classes"] = ret.num_classes # FIXME: this is hacky
+        ret = SynbolsNpz(dataset_dict["path"], split, dataset_dict["task"], transform)
+        exp_dict["num_classes"] = len(ret.labelset) # FIXME: this is hacky
         return ret
     elif dataset_dict["name"] == "fewshot_synbols":
         transform = tt.Compose([tt.ToPILImage(), tt.ToTensor()])

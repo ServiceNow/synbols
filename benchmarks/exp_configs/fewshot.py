@@ -24,6 +24,6 @@ EXP_GROUPS = {'fewshot_char':
                                 'query_size_val': 15,
                                 'query_size_test': 15,
                                 # end 5-way 5-shot 15-query
-                                'train_iters': 600,
-                                'val_iters': 600,
-                                'test_iters': 600}})}
+                                'train_iters': 100,
+                                'val_iters': 100,
+                                'test_iters': 100}})}

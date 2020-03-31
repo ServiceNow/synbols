@@ -1,5 +1,5 @@
 from torch.utils.data import Dataset
-from .synbols import Synbols
+from .synbols import SynbolsNpz
 from .episodic_dataset import EpisodicDataset
 import numpy as np
 import json
