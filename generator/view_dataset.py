@@ -53,5 +53,5 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
 
 
 if __name__ == "__main__":
-    x, mask, y = load_npz('../default_n=10000.npz')
+    x, mask, y = load_npz('./default_n=10000.npz')
     plot_dataset(x, y)

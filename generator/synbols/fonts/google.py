@@ -2,34 +2,15 @@
 # -*- coding: utf-8 -*-
 
 from collections import defaultdict
-from icu import LocaleData
 from os.path import join, exists
 import logging
 
-from ..utils import Alphabet
+from ..utils import Alphabet, SYMBOL_MAP
 
 
-FONT_PATH = "/usr/share/fonts/truetype/google-fonts/"
-METADATA = join(FONT_PATH, "google_fonts_metadata")
+GOOGLE_FONTS_PATH = "/usr/share/fonts/truetype/google-fonts/"
+GOOGLE_FONTS_METADATA_PATH = join(GOOGLE_FONTS_PATH, "google_fonts_metadata")
 FONT_BLACKLIST = ["rubik", "podkova", "baloochettan2", "seymourone", "kumarone", "stalinone", "oranienbaum", "stalinistone", "vampiroone"]
-
-SYMBOL_MAP = {
-    'latin': list(LocaleData("en_US").getExemplarSet()),
-    'telugu': list(LocaleData("te").getExemplarSet()),
-    'thai': list(LocaleData("th").getExemplarSet()),
-    'vietnamese': list(LocaleData("vi").getExemplarSet()),
-    'arabic': list(LocaleData("ar").getExemplarSet()),
-    'hebrew': list(LocaleData("iw_IL").getExemplarSet()),
-    # 'khmer': list(LocaleData("km").getExemplarSet()),  # XXX: see note above
-    'tamil': list(LocaleData("ta").getExemplarSet()),
-    'gujarati': list(LocaleData("gu").getExemplarSet()),
-    'bengali': list(LocaleData("bn").getExemplarSet()),
-    'malayalam': list(LocaleData("ml").getExemplarSet()),
-    'greek': list(LocaleData("el_GR").getExemplarSet()),
-    'cyrillic': list(u"АаБбВвГгДдЕеЁёЖжЗзИиЙйКкЛлМмНнОоПпРрСсТтУуФфХхЦцЧчШшЩщЪъЫыЬьЭэЮюЯя"),
-    'korean': list(LocaleData("ko_KR").getExemplarSet()),
-    'chinese-simplified': list(LocaleData("zh-CN").getExemplarSet())
-}
 
 
 def parse_metadata(file_path):
@@ -49,7 +30,7 @@ def parse_metadata(file_path):
 
 def build_alphabet_map():
     logging.info("Build alphabet map")
-    language_map, font_map = parse_metadata(METADATA)
+    language_map, font_map = parse_metadata(GOOGLE_FONTS_METADATA_PATH)
     alphabet_map = {}
     for alphabet_name, font_list in list(language_map.items()):
         logging.info("Check fonts for alphabet %s.", alphabet_name)

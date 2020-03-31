@@ -8,7 +8,7 @@ import logging
 
 def load_npz(file_path):
     """Load the dataset from compressed numpy format (npz)."""
-    dataset = np.load(file_path)
+    dataset = np.load(file_path, allow_pickle=True)
     y = dataset['y']
     # y = [json.loads(attr) for attr in y]
     return dataset['x'], dataset['mask'], y
