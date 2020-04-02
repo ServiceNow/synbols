@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from collections import defaultdict
-from os.path import join, exists
+from os.path import join
 import logging
 
 from ..utils import Alphabet, SYMBOL_MAP
