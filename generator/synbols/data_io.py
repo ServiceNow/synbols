@@ -24,7 +24,7 @@ def write_npz(file_path, generator):
 
 
 def load_dataset_jpeg_sequential(file_path, max_samples=None):
-    logging.info("openning %s" % file_path)
+    logging.info("Opening %s" % file_path)
     with zipfile.ZipFile(file_path) as zf:
 
         name_list = zf.namelist()
