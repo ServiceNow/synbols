@@ -52,10 +52,10 @@ def draw_symbol(ctxt, attributes):
     else:
         raise Exception("Unexpected length of string: %d. Should be either 3 or 1" % len(char))
 
-    if extent_main_char.width == 0. or extent_main_char.height == 0:
-        stdout.buffer.write(char.encode("utf-8"))
-        print("   Font:", attributes.font, "<-- ERROR needs attention")
-        return None, None
+    # if extent_main_char.width == 0. or extent_main_char.height == 0:
+    #     stdout.buffer.write(char.encode("utf-8"))
+    #     print("   Font:", attributes.font, "<-- ERROR needs attention")
+    #     return None, None
 
     if len(char) == 3:
         raise NotImplementedError()  # TODO: support multi-part character languages
