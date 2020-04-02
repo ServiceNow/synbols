@@ -48,8 +48,8 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
     plt.ylabel(v_axis)
 
     fig.tight_layout()
-    plt.savefig("dataset.png")
-    # plt.show()
+    # plt.savefig("dataset.png")
+    plt.show()
 
 
 if __name__ == "__main__":
