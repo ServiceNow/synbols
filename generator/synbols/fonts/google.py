@@ -7,10 +7,10 @@ import logging
 
 from ..utils import Alphabet, SYMBOL_MAP
 
-
 GOOGLE_FONTS_PATH = "/usr/share/fonts/truetype/google-fonts/"
 GOOGLE_FONTS_METADATA_PATH = join(GOOGLE_FONTS_PATH, "google_fonts_metadata")
-FONT_BLACKLIST = ["rubik", "podkova", "baloochettan2", "seymourone", "kumarone", "stalinone", "oranienbaum", "stalinistone", "vampiroone"]
+FONT_BLACKLIST = ["rubik", "podkova", "baloochettan2", "seymourone", "kumarone", "stalinone", "oranienbaum",
+                  "stalinistone", "vampiroone"]
 
 
 def parse_metadata(file_path):
@@ -29,15 +29,12 @@ def parse_metadata(file_path):
 
 
 def build_alphabet_map():
-    logging.info("Build alphabet map")
     language_map, font_map = parse_metadata(GOOGLE_FONTS_METADATA_PATH)
     alphabet_map = {}
     for alphabet_name, font_list in list(language_map.items()):
-        logging.info("Check fonts for alphabet %s.", alphabet_name)
         if alphabet_name in SYMBOL_MAP.keys():
-            alphabet_map[alphabet_name] = Alphabet(alphabet_name,
-                                                   [f for f in font_list if f not in FONT_BLACKLIST],
-                                                   SYMBOL_MAP[alphabet_name])
+            fonts = [f for f in font_list if f not in FONT_BLACKLIST]
+            alphabet_map[alphabet_name] = Alphabet(alphabet_name, fonts, SYMBOL_MAP[alphabet_name])
     return alphabet_map
 
 
