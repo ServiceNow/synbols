@@ -23,7 +23,7 @@ def basic_image_sampler(alphabet=None, char=None, font=None, background=None, fo
             _scale = tuple(np.exp(rng.randn(2) * 0.1)) if scale is None else scale
 
             # TODO the proper amount of translation depends on the scale
-            _translation = tuple(rng.rand(2) * 0.6 - 0.3 ) if translation is None else translation
+            _translation = tuple(rng.rand(2) * 0.6 - 0.3) if translation is None else translation
             # _translation = 0.3 * rng.choice([-1, 1], 2) + (0.1, -.1)
 
             _foreground = Gradient() if foreground is None else foreground
@@ -94,23 +94,22 @@ def generate_default_dataset(n_samples):
     return dataset_generator(attr_sampler, n_samples)
 
 
-def generate_camouflage_dataset(n_samples, n_synbols_per_image=1):
+def generate_camouflage_dataset(n_samples):
     alphabet = ALPHABET_MAP['latin']
     fg = Camouflage(stroke_angle=0.5)
     bg = Camouflage(stroke_angle=1.)
-    attr_generator = attribute_generator(n_samples, n_synbols_per_image, alphabet=alphabet, is_bold=True, foreground=fg,
-                                         background=bg,
-                                         scale=(1.3, 1.3))
-    return dataset_generator(attr_generator, n_samples, n_synbols_per_image)
+    attr_sampler = basic_image_sampler(
+        alphabet=alphabet, background=bg, foreground=fg, is_slant=False, is_bold=True, scale=(13., 1.3))
+
+    return dataset_generator(attr_sampler, n_samples)
 
 
 def generate_segmentation_dataset(n_samples, n_synbols_per_image=5):
     alphabet = ALPHABET_MAP['latin']
-    attr_generator = attribute_generator(n_samples, n_synbols_per_image, alphabet=alphabet,
-                                         slant=cairo.FontSlant.NORMAL,
-                                         is_bold=False, resolution=(128, 128), background='gradient',
-                                         n_symbols_per_image=2, inverse_color=False)
-    return dataset_generator(attr_generator, n_samples, n_synbols_per_image)
+
+    attr_generator = basic_image_sampler(alphabet=alphabet, resolution=(128, 128),
+                                         background=Gradient(), n_symbols=n_synbols_per_image)
+    return dataset_generator(attr_generator, n_samples)
 
 
 DATASET_GENERATOR_MAP = {
