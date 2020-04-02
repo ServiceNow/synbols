@@ -4,7 +4,7 @@ from synbols.data_io import pack_dataset
 from synbols.drawing import Camouflage, color_sampler, Gradient, MultiGradient, NoPattern, SolidColor
 from synbols.generate import generate_char_grid
 from view_dataset import plot_dataset
-
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     alphabet = 'latin'  # TODO missing upper cases
@@ -33,10 +33,13 @@ if __name__ == "__main__":
     fg = Gradient(types=('radial',), random_color=color_sampler(brightness_range=(0.1, 0.9)))
     # fg = NoPattern()
 
-    # kwargs = dict(foreground=fg, background=bg, is_bold=True, scale=(0.2, 0.2),
-    #               resolution=(32, 32), rng=np.random.RandomState(42), n_symbols=20)
+    kwargs = dict(foreground=fg, background=bg, is_bold=True, scale=(1, 1),
+                  # translation=(0,0),
+                  # rotation=0,
+                  resolution=(32, 32), n_symbols=1)
+    #
+    # kwargs = dict()
 
-    kwargs = dict()
-
-    x, y = pack_dataset(generate_char_grid('cyrillic', n_font=15, n_char=20, **kwargs))
+    x, y = pack_dataset(generate_char_grid('latin', n_font=15, n_char=20, **kwargs))
     plot_dataset(x, y, name=alphabet, h_axis='char', v_axis='font', rng=np.random.RandomState(42))
+    plt.show()

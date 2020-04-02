@@ -23,8 +23,8 @@ def basic_image_sampler(alphabet=None, char=None, font=None, background=None, fo
             _scale = tuple(np.exp(rng.randn(2) * 0.1)) if scale is None else scale
 
             # TODO the proper amount of translation depends on the scale
-            _translation = tuple(rng.rand(2) * 0.6 - 0.3) if translation is None else translation
-            # _translation = 0.3 * rng.choice([-1, 1], 2) + (0.1, -.1)
+            _translation = tuple(rng.rand(2) * 0.4 + (-0.3, -0.2)) if translation is None else translation
+            # _translation = 0.2 * rng.choice([-1, 1], 2) + (-0.1, -.0)
 
             _foreground = Gradient() if foreground is None else foreground
 

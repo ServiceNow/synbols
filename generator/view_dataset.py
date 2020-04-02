@@ -48,10 +48,12 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
     plt.ylabel(v_axis)
 
     fig.tight_layout()
-    # plt.savefig("dataset.png")
-    plt.show()
 
 
 if __name__ == "__main__":
     x, mask, y = load_npz('./default_n=10000.npz')
     plot_dataset(x, y)
+    # plt.savefig("dataset.png")
+    print([attr['scale'] for attr in y])
+    plt.show()
+
