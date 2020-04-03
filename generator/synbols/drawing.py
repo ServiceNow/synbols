@@ -4,6 +4,7 @@ import warnings
 
 from sys import stdout
 
+
 # from .utils import _check_random_state
 
 #
@@ -33,51 +34,31 @@ def draw_symbol(ctxt, attributes):
     slant = cairo.FontSlant.OBLIQUE if attributes.is_slant else cairo.FontSlant.NORMAL
     char = attributes.char
 
-    ctxt.set_font_size(0.7)
-    ctxt.select_font_face(attributes.font, cairo.FONT_SLANT_NORMAL, weight)
 
-    # Artificial italics
+    ctxt.set_font_size(attributes.scale[0])
+
+    # set slant to normal and perform it manually. There seems to be some issues with system italic
+    ctxt.select_font_face(attributes.font, cairo.FONT_SLANT_NORMAL, weight)
     if slant != cairo.FONT_SLANT_NORMAL:
-        mtx = cairo.Matrix(1, 0.2,
-                           0., 1)
+        mtx = cairo.Matrix(1, 0.2, 0., 1)
         ctxt.set_font_matrix(ctxt.get_font_matrix().multiply(mtx))
 
     extent = ctxt.text_extents(char)
 
-    if len(char) == 3:
-        raise NotImplementedError()  # TODO: support multi-part character languages
-        extent_main_char = ctxt.text_extents(char[1])
-    elif len(char) == 1:
-        extent_main_char = extent
-    else:
-        raise Exception("Unexpected length of string: %d. Should be either 3 or 1" % len(char))
-
-    # if extent_main_char.width == 0. or extent_main_char.height == 0:
-    #     stdout.buffer.write(char.encode("utf-8"))
-    #     print("   Font:", attributes.font, "<-- ERROR needs attention")
-    #     return None, None
-
-    if len(char) == 3:
-        raise NotImplementedError()  # TODO: support multi-part character languages
-        ctxt.translate(-ctxt.text_extents(char[0]).x_advance - extent_main_char.width / 2., extent_main_char.height / 2)
-        ctxt.translate(*attributes.translation)
-    else:
-        ctxt.translate(-extent.x_bearing - extent.width / 2, -extent.y_bearing - extent.height / 2)
-        ctxt.translate(*attributes.translation)
-
-    ctxt.translate(0.5, 0.5)
-    scale = 0.6 / np.maximum(extent_main_char.width, extent_main_char.height)
-    ctxt.scale(scale, scale)
-    ctxt.scale(*attributes.scale)
+    translate = (np.array(attributes.translation) + 1.) / 2.
+    translate *= np.array((1 - extent.width, 1 - extent.height))
+    ctxt.translate(-extent.x_bearing, -extent.y_bearing)
+    ctxt.translate(translate[0], translate[1])
 
     ctxt.rotate(attributes.rotation)
 
+    # ctxt.rectangle(0, 0, 0.1, 0.1)
     ctxt.show_text(char)
 
     ctxt.clip()
     ctxt.paint()
 
-    return extent, extent_main_char  # TODO verify that the extent is the final extent and not the one before translate
+    return extent, None  # TODO verify that the extent is the final extent and not the one before translate
 
 
 class Pattern(object):

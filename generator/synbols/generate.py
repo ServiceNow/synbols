@@ -7,6 +7,15 @@ from .drawing import Camouflage, Gradient, Image, NoPattern, SolidColor, Symbol
 from .fonts import ALPHABET_MAP
 
 
+def _select(default, value):
+    if value is None:
+        return default
+    elif callable(value):
+        return value()
+    else:
+        return value
+
+
 # ya basic!
 def basic_image_sampler(alphabet=None, char=None, font=None, background=None, foreground=None, is_slant=None,
                         is_bold=None, rotation=None, scale=None, translation=None, inverse_color=None,
@@ -14,26 +23,22 @@ def basic_image_sampler(alphabet=None, char=None, font=None, background=None, fo
     def sampler():
         symbols = []
         for i in range(n_symbols):
-            _alphabet = rng.choice(ALPHABET_MAP.values()) if alphabet is None else alphabet
-            _char = rng.choice(_alphabet.symbols) if char is None else char
-            _font = rng.choice(_alphabet.fonts) if font is None else font
-            _is_bold = rng.choice([True, False]) if is_bold is None else is_bold
-            _is_slant = rng.choice([True, False]) if is_slant is None else is_slant
-            _rotation = rng.randn() * 0.2 if rotation is None else rotation
-            _scale = tuple(np.exp(rng.randn(2) * 0.1)) if scale is None else scale
-
-            # TODO the proper amount of translation depends on the scale
-            _translation = tuple(rng.rand(2) * 0.4 + (-0.3, -0.2)) if translation is None else translation
-            # _translation = 0.2 * rng.choice([-1, 1], 2) + (-0.1, -.0)
-
-            _foreground = Gradient() if foreground is None else foreground
+            _alphabet = _select(rng.choice(list(ALPHABET_MAP.values())), alphabet)
+            _char = _select(rng.choice(_alphabet.symbols), char)
+            _font = _select(rng.choice(_alphabet.fonts), font)
+            _is_bold = _select(rng.choice([True, False]), is_bold)
+            _is_slant = _select(rng.choice([True, False]), is_slant)
+            _rotation = _select(rng.randn() * 0.1, rotation)
+            _scale = _select(tuple(np.exp(rng.randn(2) * 0.2)), scale)
+            _translation = _select(tuple(rng.rand(2) * 2 - 1), translation)
+            _foreground = _select(Gradient(), foreground)
 
             symbols.append(Symbol(alphabet=_alphabet, char=_char, font=_font, foreground=_foreground,
                                   is_slant=_is_slant, is_bold=_is_bold, rotation=_rotation, scale=_scale,
                                   translation=_translation, rng=rng))
 
-        _background = Gradient() if background is None else background
-        _inverse_color = rng.choice([True, False]) if inverse_color is None else inverse_color
+        _background = _select(Gradient(), background)
+        _inverse_color = _select(rng.choice([True, False]), inverse_color)
 
         return Image(symbols, background=_background, inverse_color=_inverse_color, resolution=resolution,
                      pixel_noise_scale=pixel_noise_scale)
