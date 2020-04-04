@@ -39,29 +39,15 @@ def trainval(exp_dict, savedir_base, reset=False):
     val_dataset = get_dataset('val', exp_dict)
 
     # train and val loader
-    if exp_dict["episodic"] == False:
-        train_loader = DataLoader(train_dataset,
-                                    batch_size=exp_dict['batch_size'],
-                                    shuffle=True,
-                                    num_workers=args.num_workers) 
-        val_loader = DataLoader(val_dataset,
-                                    batch_size=exp_dict['batch_size'],
-                                    shuffle=True,
-                                    num_workers=args.num_workers) 
-    else: # to support episodes TODO: move inside each model
-        from datasets.episodic_dataset import EpisodicDataLoader
-        train_loader = EpisodicDataLoader(train_dataset,
-                                    batch_size=exp_dict['batch_size'],
-                                    shuffle=True,
-                                    collate_fn=lambda x: x,
-                                    num_workers=args.num_workers) 
-        val_loader = EpisodicDataLoader(val_dataset,
-                                    batch_size=exp_dict['batch_size'],
-                                    shuffle=True,
-                                    collate_fn=lambda x: x,
-                                    num_workers=args.num_workers) 
-                
-   
+    train_loader = DataLoader(train_dataset,
+                                batch_size=exp_dict['batch_size'],
+                                shuffle=True,
+                                num_workers=args.num_workers) 
+    val_loader = DataLoader(val_dataset,
+                                batch_size=exp_dict['batch_size'],
+                                shuffle=True,
+                                num_workers=args.num_workers) 
+
     # Model
     # -----------
     model = get_model(exp_dict)
