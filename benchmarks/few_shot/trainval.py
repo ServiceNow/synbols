@@ -14,7 +14,7 @@ from models import get_model
 import pandas as pd
 
 
-def trainval(exp_dict, savedir_base, reset=False, wandb=None):
+def trainval(exp_dict, savedir_base, reset=False, wandb='None', wandb_key='None'):
     # bookkeeping
     # ---------------
 
@@ -32,9 +32,11 @@ def trainval(exp_dict, savedir_base, reset=False, wandb=None):
     print(exp_dict)
     print("Experiment saved in %s" % savedir)
 
-    if wandb is not None:
+    if wandb is not 'None':
         # https://docs.wandb.com/quickstart
         import wandb as logger
+        if wandb_key is not 'None':
+            logger.login(key=wandb_key)
         logger.init(project=wandb)
         logger.config.update(exp_dict)
 
@@ -112,7 +114,7 @@ def trainval(exp_dict, savedir_base, reset=False, wandb=None):
         hu.torch_save(model_path, model.get_state_dict())
         hu.save_pkl(score_list_path, score_list)
         print("Checkpoint Saved: %s" % savedir)
-        if wandb is not None:
+        if wandb is not 'None':
             for key, values in score_dict.items():
                 logger.log({key:values})
 
@@ -128,7 +130,8 @@ if __name__ == "__main__":
     parser.add_argument("-v", "--view_experiments", default=None)
     parser.add_argument("-j", "--run_jobs", type=int, default=None)
     parser.add_argument("-nw", "--num_workers", type=int, default=0)
-    parser.add_argument("-wb", "--wandb", type=str, default=None)
+    parser.add_argument("-wb", "--wandb", type=str, default='None')
+    parser.add_argument("-wbk", "--wandb_key", type=str, default='None')
 
     args = parser.parse_args()
 
@@ -158,7 +161,8 @@ if __name__ == "__main__":
         # launch jobs
         # TODO: define experiment-wise
         from haven import haven_jobs as hjb
-        run_command = ('python trainval.py -ei <exp_id> -sb %s -nw 1' %  (args.savedir_base))
+        run_command = ('python trainval.py -ei <exp_id> -sb %s -nw 1 -wb %s -wbk %s' % (
+                args.savedir_base, args.wandb, args.wandb_key))
         job_config = {
             'volume': '/mnt:/mnt',
             'image': 'images.borgy.elementai.net/issam/main',
@@ -168,8 +172,8 @@ if __name__ == "__main__":
             'restartable': '1',
             'cpu': '4',
         }
-
         workdir = os.path.dirname(os.path.realpath(__file__))
+
         hjb.run_exp_list_jobs(exp_list, 
                             savedir_base=args.savedir_base, 
                             workdir=workdir,
@@ -184,4 +188,5 @@ if __name__ == "__main__":
             trainval(exp_dict=exp_dict,
                     savedir_base=args.savedir_base,
                     reset=args.reset,
-                    wandb=args.wandb)
+                    wandb=args.wandb,
+                    wandb_key=args.wandb_key)

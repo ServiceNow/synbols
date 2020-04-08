@@ -94,13 +94,13 @@ class SynbolsNpz(Dataset):
             print("Done...")
 
     def make_splits(self, seed=42):
-        data = np.load(self.path) 
+        data = np.load(self.path, allow_pickle=True) 
         self.x = data['x']
         self.y = data['y']
         del(data)
         _y = []
         for y in self.y:
-            _y.append(json.loads(y)[self.task])
+            _y.append(y[self.task])
         self.y = _y
         self.labelset = list(sorted(set(self.y)))
         self.y = np.array([self.labelset.index(y) for y in self.y])

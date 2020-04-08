@@ -1,4 +1,7 @@
-from synbols.data_io import load_npz
+import __init__
+# from ...generator.synbols import data_io as load_npz
+from generator.synbols.data_io import load_npz
+
 import numpy as np
 
 
@@ -69,7 +72,8 @@ if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
-    attr_list = load_npz('../../default_n=10000.npz')[2]
+    # attr_list = load_npz('../../default_n=10000.npz')[2]
+    attr_list = load_npz('/mnt/datasets/public/research/synbols/plain_n=1000000.npz')[2]
 
     axis1 = np.array([attr['char'] for attr in attr_list])
     axis2 = np.array([attr['scale'][0] for attr in attr_list])

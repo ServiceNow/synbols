@@ -3,7 +3,7 @@ from haven import haven_utils as hu
 # Define exp groups for parameter search
 EXP_GROUPS = {'fewshot_char_protonet':
                 hu.cartesian_exp_group({
-                    'benchmark':'fewshot',
+                    'benchmark':'few_shot',
                     'lr':[0.1],
                     'batch_size':[1],
                     'model': "protonet",
@@ -29,9 +29,9 @@ EXP_GROUPS = {'fewshot_char_protonet':
                                 'val_iters': 50,
                                 'test_iters': 50}}),
                 'fewshot_char_maml':hu.cartesian_exp_group({
-                    'benchmark':'fewshot',
+                    'benchmark':'few_shot',
                     'model': "MAML",
-                    'lr':[0.01, 0.1],
+                    'lr':[0.1,],
                     'n_inner_iter':[5],
                     'batch_size':[1],
                     'backbone': "conv",
