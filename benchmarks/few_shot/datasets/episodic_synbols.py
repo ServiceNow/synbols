@@ -6,7 +6,7 @@ import json
 
 class EpisodicSynbols(EpisodicDataset):
     def __init__(self, path, split, sampler, size, key='font', transform=None):
-        dataset = Synbols(path, split, key, transform)
+        dataset = SynbolsNpz(path, split, key, transform)
         self.x = dataset.x
         self.name = "synbols"
         super().__init__(dataset.y, sampler, size, dataset.transform)
