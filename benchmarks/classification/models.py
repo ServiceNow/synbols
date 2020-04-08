@@ -19,14 +19,13 @@ def get_model(exp_dict):
 class Classification(torch.nn.Module):
     def __init__(self, exp_dict):
         super().__init__()
+        self.exp_dict = exp_dict
         self.backbone = get_backbone(exp_dict)
         self.backbone.cuda()
         
-        self.optimizer = torch.optim.SGD(self.backbone.parameters(),
+        self.optimizer = torch.optim.Adam(self.backbone.parameters(),
                                             lr=exp_dict['lr'],
-                                            weight_decay=5e-4,
-                                            momentum=0.9,
-                                            nesterov=True)
+                                            weight_decay=5e-4)
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer,
                                                                     mode='min',
                                                                     factor=0.1,
@@ -42,8 +41,12 @@ class Classification(torch.nn.Module):
             self.optimizer.zero_grad()
             y = y.cuda(non_blocking=True)
             x = x.cuda(non_blocking=False)
-            logits = self.backbone(x)
-            loss = F.cross_entropy(logits, y)
+            if self.exp_dict["backbone"]["name"] == "warn":
+                logits, regularizer = self.backbone(x)
+            else:
+                logits = self.backbone(x)
+                regularizer = 0
+            loss = F.cross_entropy(logits, y) + regularizer
             _loss += float(loss) * x.size(0)
             _total += x.size(0)
             loss.backward()
@@ -62,7 +65,11 @@ class Classification(torch.nn.Module):
         for x, y in tqdm(loader):
             y = y.cuda(non_blocking=True)
             x = x.cuda(non_blocking=False)
-            logits = self.backbone(x)
+            if self.exp_dict["backbone"]["name"] == "warn":
+                logits, regularizer = self.backbone(x)
+            else:
+                logits = self.backbone(x)
+                regularizer = 0
             preds = logits.data.max(-1)[1]
             loss = F.cross_entropy(logits, y)
             _loss += float(loss) * x.size(0)

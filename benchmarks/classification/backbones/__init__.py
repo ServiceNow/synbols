@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import torchvision.models as models
 from .efficientnet_pytorch import EfficientNet
+from .warn.models.wide_resnet_cifar_attention import WideResNetAttention
 import torch.nn.functional as F
 
 class GAP(torch.nn.Module):
@@ -72,6 +73,10 @@ def get_backbone(exp_dict):
         backbone = models.resnet50(pretrained=exp_dict["backbone"]["imagenet_pretraining"], progress=True)
         num_ftrs = backbone.fc.in_features
         backbone.fc = torch.nn.Linear(num_ftrs, nclasses) 
+        return backbone
+    elif backbone_name == "warn":
+        backbone = WideResNetAttention(28, 4, nclasses, 0.1, 3, 4, reg_w=0.001,
+                 attention_type="softmax")
         return backbone
     elif backbone_name == "vgg16":
         backbone = models.vgg16_bn(pretrained=exp_dict["backbone"]["imagenet_pretraining"], progress=True)

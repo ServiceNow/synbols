@@ -123,7 +123,10 @@ class SynbolsNpz(Dataset):
             self.transform = lambda x: x
         else:
             self.transform = transform
-        self.save_load_cache()
+        if False:
+            self.save_load_cache()
+        else:
+            self.make_splits()
 
     def save_load_cache(self):
         path = "/tmp/%s_%s_%s.npz" %(os.path.basename(self.path), self.task, self.split) 
