@@ -14,7 +14,7 @@ parser.add_argument('--no_docker', help="Don't run in docker", action='store_tru
 
 
 def _docker_run(cmd):
-    docker_cmd = ("docker run --user %s" % (os.getuid())).split()
+    docker_cmd = ("docker run --user %s -m 8g" % (os.getuid())).split()
     synbol_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     docker_cmd += ["-v", "%s/generator:/generator" % synbol_dir]
     docker_cmd += ["-v", "%s:/local" % synbol_dir]
@@ -27,22 +27,20 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not args.no_docker:
+
+        # TODO ctrl+c should stop the docker.
         _docker_run("cd /local; python generator/generate_dataset.py --no_docker " + ' '.join(sys.argv[1:]))
     else:
 
-        from synbols.generate import *
-        from synbols.data_io import write_npz
+        from synbols.generate import DATASET_GENERATOR_MAP
+        from synbols.data_io import write_npz, write_h5
 
         logging.info("Generating %d samples from %s dataset", args.n_samples, args.dataset)
 
-        DATASET_GENERATOR_MAP = {
-            'plain': generate_plain_dataset,
-            'default': generate_default_dataset,
-            'camouflage': generate_camouflage_dataset,
-            'segmentation': generate_segmentation_dataset,
-        }
-
         ds_generator = DATASET_GENERATOR_MAP[args.dataset](args.n_samples)
 
-        directory = '%s_n=%d' % (args.dataset, args.n_samples)
-        write_npz(directory, ds_generator)
+        file_path = '%s_n=%d.h5py' % (args.dataset, args.n_samples)
+        write_h5(file_path, ds_generator)
+
+        # file_path = '%s_n=%d.npz' % (args.dataset, args.n_samples)
+        # write_npz(file_path, ds_generator)
