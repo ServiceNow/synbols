@@ -1,5 +1,4 @@
 import time as t
-import cairo
 import logging
 import numpy as np
 
@@ -19,7 +18,7 @@ def _select(default, value):
 # ya basic!
 def basic_image_sampler(alphabet=None, char=None, font=None, background=None, foreground=None, is_slant=None,
                         is_bold=None, rotation=None, scale=None, translation=None, inverse_color=None,
-                        pixel_noise_scale=0.01, resolution=(32, 32), n_symbols=1, rng=np.random):
+                        pixel_noise_scale=0.01, resolution=(32, 32), is_gray=False, n_symbols=1, rng=np.random):
     def sampler():
         symbols = []
         for i in range(n_symbols):
@@ -29,7 +28,7 @@ def basic_image_sampler(alphabet=None, char=None, font=None, background=None, fo
             _is_bold = _select(rng.choice([True, False]), is_bold)
             _is_slant = _select(rng.choice([True, False]), is_slant)
             _rotation = _select(rng.randn() * 0.1, rotation)
-            _scale = _select(tuple(np.exp(rng.randn(2) * 0.2)), scale)
+            _scale = _select(np.exp(rng.randn() * 0.2), scale)
             _translation = _select(tuple(rng.rand(2) * 2 - 1), translation)
             _foreground = _select(Gradient(), foreground)
 
@@ -41,7 +40,7 @@ def basic_image_sampler(alphabet=None, char=None, font=None, background=None, fo
         _inverse_color = _select(rng.choice([True, False]), inverse_color)
 
         return Image(symbols, background=_background, inverse_color=_inverse_color, resolution=resolution,
-                     pixel_noise_scale=pixel_noise_scale)
+                     pixel_noise_scale=pixel_noise_scale, is_gray=is_gray)
 
     return sampler
 
@@ -89,7 +88,15 @@ def generate_plain_dataset(n_samples):
     alphabet = ALPHABET_MAP['latin']
     attr_sampler = basic_image_sampler(
         alphabet=alphabet, background=NoPattern(), foreground=SolidColor((1, 1, 1,)), is_slant=False,
-        is_bold=False, rotation=0, scale=(1., 1.), translation=(0., 0.), inverse_color=False, pixel_noise_scale=0.)
+        is_bold=False, rotation=0, scale=1., translation=(0., 0.), inverse_color=False, pixel_noise_scale=0.)
+    return dataset_generator(attr_sampler, n_samples)
+
+
+def generate_tiny_dataset(n_samples):
+    fg = SolidColor((1, 1, 1))
+    bg = SolidColor((0, 0, 0))
+    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP['latin'], background=bg, foreground=fg, is_bold=False,
+                                       scale=1.3, resolution=(8, 8), is_gray=True)
     return dataset_generator(attr_sampler, n_samples)
 
 
@@ -102,9 +109,9 @@ def generate_default_dataset(n_samples):
 def generate_camouflage_dataset(n_samples):
     alphabet = ALPHABET_MAP['latin']
     fg = Camouflage(stroke_angle=0.5)
-    bg = Camouflage(stroke_angle=1.)
+    bg = Camouflage(stroke_angle=1.5)
     attr_sampler = basic_image_sampler(
-        alphabet=alphabet, background=bg, foreground=fg, is_slant=False, is_bold=True, scale=(13., 1.3))
+        alphabet=alphabet, background=bg, foreground=fg, is_slant=False, is_bold=True, scale=1.3)
 
     return dataset_generator(attr_sampler, n_samples)
 
@@ -122,4 +129,5 @@ DATASET_GENERATOR_MAP = {
     'default': generate_default_dataset,
     'camouflage': generate_camouflage_dataset,
     'segmentation': generate_segmentation_dataset,
+    'tiny': generate_tiny_dataset,
 }

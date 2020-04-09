@@ -2,6 +2,8 @@
   <dictionary name="alex">
     <words>
       <w>dataset</w>
+      <w>dset</w>
+      <w>dtype</w>
     </words>
   </dictionary>
 </component>

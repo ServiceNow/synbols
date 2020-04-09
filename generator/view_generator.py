@@ -23,21 +23,21 @@ if __name__ == "__main__":
     # alphabet = 'greek'
     # alphabet = 'cyrillic'
 
-    # bg = Camouflage(stroke_angle=1.5)
+    bg = Camouflage(stroke_angle=1.)
     # bg = NoPattern()
-    bg = MultiGradient(alpha=0.5, n_gradients=2, types=('linear', 'radial'))
+    # bg = MultiGradient(alpha=0.5, n_gradients=2, types=('linear', 'radial'))
     # bg = Gradient(types=('linear',), random_color=color_sampler(brightness_range=(0.1, 0.9)))
 
-    # fg = Camouflage(stroke_angle=0.5)
-    # fg = SolidColor((1, 0, 0))
-    fg = Gradient(types=('radial',), random_color=color_sampler(brightness_range=(0.1, 0.9)))
+    fg = Camouflage(stroke_angle=0.5)
+    # fg = SolidColor((1, 1, 1))
+    # fg = Gradient(types=('radial',), random_color=color_sampler(brightness_range=(0.1, 0.9)))
     # fg = NoPattern()
 
-    kwargs = dict(foreground=fg, background=bg, is_bold=True, scale=(1, 1),
-                  # translation=(0,0),
-                  # rotation=0,
+    scale = 1.3
+    # scale = lambda: tuple(np.exp(np.random.randn(2) * 0.4)*0.6)
+    kwargs = dict(foreground=fg, background=bg, is_bold=True, scale=scale,
                   resolution=(32, 32), n_symbols=1)
-    #
+
     # kwargs = dict()
 
     x, y = pack_dataset(generate_char_grid('latin', n_font=15, n_char=20, **kwargs))
