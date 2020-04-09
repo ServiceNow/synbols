@@ -3,10 +3,11 @@ import torchvision.models as models
 
 import torch
 import torch.nn.functional as F
-import torchvision.models as models
 from sklearn.metrics import confusion_matrix
 from tqdm import tqdm
 import numpy as np
+from backbones import get_backbone
+import time
 
 
 def get_model(exp_dict):
@@ -15,20 +16,16 @@ def get_model(exp_dict):
     else:
         raise ValueError("Model %s not found" %exp_dict["model"])
 
-
 class Classification(torch.nn.Module):
     def __init__(self, exp_dict):
         super().__init__()
-        self.backbone = models.resnet18(pretrained=exp_dict["imagenet_pretraining"], progress=True)
-        num_ftrs = self.backbone.fc.in_features
-        self.backbone.fc = torch.nn.Linear(num_ftrs, exp_dict["num_classes"]) 
+        self.exp_dict = exp_dict
+        self.backbone = get_backbone(exp_dict)
         self.backbone.cuda()
         
-        self.optimizer = torch.optim.SGD(self.backbone.parameters(),
+        self.optimizer = torch.optim.Adam(self.backbone.parameters(),
                                             lr=exp_dict['lr'],
-                                            weight_decay=5e-4,
-                                            momentum=0.9,
-                                            nesterov=True)
+                                            weight_decay=5e-4)
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer,
                                                                     mode='min',
                                                                     factor=0.1,
@@ -39,17 +36,24 @@ class Classification(torch.nn.Module):
         _loss = 0
         _total = 0
         self.backbone.train()
+        t = time.time()
         for x, y in tqdm(loader):
             self.optimizer.zero_grad()
             y = y.cuda(non_blocking=True)
             x = x.cuda(non_blocking=False)
-            logits = self.backbone(x)
-            loss = F.cross_entropy(logits, y)
-            _loss += float(loss)
+            if self.exp_dict["backbone"]["name"] == "warn":
+                logits, regularizer = self.backbone(x)
+            else:
+                logits = self.backbone(x)
+                regularizer = 0
+            loss = F.cross_entropy(logits, y) + regularizer
+            _loss += float(loss) * x.size(0)
             _total += x.size(0)
             loss.backward()
             self.optimizer.step()
-        return {"train_loss": float(_loss) / _total}
+        time_epoch = time.time() - t
+        return {"train_loss": float(_loss) / _total,
+                "train_epoch_time": time_epoch}
 
     @torch.no_grad()
     def val_on_loader(self, loader, savedir=None):
@@ -57,18 +61,25 @@ class Classification(torch.nn.Module):
         _accuracy = 0
         _total = 0
         _loss = 0
+        t = time.time()
         for x, y in tqdm(loader):
             y = y.cuda(non_blocking=True)
             x = x.cuda(non_blocking=False)
-            logits = self.backbone(x)
+            if self.exp_dict["backbone"]["name"] == "warn":
+                logits, regularizer = self.backbone(x)
+            else:
+                logits = self.backbone(x)
+                regularizer = 0
             preds = logits.data.max(-1)[1]
             loss = F.cross_entropy(logits, y)
-            _loss += float(loss)
+            _loss += float(loss) * x.size(0)
             _accuracy += float((preds == y).float().sum())
             _total += x.size(0)
+        epoch_time = time.time() - t
         self.scheduler.step(_loss / _total)
-        return {"val_loss": _loss / _total, 
-                "val_accuracy": _accuracy / _total}
+        return {"val_loss": _loss / _total,
+                "val_accuracy": _accuracy / _total,
+                "val_epoch_time": epoch_time}
 
     def get_state_dict(self):
         state = {}

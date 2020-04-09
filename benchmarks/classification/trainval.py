@@ -117,7 +117,7 @@ if __name__ == "__main__":
     parser.add_argument('-sb', '--savedir_base', required=True)
     parser.add_argument("-r", "--reset",  default=0, type=int)
     parser.add_argument("-ei", "--exp_id", default=None)
-    parser.add_argument("-j", "--run_jobs", default=None)
+    parser.add_argument("-j", "--run_jobs", default=0, type=int)
     parser.add_argument("-nw", "--num_workers", type=int, default=0)
 
     args = parser.parse_args()
@@ -150,7 +150,7 @@ if __name__ == "__main__":
             'image': 'images.borgy.elementai.net/issam/main',
             'gpu': '1',
             'mem': '16',
-            'bid': '1',
+            'bid': '0',
             'restartable': '1',
             'cpu': '4'}
         workdir = os.path.dirname(os.path.realpath(__file__))
