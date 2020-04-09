@@ -1,4 +1,4 @@
-from synbols.data_io import load_npz
+from synbols.data_io import load_h5
 import numpy as np
 
 
@@ -69,10 +69,10 @@ if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
-    attr_list = load_npz('../../default_n=1000.npz')[2]
+    attr_list = load_h5('../../default_n=2000_2020-Apr-09.h5py')[2]
 
     axis1 = np.array([attr['char'] for attr in attr_list])
-    axis2 = np.array([attr['scale'][0] for attr in attr_list])
+    axis2 = np.array([attr['scale'] for attr in attr_list])
 
     ratios = (0.5, 0.2, 0.3)
 

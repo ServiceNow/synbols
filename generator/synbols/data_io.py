@@ -45,8 +45,8 @@ class H5Stack:
                 dtype = x.dtype
 
             self.dset = self.file.create_dataset(
-                self.name, (self.chunk_size,) + shape, dtype=dtype, maxshape=(None,) + shape, chunks=True,
-                compression=self.compression)
+                self.name, (self.chunk_size,) + shape, dtype=dtype, maxshape=(None,) + shape,
+                chunks=(self.chunk_size,) + shape, compression=self.compression)
 
         dset = self.dset
         if self.i >= dset.shape[0]:
@@ -57,6 +57,7 @@ class H5Stack:
 
 
 def write_h5(file_path, generator):
+    print("h5py version: ", h5py.__version__)
     with h5py.File(file_path, 'w', libver='latest') as fd:
         x_stack = H5Stack(fd, 'x')
         mask_stack = H5Stack(fd, 'mask')
@@ -69,6 +70,7 @@ def write_h5(file_path, generator):
 
 
 def load_h5(file_path):
+    print("h5py version: ", h5py.__version__)
     with h5py.File(file_path, 'r') as fd:
         y = [json.loads(attr) for attr in fd['y']]
         return np.array(fd['x']), np.array(fd['mask']), y

@@ -4,6 +4,7 @@ import logging
 import subprocess as sp
 import sys
 import os
+from datetime import datetime
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -39,8 +40,7 @@ if __name__ == "__main__":
 
         ds_generator = DATASET_GENERATOR_MAP[args.dataset](args.n_samples)
 
-        file_path = '%s_n=%d.h5py' % (args.dataset, args.n_samples)
-        write_h5(file_path, ds_generator)
+        file_path = '%s_n=%d_%s' % (args.dataset, args.n_samples, datetime.now().strftime("%Y-%b-%d"))
 
-        # file_path = '%s_n=%d.npz' % (args.dataset, args.n_samples)
+        write_h5(file_path + ".h5py", ds_generator)
         # write_npz(file_path, ds_generator)

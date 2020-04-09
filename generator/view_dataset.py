@@ -51,7 +51,7 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
 
 if __name__ == "__main__":
     # x, mask, y = load_npz('../camouflage_n=100000.npz')
-    x, mask, y = load_h5('../default_n=2000.h5py')
+    x, mask, y = load_h5('../default_n=2000_2020-Apr-09.h5py')
     print(x.shape)
     plot_dataset(x, y)
     # plt.savefig("dataset.png")
