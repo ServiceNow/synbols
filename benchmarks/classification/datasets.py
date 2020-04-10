@@ -36,16 +36,27 @@ def get_dataset(split, exp_dict):
         ret = SynbolsNpz(dataset_dict["path"], split, dataset_dict["task"], transform)
         exp_dict["num_classes"] = len(ret.labelset) # FIXME: this is hacky
         return ret
-    elif dataset_dict["name"] == "mnist":
-        transform = []
+    elif dataset_dict["name"] == "synbols_hdf5":
+        transform = [tt.ToPILImage()]
         if dataset_dict["augmentation"] and split == "train":
             transform += [tt.RandomResizedCrop(size=(dataset_dict["height"], dataset_dict["width"]), scale=(0.8, 1)),
                          tt.RandomHorizontalFlip(),
                          tt.ColorJitter(0.4, 0.4, 0.4, 0.4)]
         transform += [tt.ToTensor(),
-                      tt.Lambda(lambda x: x.repeat(3, 1, 1)),
-                      tt.Lambda(lambda x: torch.nn.functional.interpolate(x[None, ...], (32, 32), mode='bilinear')[0]),
                       tt.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]
+        transform = tt.Compose(transform)
+        ret = SynbolsHDF5(dataset_dict["path"], split, dataset_dict["task"], transform)
+        exp_dict["num_classes"] = len(ret.labelset) # FIXME: this is hacky
+        return ret
+    elif dataset_dict["name"] == "mnist":
+        transform = []
+        if dataset_dict["augmentation"] and split == "train":
+            transform += [tt.RandomResizedCrop(size=(dataset_dict["height"], dataset_dict["width"]), scale=(0.8, 1)),
+                         tt.RandomHorizontalFlip()]
+        else:
+            transform += [tt.Resize(dataset_dict["height"])]
+        transform += [tt.ToTensor(),
+                      tt.Normalize([0.5], [0.5])]
         transform = tt.Compose(transform)
         ret = MNIST('/mnt/datasets/public/research/pau', train=(split=="train"), transform=transform, download=True)
         exp_dict["num_classes"] = 10 # FIXME: this is hacky

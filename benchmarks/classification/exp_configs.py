@@ -134,21 +134,42 @@ for augmentation in [False]:
         "name": "mnist",
         "width": 32,
         "height": 32,
+        "channels": 1,
+        "augmentation": augmentation
+    }
+    default_1M = {
+        "name": "synbols_hdf5",
+        "width": 32,
+        "height": 32,
+        "channels": 3,
+        "path": "/mnt/datasets/public/research/synbols/default_n=1000000_2020-Apr-09.h5py",
+        "task": "char",
         "augmentation": augmentation
     }
     default = {
-        "name": "synbols_npz",
+        "name": "synbols_hdf5",
         "width": 32,
         "height": 32,
-        "path": "/mnt/datasets/public/research/synbols/default_n=100000.npz",
+        "channels": 3,
+        "path": "/mnt/datasets/public/research/synbols/default_n=100000_2020-Apr-09.h5py",
         "task": "char",
         "augmentation": augmentation
     }
     camouflage = {
-        "name": "synbols_npz",
+        "name": "synbols_hdf5",
         "width": 32,
         "height": 32,
-        "path": "/mnt/datasets/public/research/synbols/camouflage_n=100000.npz",
+        "channels": 3,
+        "path": "/mnt/datasets/public/research/synbols/camouflage_n=100000_2020-Apr-09.h5py",
+        "task": "char",
+        "augmentation": augmentation
+    }
+    tiny = {
+        "name": "synbols_hdf5",
+        "width": 32,
+        "height": 32,
+        "channels": 3,
+        "path": "/mnt/datasets/public/research/synbols/camouflage_n=100000_2020-Apr-09.h5py",
         "task": "char",
         "augmentation": augmentation
     }
@@ -156,26 +177,27 @@ for augmentation in [False]:
         "name": "synbols_npz",
         "width": 32,
         "height": 32,
+        "channels": 1,
         "path": "/mnt/datasets/public/research/synbols/plain_n=1000000.npz",
         "task": "char",
         "augmentation": augmentation
     }
-    for dataset in [plain, default, mnist]:
-        for backbone in [resnet50, resnet18, mlp, warn, conv4]:
-            for lr in [0.001]:
-                baselines += [{'lr':lr,
-                            'batch_size': 512,
-                            'model': "classification",
-                            'backbone': backbone,
-                            'max_epoch': 100,
-                            'episodic': False,
-                            'dataset': dataset}]
-        baselines += [{'lr': lr,
-                    'batch_size':256,
-                    'model': "classification",
-                    'backbone': vgg16,
-                    'max_epoch': 100,
-                    'episodic': False,
-                    'dataset': dataset}]
+    for dataset in [mnist, plain, default, camouflage, default_1M]:
+        for lr in [0.001, 0.0001, 0.00001]:
+            for backbone in [resnet18, resnet50, resnet18, mlp, warn, conv4]:
+                    baselines += [{'lr':lr,
+                                'batch_size': 512,
+                                'model': "classification",
+                                'backbone': backbone,
+                                'max_epoch': 100,
+                                'episodic': False,
+                                'dataset': dataset}]
+            baselines += [{'lr': lr,
+                        'batch_size':256,
+                        'model': "classification",
+                        'backbone': vgg16,
+                        'max_epoch': 100,
+                        'episodic': False,
+                        'dataset': dataset}]
                 
 EXP_GROUPS["baselines"] = baselines
