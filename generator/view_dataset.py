@@ -14,8 +14,8 @@ def _extract_axis(y, axis_name, max_val):
 
 def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n_col=30, rng=np.random):
     fig = plt.figure(name)
-    # plt.axis('off')
-
+    plt.axis('off')
+    plt.tight_layout()
     h_values = _extract_axis(y, h_axis, n_col)
     v_values = _extract_axis(y, v_axis, n_row)
     attr_map = defaultdict(list)
@@ -50,8 +50,7 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
 
 
 if __name__ == "__main__":
-    # x, mask, y = load_npz('../camouflage_n=100000.npz')
-    x, mask, y = load_h5('../default_n=2000_2020-Apr-09.h5py')
+    x, mask, y = load_h5('../segmentation_n=10000_2020-Apr-10.h5py')
     print(x.shape)
     plot_dataset(x, y)
     # plt.savefig("dataset.png")

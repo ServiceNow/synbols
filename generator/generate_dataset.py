@@ -15,7 +15,7 @@ parser.add_argument('--no_docker', help="Don't run in docker", action='store_tru
 
 
 def _docker_run(cmd):
-    docker_cmd = ("docker run --user %s -m 8g" % (os.getuid())).split()
+    docker_cmd = ("docker run --user %s" % (os.getuid())).split()
     synbol_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     docker_cmd += ["-v", "%s/generator:/generator" % synbol_dir]
     docker_cmd += ["-v", "%s:/local" % synbol_dir]
