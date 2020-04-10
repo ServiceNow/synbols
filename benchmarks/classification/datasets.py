@@ -6,6 +6,8 @@ from torchvision import transforms as tt
 from torchvision.datasets import MNIST
 from PIL import Image
 import torch
+import h5py
+import multiprocessing
 
 
 def get_dataset(split, exp_dict):
@@ -51,6 +53,10 @@ def get_dataset(split, exp_dict):
 
     else:
         raise ValueError
+
+def _read_json_key(args):
+    string, key = args
+    return json.loads(string)[key]
 
 class SynbolsFolder(Dataset):
     def __init__(self, path, split, key='font', transform=None, train_fraction=0.6, val_fraction=0.4):
@@ -119,6 +125,7 @@ class SynbolsNpz(Dataset):
         self.train_fraction = train_fraction
         self.val_fraction = val_fraction
         self.test_fraction = 1 - train_fraction - val_fraction
+        self.data = np.load(self.path, allow_pickle=True) 
         if transform is None:
             self.transform = lambda x: x
         else:
@@ -143,14 +150,14 @@ class SynbolsNpz(Dataset):
             np.savez(path, {'x': self.x, 'y': self.y})
             print("Done...")
 
-    def make_splits(self, seed=42):
-        data = np.load(self.path, allow_pickle=True) 
-        self.x = data['x']
-        self.y = data['y']
-        del(data)
-        _y = []
-        for y in self.y:
-            _y.append(y[self.task])
+    def make_splits(self, json=False, seed=42):
+        print("Converting json strings to labels...")
+        if json:
+            with multiprocessing.Pool(8) as pool:
+                _y = pool.map(_read_json_key, zip(self.y, [self.task] * len(self.y)))
+        else:
+            _y = [y[self.task] for y in self.y]
+        print("Done.")
         self.y = _y
         self.labelset = list(sorted(set(self.y)))
         self.y = np.array([self.labelset.index(y) for y in self.y])
@@ -174,5 +181,25 @@ class SynbolsNpz(Dataset):
     def __len__(self):
         return len(self.x)
 
+class SynbolsHDF5(SynbolsNpz):
+    def __init__(self, path, split, key='font', transform=None, train_fraction=0.6, val_fraction=0.4):
+        self.path = path
+        self.split = split
+        self.task = key
+        self.train_fraction = train_fraction
+        self.val_fraction = val_fraction
+        self.test_fraction = 1 - train_fraction - val_fraction
+        if transform is None:
+            self.transform = lambda x: x
+        else:
+            self.transform = transform
+        print("Loading hdf5...")
+        with h5py.File(path, 'r') as data:
+            self.x = data['x'][...]
+            self.y = data['y'][...]
+            del(data)
+        print("Done.")
+        self.make_splits(json=True)
+
 if __name__ == '__main__':
-    synbols = Synbols('/mnt/datasets/public/research/synbols/latin_res=32x32_n=100000.npz', 'val')
+    synbols = SynbolsHDF5('/mnt/datasets/public/research/synbols/camouflage_n=100000_2020-Apr-09.h5py', 'val')
