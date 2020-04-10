@@ -1,29 +1,27 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from collections import defaultdict
-from synbols.data_io import load_npz
+from collections import defaultdict, Counter
+from synbols.data_io import load_npz, load_h5
 import logging
 
 logging.basicConfig(level=logging.INFO)
 
 
-def _extract_axis(y, h_axis, v_axis):
-    h_values = np.unique([attr[h_axis] for attr in y])
-    v_values = np.unique([attr[v_axis] for attr in y])
-
-    map = defaultdict(list)
-
-    for i, attr in enumerate(y):
-        map[(attr[h_axis], attr[v_axis])].append(i)
-
-    return map, h_values, v_values
+def _extract_axis(y, axis_name, max_val):
+    counter = Counter([attr[axis_name] for attr in y])
+    return [e for e, _ in counter.most_common(max_val)]
 
 
 def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n_col=30, rng=np.random):
     fig = plt.figure(name)
-    # plt.axis('off')
+    plt.axis('off')
+    plt.tight_layout()
+    h_values = _extract_axis(y, h_axis, n_col)
+    v_values = _extract_axis(y, v_axis, n_row)
+    attr_map = defaultdict(list)
+    for i, attr in enumerate(y):
+        attr_map[(attr[h_axis], attr[v_axis])].append(i)
 
-    attr_map, h_values, v_values = _extract_axis(y, h_axis, v_axis)
     h_values = rng.choice(h_values, np.minimum(n_col, len(h_values)), replace=False)
     v_values = rng.choice(v_values, np.minimum(n_row, len(v_values)), replace=False)
 
@@ -43,6 +41,7 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
         img_grid.append(np.hstack(img_row))
 
     img_grid = np.vstack(img_grid)
+
     plt.imshow(img_grid)
     plt.xlabel(h_axis)
     plt.ylabel(v_axis)
@@ -51,9 +50,8 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
 
 
 if __name__ == "__main__":
-    x, mask, y = load_npz('./default_n=10000.npz')
+    x, mask, y = load_h5('../segmentation_n=10000_2020-Apr-10.h5py')
+    print(x.shape)
     plot_dataset(x, y)
     # plt.savefig("dataset.png")
-    print([attr['scale'] for attr in y])
     plt.show()
-
