@@ -137,6 +137,13 @@ for augmentation in [False]:
         "channels": 1,
         "augmentation": augmentation
     }
+    svhn = {
+        "name": "svhn",
+        "width": 32,
+        "height": 32,
+        "channels": 3,
+        "augmentation": augmentation
+    }
     default_1M = {
         "name": "synbols_hdf5",
         "width": 32,
@@ -177,14 +184,14 @@ for augmentation in [False]:
         "name": "synbols_npz",
         "width": 32,
         "height": 32,
-        "channels": 1,
+        "channels": 3,
         "path": "/mnt/datasets/public/research/synbols/plain_n=1000000.npz",
         "task": "char",
         "augmentation": augmentation
     }
-    for dataset in [mnist, plain, default, camouflage, default_1M]:
+    for dataset in [svhn, mnist, plain, default, camouflage, default_1M]:
         for lr in [0.001, 0.0001, 0.00001]:
-            for backbone in [resnet18, resnet50, resnet18, mlp, warn, conv4]:
+            for backbone in [resnet18, resnet50, mlp, warn, conv4]:
                     baselines += [{'lr':lr,
                                 'batch_size': 512,
                                 'model': "classification",

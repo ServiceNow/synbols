@@ -35,9 +35,10 @@ class Classification(torch.nn.Module):
     def train_on_loader(self, loader):
         _loss = 0
         _total = 0
+        _batch_time = []
         self.backbone.train()
-        t = time.time()
         for x, y in tqdm(loader):
+            t = time.time()
             self.optimizer.zero_grad()
             y = y.cuda(non_blocking=True)
             x = x.cuda(non_blocking=False)
@@ -47,13 +48,14 @@ class Classification(torch.nn.Module):
                 logits = self.backbone(x)
                 regularizer = 0
             loss = F.cross_entropy(logits, y) + regularizer
+            _batch_time.append(time.time() - t)
             _loss += float(loss) * x.size(0)
             _total += x.size(0)
             loss.backward()
             self.optimizer.step()
-        time_epoch = time.time() - t
         return {"train_loss": float(_loss) / _total,
-                "train_epoch_time": time_epoch}
+                "train_epoch_time": sum(_batch_time),
+                "train_batch_time": np.mean(_batch_time)}
 
     @torch.no_grad()
     def val_on_loader(self, loader, savedir=None):
@@ -61,8 +63,9 @@ class Classification(torch.nn.Module):
         _accuracy = 0
         _total = 0
         _loss = 0
-        t = time.time()
+        _batch_time = []
         for x, y in tqdm(loader):
+            t = time.time()
             y = y.cuda(non_blocking=True)
             x = x.cuda(non_blocking=False)
             if self.exp_dict["backbone"]["name"] == "warn":
@@ -72,14 +75,17 @@ class Classification(torch.nn.Module):
                 regularizer = 0
             preds = logits.data.max(-1)[1]
             loss = F.cross_entropy(logits, y)
+            _batch_time.append(time.time() - t)
             _loss += float(loss) * x.size(0)
             _accuracy += float((preds == y).float().sum())
             _total += x.size(0)
-        epoch_time = time.time() - t
-        self.scheduler.step(_loss / _total)
-        return {"val_loss": _loss / _total,
-                "val_accuracy": _accuracy / _total,
-                "val_epoch_time": epoch_time}
+        _loss /= _total
+        _accuracy /= _total
+        self.scheduler.step(_loss)
+        return {"val_loss": _loss,
+                "val_accuracy": _accuracy,
+                "val_epoch_time": sum(_batch_time),
+                "val_batch_time": np.mean(_batch_time)}
 
     def get_state_dict(self):
         state = {}
