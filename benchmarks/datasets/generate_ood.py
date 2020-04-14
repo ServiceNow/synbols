@@ -1,7 +1,11 @@
+<<<<<<< HEAD
 import __init__
 # from ...generator.synbols import data_io as load_npz
 from generator.synbols.data_io import load_npz
 
+=======
+from synbols.data_io import load_h5
+>>>>>>> 0f51578a6367500ab475701a99148fe35ad1f5e6
 import numpy as np
 
 
@@ -72,6 +76,7 @@ if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
+<<<<<<< HEAD
     # attr_list = load_npz('../../default_n=10000.npz')[2]
     attr_list = load_npz('/mnt/datasets/public/research/synbols/default_n=100000.npz')[2]
     # X in [0], mask in [1], attr in [2]
@@ -79,6 +84,12 @@ if __name__ == "__main__":
     axis1 = np.array([attr['char'] for attr in attr_list])
     axis2 = np.array([attr['scale'][0] for attr in attr_list])
     #axis2 = np.array([attr['scale'] for attr in attr_list])
+=======
+    attr_list = load_h5('../../default_n=2000_2020-Apr-09.h5py')[2]
+
+    axis1 = np.array([attr['char'] for attr in attr_list])
+    axis2 = np.array([attr['scale'] for attr in attr_list])
+>>>>>>> 0f51578a6367500ab475701a99148fe35ad1f5e6
 
     ratios = (0.5, 0.2, 0.3)
     # play with this a little

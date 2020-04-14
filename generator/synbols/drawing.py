@@ -34,8 +34,7 @@ def draw_symbol(ctxt, attributes):
     slant = cairo.FontSlant.OBLIQUE if attributes.is_slant else cairo.FontSlant.NORMAL
     char = attributes.char
 
-
-    ctxt.set_font_size(attributes.scale[0])
+    ctxt.set_font_size(attributes.scale)
 
     # set slant to normal and perform it manually. There seems to be some issues with system italic
     ctxt.select_font_face(attributes.font, cairo.FONT_SLANT_NORMAL, weight)
@@ -215,8 +214,12 @@ def _make_surface(width, height):
     return surface, ctxt
 
 
-def _image_transform(img, inverse_color, pixel_noise_scale, rng):
+def _image_transform(img, inverse_color, pixel_noise_scale, is_gray, rng):
     img = img.astype(np.float32) / 256.
+
+    if is_gray:
+        img = np.mean(img, axis=2, keepdims=True)
+
     if inverse_color:
         img = 1 - img
 
@@ -231,12 +234,13 @@ def _image_transform(img, inverse_color, pixel_noise_scale, rng):
 
 class Image:
     def __init__(self, symbols, resolution=(32, 32), background=NoPattern(), inverse_color=False,
-                 pixel_noise_scale=0.01, rng=np.random):
+                 pixel_noise_scale=0.01, is_gray=False, rng=np.random):
         self.symbols = symbols
         self.resolution = resolution
         self.inverse_color = inverse_color
         self.pixel_noise_scale = pixel_noise_scale
         self.background = background
+        self.is_gray = is_gray
         self.rng = rng
 
     def make_mask(self):
@@ -253,7 +257,7 @@ class Image:
             symbol.draw(ctxt)
             ctxt.restore()
         img = _surface_to_array(surface)
-        return _image_transform(img, self.inverse_color, self.pixel_noise_scale, self.rng)
+        return _image_transform(img, self.inverse_color, self.pixel_noise_scale, self.is_gray, self.rng)
 
     def attribute_dict(self):
         symbols = [symbol.attribute_dict() for symbol in self.symbols]
@@ -318,7 +322,8 @@ class Symbol:
         draw_symbol(ctxt, self)
         self.foreground = fg
         img = _surface_to_array(surface)
-        return np.mean(img, axis=2, keepdims=True)
+        mask = np.mean(img, axis=2, keepdims=True)
+        return (mask*255).astype(np.uint8)
 
     def attribute_dict(self):
         return dict(

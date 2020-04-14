@@ -20,3 +20,10 @@ dataset:
 
 test:
 	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/view_generator.py"
+
+datasets:
+	generator/generate_dataset.py --n_samples=100000 &
+	generator/generate_dataset.py --n_samples=1000000 &
+	generator/generate_dataset.py --dataset=camouflage --n_samples=100000 &
+	generator/generate_dataset.py --dataset=tiny --n_samples=10000 &
+	wait

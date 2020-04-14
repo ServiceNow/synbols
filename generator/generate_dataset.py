@@ -4,6 +4,7 @@ import logging
 import subprocess as sp
 import sys
 import os
+from datetime import datetime
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -27,22 +28,19 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not args.no_docker:
+
+        # TODO ctrl+c should stop the docker.
         _docker_run("cd /local; python generator/generate_dataset.py --no_docker " + ' '.join(sys.argv[1:]))
     else:
 
-        from synbols.generate import *
-        from synbols.data_io import write_npz
+        from synbols.generate import DATASET_GENERATOR_MAP
+        from synbols.data_io import write_npz, write_h5
 
         logging.info("Generating %d samples from %s dataset", args.n_samples, args.dataset)
 
-        DATASET_GENERATOR_MAP = {
-            'plain': generate_plain_dataset,
-            'default': generate_default_dataset,
-            'camouflage': generate_camouflage_dataset,
-            'segmentation': generate_segmentation_dataset,
-        }
-
         ds_generator = DATASET_GENERATOR_MAP[args.dataset](args.n_samples)
 
-        directory = '%s_n=%d' % (args.dataset, args.n_samples)
-        write_npz(directory, ds_generator)
+        file_path = '%s_n=%d_%s' % (args.dataset, args.n_samples, datetime.now().strftime("%Y-%b-%d"))
+
+        write_h5(file_path + ".h5py", ds_generator)
+        # write_npz(file_path, ds_generator)

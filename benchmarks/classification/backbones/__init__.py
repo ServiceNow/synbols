@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import torchvision.models as models
 from .efficientnet_pytorch import EfficientNet
+from .warn.models.wide_resnet_cifar_attention import WideResNetAttention
 import torch.nn.functional as F
 
 class GAP(torch.nn.Module):
@@ -10,7 +11,7 @@ class GAP(torch.nn.Module):
     def forward(self, x):
         return x.mean(3).mean(2)
 class Conv4(torch.nn.Module):
-    def __init__(self, in_h, in_w, output_size):
+    def __init__(self, in_h, in_w, channels, output_size):
         super().__init__()
         in_size = min(in_w, in_h)
         ratio = in_size // 4
@@ -25,7 +26,7 @@ class Conv4(torch.nn.Module):
         else:
             self.strides = [1, 1, 1, 1]
         self.channels = [32, 64, 128, 256]
-        in_ch = 3
+        in_ch = channels
         for i in range(4):
             setattr(self, "conv%d" %i, torch.nn.Conv2d(in_ch, self.channels[i], 3, self.strides[i], 1, bias=False))
             setattr(self, "bn%d" %i, torch.nn.BatchNorm2d(self.channels[i]))
@@ -67,14 +68,30 @@ def get_backbone(exp_dict):
         backbone = models.resnet18(pretrained=exp_dict["backbone"]["imagenet_pretraining"], progress=True)
         num_ftrs = backbone.fc.in_features
         backbone.fc = torch.nn.Linear(num_ftrs, nclasses) 
+        if exp_dict["dataset"]["channels"] != 3:
+            assert(not(exp_dict["backbone"]["imagenet_pretraining"]))
+            backbone._modules['conv1'] = torch.nn.Conv2d(exp_dict["dataset"]["channels"], 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         return backbone
     elif backbone_name == "resnet50":
         backbone = models.resnet50(pretrained=exp_dict["backbone"]["imagenet_pretraining"], progress=True)
         num_ftrs = backbone.fc.in_features
         backbone.fc = torch.nn.Linear(num_ftrs, nclasses) 
+        if exp_dict["dataset"]["channels"] != 3:
+            assert(not(exp_dict["backbone"]["imagenet_pretraining"]))
+            self.backbone._modules['conv1'] = torch.nn.Conv2d(exp_dict["dataset"]["channels"], 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        return backbone
+    elif backbone_name == "warn":
+        backbone = WideResNetAttention(28, 4, nclasses, 0.1, 3, 4, reg_w=0.001,
+                 attention_type="softmax")
+        if exp_dict["dataset"]["channels"] != 3:
+            assert(not(exp_dict["backbone"]["imagenet_pretraining"]))
+            self.backbone._modules['conv0'] = torch.nn.Conv2d(exp_dict["dataset"]["channels"], 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
         return backbone
     elif backbone_name == "vgg16":
         backbone = models.vgg16_bn(pretrained=exp_dict["backbone"]["imagenet_pretraining"], progress=True)
+        if exp_dict["dataset"]["channels"] != 3:
+            assert(not(exp_dict["backbone"]["imagenet_pretraining"]))
+            backbone._modules['features'][0] = torch.nn.Conv2d(exp_dict["dataset"]["channels"], 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
         children = list(backbone.children())
         children = children[:-2]
         output = []
@@ -90,6 +107,7 @@ def get_backbone(exp_dict):
     elif backbone_name == "conv4":
         return Conv4(exp_dict["dataset"]["height"], 
                      exp_dict["dataset"]["width"],
+                     exp_dict["dataset"]["channels"],
                      nclasses)
     elif backbone_name == "efficientnet":
         net = EfficientNet.from_pretrained(exp_dict["backbone"]["type"], num_classes=nclasses)
@@ -108,7 +126,7 @@ def get_backbone(exp_dict):
         return net
 
     elif backbone_name == "mlp":
-        return MLP(ni=exp_dict["dataset"]["height"] * exp_dict["dataset"]["width"] * 3,
+        return MLP(ni=exp_dict["dataset"]["height"] * exp_dict["dataset"]["width"] * exp_dict["dataset"]["channels"],
                    no=nclasses,
                    nhidden=exp_dict["backbone"]["hidden_size"],
                    depth=exp_dict["backbone"]["depth"])
