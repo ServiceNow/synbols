@@ -73,12 +73,15 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     # attr_list = load_npz('../../default_n=10000.npz')[2]
-    attr_list = load_npz('/mnt/datasets/public/research/synbols/plain_n=1000000.npz')[2]
+    attr_list = load_npz('/mnt/datasets/public/research/synbols/default_n=100000.npz')[2]
+    # X in [0], mask in [1], attr in [2]
 
     axis1 = np.array([attr['char'] for attr in attr_list])
     axis2 = np.array([attr['scale'][0] for attr in attr_list])
+    #axis2 = np.array([attr['scale'] for attr in attr_list])
 
     ratios = (0.5, 0.2, 0.3)
+    # play with this a little
 
     part_map_1 = unique_class_based_partition(values=axis1, ratios=ratios)
     part_map_2 = unique_class_based_partition(values=axis2, ratios=ratios)
