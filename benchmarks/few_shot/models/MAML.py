@@ -12,12 +12,14 @@ class MAML(torch.nn.Module):
     def __init__(self, exp_dict):
         super().__init__()
         self.n_inner_iter = exp_dict['n_inner_iter']
+        self.outer_lr = exp_dict['outer_lr']
+        self.inner_lr = exp_dict['inner_lr']
 
         self.backbone = get_backbone(exp_dict)
         self.backbone.cuda()
         
         self.optimizer = torch.optim.SGD(self.backbone.parameters(),
-                                            lr=exp_dict['lr'],
+                                            lr=self.outer_lr,
                                             weight_decay=5e-4,
                                             momentum=0.9,
                                             nesterov=True)
@@ -53,7 +55,7 @@ class MAML(torch.nn.Module):
             query_relative_labels = torch.arange(episode['nclasses']).view(1, -1).repeat(
                 episode['query_size'], 1).cuda().view(-1)
             
-            inner_opt = torch.optim.SGD(self.backbone.parameters(), lr=1e-1)
+            inner_opt = torch.optim.SGD(self.backbone.parameters(), lr=self.inner_lr)
             
             querysz = query_relative_labels.size()[0]
 
@@ -117,7 +119,7 @@ class MAML(torch.nn.Module):
             query_relative_labels = torch.arange(episode['nclasses']).view(1, -1).repeat(
                 episode['query_size'], 1).cuda().view(-1)
 
-            inner_opt = torch.optim.SGD(self.backbone.parameters(), lr=1e-1)
+            inner_opt = torch.optim.SGD(self.backbone.parameters(), lr=self.inner_lr)
             
             querysz = query_relative_labels.size()[0]
 

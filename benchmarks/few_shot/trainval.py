@@ -164,7 +164,8 @@ if __name__ == "__main__":
         run_command = ('python trainval.py -ei <exp_id> -sb %s -nw 1 -wb %s -wbk %s' % (
                 args.savedir_base, args.wandb, args.wandb_key))
         job_config = {
-            'volume': '/mnt:/mnt',
+            # 'volume': '/mnt:/mnt',
+            'volume': ["/mnt:/mnt", "/home/optimass:/home/optimass"],
             'image': 'images.borgy.elementai.net/issam/main',
             'gpu': '1',
             'mem': '16',

@@ -29,7 +29,9 @@ class protonet(torch.nn.Module):
         _total = 0
         self.backbone.train()
         for episode in tqdm(loader):
+
             episode = episode[0] # undo collate
+            plot_episode(episode, classes_first=False)
             self.optimizer.zero_grad()
             support_set = episode["support_set"].cuda(non_blocking=False)
             query_set = episode["query_set"].cuda(non_blocking=False)
@@ -103,3 +105,19 @@ class protonet(torch.nn.Module):
         self.backbone.load_state_dict(state_dict["model"])
         self.optimizer.load_state_dict(state_dict["optimizer"])
         self.scheduler.load_state_dict(state_dict["scheduler"])
+
+def plot_episode(episode, classes_first=True):
+    import pylab
+    sample_set = episode["support_set"].cpu()
+    query_set = episode["query_set"].cpu()
+    support_size = episode["support_size"]
+    query_size = episode["query_size"]
+    if not classes_first:
+        sample_set = sample_set.permute(1, 0, 2, 3, 4)
+        query_set = query_set.permute(1, 0, 2, 3, 4)
+    n, support_size, c, h, w = sample_set.size()
+    n, query_size, c, h, w = query_set.size()
+    sample_set = ((sample_set / 2 + 0.5) * 255).numpy().astype('uint8').transpose((0, 3, 1, 4, 2)).reshape((n *h, support_size * w, c))
+    pylab.imsave('support_set.png', sample_set)
+    query_set = ((query_set / 2 + 0.5) * 255).numpy().astype('uint8').transpose((0, 3, 1, 4, 2)).reshape((n *h, query_size * w, c))
+    pylab.imsave('query_set.png', query_set)

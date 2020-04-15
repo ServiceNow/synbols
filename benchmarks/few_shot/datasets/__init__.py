@@ -2,6 +2,7 @@ from torchvision import transforms as tt
 from .synbols import SynbolsFolder, SynbolsNpz
 from .episodic_dataset import FewShotSampler # should be imported here because it changes the dataloader to be episodic
 from .episodic_synbols import EpisodicSynbols 
+import sys
 
 def get_dataset(split, exp_dict):
     dataset_dict = exp_dict["dataset"]
