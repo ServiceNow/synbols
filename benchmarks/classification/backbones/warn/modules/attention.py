@@ -48,7 +48,7 @@ class Gate(torch.nn.Module):
         if self.gate_depth == 1:
             return torch.tanh(self.bn(self.gates(x)))
         else:
-            return F.tanh(self.bn(self.gates(F.relu(self.pre_bn(self.pre_gates(x))))))
+            return torch.tanh(self.bn(self.gates(F.relu(self.pre_bn(self.pre_gates(x))))))
 
 
 class AttentionHead(torch.nn.Module):
@@ -180,7 +180,7 @@ class AttentionModule(torch.nn.Module):
         if self.self_attention:
             scores = self.score(x).view(b, self.nheads, 1, h * w)
             scores = (scores * att_mask).sum(3)
-            scores = F.softmax(F.tanh(scores), 1)
+            scores = F.softmax(torch.tanh(scores), 1)
             return (output * scores).sum(1, keepdim=True)
         else:
             return output
