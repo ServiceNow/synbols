@@ -5,7 +5,8 @@ import json
 from .filters import filter_fonts
 from ..utils import Alphabet, SYMBOL_MAP
 
-CACHE_FILE = "font_whitelist.json"
+CACHE_FILE = os.path.join(os.path.dirname(__file__), 'font_whitelist.json')
+
 DEFAULT_LATIN_FONT_LIST = \
     """
     SignPainter
