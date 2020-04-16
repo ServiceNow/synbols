@@ -21,7 +21,7 @@ dataset:
 test:
 	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/view_generator.py"
 
-clusters:
+view_font_clusters:
 	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/view_font_clustering.py"
 
 datasets:

@@ -65,7 +65,8 @@ try:
             json.dump(whitelist, fd)
 
     for name, font_list in whitelist.items():
-        ALPHABET_MAP[name].fonts = font_list
+        # TODO we have to work out the logic of the different whitelists/ blacklists...
+        ALPHABET_MAP[name].fonts = list(set(font_list).intersection(ALPHABET_MAP[name].fonts))
 
 except FileNotFoundError:
     # Fallback to a default alphabet map
