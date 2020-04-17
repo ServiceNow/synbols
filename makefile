@@ -32,3 +32,6 @@ datasets:
 	generator/generate_dataset.py --dataset=segmentation --n_samples=100000 &
 	generator/generate_dataset.py --dataset=missing-symbol --n_samples=100000 &
 	wait
+
+splits:
+	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/generate_splits.py"
