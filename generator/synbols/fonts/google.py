@@ -3,6 +3,9 @@
 
 from collections import defaultdict
 from os.path import join
+from os import path
+import json
+import numpy as np
 import logging
 
 from ..utils import Alphabet, SYMBOL_MAP
@@ -11,6 +14,7 @@ GOOGLE_FONTS_PATH = "/usr/share/fonts/truetype/google-fonts/"
 GOOGLE_FONTS_METADATA_PATH = join(GOOGLE_FONTS_PATH, "google_fonts_metadata")
 FONT_BLACKLIST = ["rubik", "podkova", "baloochettan2", "seymourone", "kumarone", "stalinone", "oranienbaum",
                   "stalinistone", "vampiroone"]
+FONT_CLUSTERS_PATH = path.join(path.dirname(__file__), 'hierarchical_clustering_font.json')
 
 
 def parse_metadata(file_path):
@@ -28,7 +32,26 @@ def parse_metadata(file_path):
     return alphabet_map, font_map
 
 
+def _blacklist_from_cluster():
+    """Blacklist every redundant font in clusters (keep the first one of each cluster)"""
+    if path.exists(FONT_CLUSTERS_PATH):
+        logging.info('loading blacklist')
+        with open(FONT_CLUSTERS_PATH) as fd:
+            clusters = json.load(fd)
+            for cluster in clusters:
+                font_names, values = zip(*cluster)
+                main_font_idx = np.argmin(values)
+                for i, font_name in enumerate(font_names):
+                    if i == main_font_idx:
+                        pass
+                        logging.info("keeping %s", font_name)
+                    else:
+                        FONT_BLACKLIST.append(font_name)
+                        logging.info("blacklisting %s", font_name)
+
+
 def build_alphabet_map():
+    _blacklist_from_cluster()
     language_map, font_map = parse_metadata(GOOGLE_FONTS_METADATA_PATH)
     alphabet_map = {}
     for alphabet_name, font_list in list(language_map.items()):
