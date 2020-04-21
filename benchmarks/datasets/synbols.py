@@ -1,15 +1,15 @@
-from torch.utils.data import Dataset
-import numpy as np
 import json
+
+import h5py
+import numpy as np
+from torch.utils.data import Dataset
+
 
 class Synbols(Dataset):
     def __init__(self, path, split, key='font', transform=None):
         self.path = path
         self.split = split
-        data = np.load(path) 
-        self.x = data['x']
-        self.y = data['y']
-        del(data)
+        self.x, self.y = self._load_data(path)
         _y = []
         for y in self.y:
             _y.append(json.loads(y)[key])
@@ -22,6 +22,14 @@ class Synbols(Dataset):
             self.transform = transform
         self.num_classes = len(self.labelset)
         self.make_splits()
+
+    def _load_data(self, f):
+        if f.endswith('h5py'):
+            with h5py.File(f, 'r') as f:
+                return f['x'].value, f['y'].value
+        else:
+            data = np.load(f)
+            return data['x'], data['y']
 
     def make_splits(self, seed=42):
         start, end = self.get_splits(self.x)
@@ -48,5 +56,7 @@ class Synbols(Dataset):
     def __len__(self):
         return len(self.x)
 
+
 if __name__ == '__main__':
-    synbols = Synbols('/mnt/datasets/public/research/synbols/old/latin_res=32x32_n=100000.npz', 'val')
+    synbols = Synbols('/mnt/datasets/public/research/synbols/old/latin_res=32x32_n=100000.npz',
+                      'val')

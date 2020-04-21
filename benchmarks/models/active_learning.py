@@ -1,7 +1,11 @@
+import os
+import types
 from copy import deepcopy
 
+import h5py
 import numpy as np
 import torch
+import torch.utils.data as torchdata
 from baal import ModelWrapper
 from baal.active import ActiveLearningLoop, get_heuristic
 from baal.calibration import DirichletCalibrator
@@ -11,6 +15,39 @@ from torch.utils.data import DataLoader
 from torchvision import models
 
 from datasets import get_dataset
+
+pjoin = os.path.join
+
+LOG_UNCERT = False
+
+
+class MyLoop(ActiveLearningLoop):
+    def step(self) -> bool:
+        pool = self.dataset.pool
+        assert self.max_sample == -1
+        if len(pool) > 0:
+
+            # Limit number of samples
+            if self.max_sample != -1 and self.max_sample < len(pool):
+                indices = np.random.choice(len(pool), self.max_sample, replace=False)
+                pool = torchdata.Subset(pool, indices)
+            else:
+                indices = np.arange(len(pool))
+
+            probs = self.get_probabilities(pool, **self.kwargs)
+            if probs is not None:
+                if isinstance(probs, types.GeneratorType):
+                    self.uncertainty = self.heuristic.get_uncertainties_generator(probs)
+                elif len(probs) > 0:
+                    self.uncertainty = self.heuristic.get_uncertainties(probs)
+                else:
+                    return False
+                to_label = self.heuristic.reorder_indices(self.uncertainty)
+                to_label = indices[np.array(to_label)]
+                if len(to_label) > 0:
+                    self.dataset.label(to_label[: self.ndata_to_label])
+                    return True
+        return False
 
 
 class ActiveLearning(torch.nn.Module):
@@ -23,7 +60,7 @@ class ActiveLearning(torch.nn.Module):
         self.backbone.cuda()
 
         self.batch_size = exp_dict['batch_size']
-        self.calibrate = exp_dict['calibrate']
+        self.calibrate = exp_dict.get('calibrate', False)
         self.learning_epoch = exp_dict['learning_epoch']
         self.optimizer = torch.optim.SGD(self.backbone.parameters(),
                                          lr=exp_dict['lr'],
@@ -39,18 +76,19 @@ class ActiveLearning(torch.nn.Module):
         self.heuristic = get_heuristic(exp_dict['heuristic'])
         self.wrapper = ModelWrapper(self.backbone, criterion=self.criterion)
         self.wrapper.add_metric('cls_report', lambda: ClassificationReport(exp_dict["num_classes"]))
-        self.loop = ActiveLearningLoop(None, self.wrapper.predict_on_dataset,
-                                       heuristic=self.heuristic,
-                                       ndata_to_label=exp_dict['query_size'],
-                                       batch_size=self.batch_size,
-                                       iterations=exp_dict['iterations'],
-                                       use_cuda=True)
-        if self.calibrate:
-            self.calib_set = get_dataset('calib', exp_dict['dataset'])
-            self.valid_set = get_dataset('val', exp_dict['dataset'])
-            self.calibrator = DirichletCalibrator(self.wrapper, exp_dict["num_classes"],
-                                                  lr=0.001, reg_factor=exp_dict['reg_factor'],
-                                                  mu=exp_dict['mu'])
+        self.loop = MyLoop(None, self.wrapper.predict_on_dataset_generator,
+                           heuristic=self.heuristic,
+                           ndata_to_label=exp_dict['query_size'],
+                           batch_size=1,
+                           iterations=exp_dict['iterations'],
+                           use_cuda=True)
+
+        self.calib_set = get_dataset('calib', exp_dict['dataset'])
+        self.valid_set = get_dataset('val', exp_dict['dataset'])
+        self.calibrator = DirichletCalibrator(self.wrapper, exp_dict["num_classes"],
+                                              lr=0.001, reg_factor=exp_dict['reg_factor'],
+                                              mu=exp_dict['mu'])
+
         self.active_dataset = None
         self.active_dataset_settings = None
 
@@ -69,25 +107,24 @@ class ActiveLearning(torch.nn.Module):
         return self._format_metrics(metrics, 'train')
 
     def val_on_loader(self, loader, savedir=None):
-        if self.calibrate:
-            self.calibrator.calibrate(
-                train_set=self.calib_set,
-                test_set=self.valid_set,
-                epoch=10,
-                batch_size=self.batch_size,
-                double_fit=True,
-                workers=4, use_cuda=True)
-            self.loop.get_probabilities = ModelWrapper(self.calibrator.calibrated_model,
-                                                       None).predict_on_dataset
-
         val_data = loader.dataset
+        self.loop.step()
         self.wrapper.test_on_dataset(val_data, batch_size=self.batch_size, use_cuda=True)
         metrics = self.wrapper.metrics
-        self.scheduler.step(metrics['test_loss'].value)
-        self.loop.step()
         mets = self._format_metrics(metrics, 'test')
         mets.update({'num_samples': len(self.active_dataset)})
         return mets
+
+    def on_train_end(self, savedir, epoch):
+        if LOG_UNCERT:
+            h5_path = pjoin(savedir, 'ckpt.h5')
+            labelled = self.active_dataset.state_dict()['labelled']
+            uncertainties = self.loop.uncertainty
+            with h5py.File(h5_path, 'a') as f:
+                if f'epoch_{epoch}' not in f:
+                    g = f.create_group(f'epoch_{epoch}')
+                    g.create_dataset('labelled', data=labelled)
+                    g.create_dataset('uncertainty', data=uncertainties)
 
     def _format_metrics(self, metrics, step):
         mets = {k: v.value for k, v in metrics.items() if step in k}

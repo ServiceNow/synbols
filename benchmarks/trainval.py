@@ -1,10 +1,11 @@
 import os
 import argparse
 
+import torch
 from haven import haven_utils as hu
 from haven import haven_results as hr
 from haven import haven_chk as hc
-
+import numpy as np
 from datasets import get_dataset
 from torch.utils.data import DataLoader
 from torch.utils.data._utils.collate import default_collate
@@ -31,6 +32,12 @@ def trainval(exp_dict, savedir_base, reset=False):
     hu.save_json(os.path.join(savedir, "exp_dict.json"), exp_dict)
     print(exp_dict)
     print("Experiment saved in %s" % savedir)
+
+    # Set Seed
+    # -------
+    seed = exp_dict.get('seed')
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
     # Dataset
     # -----------
@@ -79,7 +86,9 @@ def trainval(exp_dict, savedir_base, reset=False):
         score_dict.update(model.train_on_loader(train_loader))
 
         # Validate the model
-        score_dict.update(model.val_on_loader(val_loader, savedir=os.path.join(savedir_base, exp_dict['dataset']['name'])))
+        savepath = os.path.join(savedir_base, exp_dict['dataset']['name'])
+        score_dict.update(model.val_on_loader(val_loader, savedir=savepath))
+        model.on_train_end(savedir=savedir, epoch=e)
         score_dict["epoch"] = e
 
         # Visualize the model
