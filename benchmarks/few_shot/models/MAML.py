@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from sklearn.metrics import confusion_matrix
 from tqdm import tqdm
 import numpy as np
-from .modules.protonet import prototype_distance
+from .modules.ProtoNet import prototype_distance
 from .backbones import get_backbone
 import higher
 

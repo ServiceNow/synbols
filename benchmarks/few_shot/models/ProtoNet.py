@@ -3,17 +3,17 @@ import torch.nn.functional as F
 from sklearn.metrics import confusion_matrix
 from tqdm import tqdm
 import numpy as np
-from .modules.protonet import prototype_distance
+from .modules.ProtoNet import prototype_distance
 from .backbones import get_backbone
 import os
 
-class protonet(torch.nn.Module):
+class ProtoNet(torch.nn.Module):
     def __init__(self, exp_dict):
         super().__init__()
         self.backbone = get_backbone(exp_dict)
         self.backbone.cuda()
 
-        self.temp=0
+        # self.temp=0
         
         self.optimizer = torch.optim.SGD(self.backbone.parameters(),
                                             lr=exp_dict['lr'],
