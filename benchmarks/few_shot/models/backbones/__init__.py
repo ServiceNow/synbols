@@ -6,7 +6,7 @@ def get_backbone(exp_dict):
     if exp_dict["backbone"] == "resnet18":
         backbone = models.resnet18(pretrained=exp_dict["imagenet_pretraining"], progress=True)
         return torch.nn.Sequential(*list(backbone.children())[:-2]) #removes last fc
-    if exp_dict["backbone"] == "conv":
+    if exp_dict["backbone"] == "conv4":
         ## only gonna work on Synbols for now
         ## and MAML, because of different output dim
 

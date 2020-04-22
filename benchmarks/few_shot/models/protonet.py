@@ -5,13 +5,15 @@ from tqdm import tqdm
 import numpy as np
 from .modules.protonet import prototype_distance
 from .backbones import get_backbone
-
+import os
 
 class protonet(torch.nn.Module):
     def __init__(self, exp_dict):
         super().__init__()
         self.backbone = get_backbone(exp_dict)
         self.backbone.cuda()
+
+        self.temp=0
         
         self.optimizer = torch.optim.SGD(self.backbone.parameters(),
                                             lr=exp_dict['lr'],
@@ -27,11 +29,13 @@ class protonet(torch.nn.Module):
     def train_on_loader(self, loader):
         _loss = 0
         _total = 0
+
+        self.temp += 1
         self.backbone.train()
         for episode in tqdm(loader):
 
             episode = episode[0] # undo collate
-            plot_episode(episode, classes_first=False)
+            # plot_episode(episode, classes_first=False, epoch=self.temp)
             self.optimizer.zero_grad()
             support_set = episode["support_set"].cuda(non_blocking=False)
             query_set = episode["query_set"].cuda(non_blocking=False)
@@ -51,6 +55,7 @@ class protonet(torch.nn.Module):
             logits = prototype_distance(support_embeddings, query_embeddings, support_relative_labels)
             loss = F.cross_entropy(logits, query_relative_labels.long())
             _loss += float(loss)
+            loss = F.cross_entropy(logits, query_relative_labels.long())
             _total += 1
             loss.backward()
             self.optimizer.step()
@@ -92,7 +97,7 @@ class protonet(torch.nn.Module):
             _total += qs * nclasses
         self.scheduler.step(_loss / _total)
         return {"val_loss": _loss / _total, 
-                "val_accuracy": _accuracy / _total}
+                "val_accuracy": 100*(_accuracy / _total)}
 
     def get_state_dict(self):
         state = {}
@@ -106,7 +111,7 @@ class protonet(torch.nn.Module):
         self.optimizer.load_state_dict(state_dict["optimizer"])
         self.scheduler.load_state_dict(state_dict["scheduler"])
 
-def plot_episode(episode, classes_first=True):
+def plot_episode(episode, classes_first=True, savedir='figures/', epoch=0):
     import pylab
     sample_set = episode["support_set"].cpu()
     query_set = episode["query_set"].cpu()
@@ -118,6 +123,6 @@ def plot_episode(episode, classes_first=True):
     n, support_size, c, h, w = sample_set.size()
     n, query_size, c, h, w = query_set.size()
     sample_set = ((sample_set / 2 + 0.5) * 255).numpy().astype('uint8').transpose((0, 3, 1, 4, 2)).reshape((n *h, support_size * w, c))
-    pylab.imsave('support_set.png', sample_set)
+    pylab.imsave(os.path.join(savedir, 'support_set_{}.png'.format(epoch)), sample_set)
     query_set = ((query_set / 2 + 0.5) * 255).numpy().astype('uint8').transpose((0, 3, 1, 4, 2)).reshape((n *h, query_size * w, c))
-    pylab.imsave('query_set.png', query_set)
+    pylab.imsave(os.path.join(savedir, 'query_set_{}.png'.format(epoch)), query_set)
