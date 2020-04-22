@@ -116,15 +116,12 @@ class ActiveLearning(torch.nn.Module):
         return mets
 
     def on_train_end(self, savedir, epoch):
-        if LOG_UNCERT:
-            h5_path = pjoin(savedir, 'ckpt.h5')
-            labelled = self.active_dataset.state_dict()['labelled']
-            uncertainties = self.loop.uncertainty
-            with h5py.File(h5_path, 'a') as f:
-                if f'epoch_{epoch}' not in f:
-                    g = f.create_group(f'epoch_{epoch}')
-                    g.create_dataset('labelled', data=labelled)
-                    g.create_dataset('uncertainty', data=uncertainties)
+        h5_path = pjoin(savedir, 'ckpt.h5')
+        labelled = self.active_dataset.state_dict()['labelled']
+        with h5py.File(h5_path, 'a') as f:
+            if f'epoch_{epoch}' not in f:
+                g = f.create_group(f'epoch_{epoch}')
+                g.create_dataset('labelled', data=labelled.astype(np.bool))
 
     def _format_metrics(self, metrics, step):
         mets = {k: v.value for k, v in metrics.items() if step in k}
