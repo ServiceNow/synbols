@@ -78,14 +78,13 @@ def get_backbone(exp_dict):
         backbone.fc = torch.nn.Linear(num_ftrs, nclasses) 
         if exp_dict["dataset"]["channels"] != 3:
             assert(not(exp_dict["backbone"]["imagenet_pretraining"]))
-            self.backbone._modules['conv1'] = torch.nn.Conv2d(exp_dict["dataset"]["channels"], 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+            backbone._modules['conv1'] = torch.nn.Conv2d(exp_dict["dataset"]["channels"], 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         return backbone
     elif backbone_name == "warn":
         backbone = WideResNetAttention(28, 4, nclasses, 0.1, 3, 4, reg_w=0.001,
                  attention_type="softmax")
         if exp_dict["dataset"]["channels"] != 3:
-            assert(not(exp_dict["backbone"]["imagenet_pretraining"]))
-            self.backbone._modules['conv0'] = torch.nn.Conv2d(exp_dict["dataset"]["channels"], 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+            backbone._modules['conv0'] = torch.nn.Conv2d(exp_dict["dataset"]["channels"], 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
         return backbone
     elif backbone_name == "vgg16":
         backbone = models.vgg16_bn(pretrained=exp_dict["backbone"]["imagenet_pretraining"], progress=True)

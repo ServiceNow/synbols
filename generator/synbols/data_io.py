@@ -69,9 +69,27 @@ def write_h5(file_path, generator):
 
 
 def load_h5(file_path):
+    """Load the dataset from h5py format
+
+    Args:
+        file_path: path to the hdf5 dataset
+
+    Returns:
+        x: array of shape (n_samples, width, height, n_channels), containing images
+        mask: array of shape (n_samples, width, height, n_symbols), containing the mask of each symbol in the image
+        attributes: list of length n_samples, containing a dictionary of attributes for each images
+        splits: dict of different type of splits for this dataset. Each split is a list of mask for each subset.
+    """
+
     with h5py.File(file_path, 'r') as fd:
         y = [json.loads(attr) for attr in fd['y']]
-        return np.array(fd['x']), np.array(fd['mask']), y
+
+        splits = {}
+        if 'split' in fd.keys():
+            for key in fd['split'].keys():
+                splits[key] = np.array(fd['split'][key])
+
+        return np.array(fd['x']), np.array(fd['mask']), y, splits
 
 
 def load_dataset_jpeg_sequential(file_path, max_samples=None):

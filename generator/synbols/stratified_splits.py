@@ -21,9 +21,22 @@ def partition_array(values, ratios):
     return partition
 
 
-def unique_class_based_partition(values, ratios):
+def random_map(n, ratios, rng=np.random):
+    np.testing.assert_almost_equal(np.sum(ratios), 1., decimal=3)
+    sizes = np.round(np.array(ratios) * n, 0).astype(np.int)
+    sizes[0] += n - np.sum(sizes)
+    part_map = np.concatenate([[i] * ni for i, ni in enumerate(sizes)])
+    rng.shuffle(part_map)
+    return part_map
+
+
+def unique_class_based_partition(values, ratios, rng=None):
     """Split according to unique values"""
     unique_values = np.unique(values)
+
+    if rng is not None:
+        rng.shuffle(unique_values)
+
     class_partition = partition_array(unique_values, ratios)
 
     value_to_partition = {}
