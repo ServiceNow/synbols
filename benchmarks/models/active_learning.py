@@ -8,6 +8,7 @@ import torch
 import torch.utils.data as torchdata
 from baal import ModelWrapper
 from baal.active import ActiveLearningLoop, get_heuristic
+from baal.active.heuristics import BALD, requireprobs, xlogy, BatchBALD
 from baal.calibration import DirichletCalibrator
 from baal.utils.metrics import ClassificationReport
 from torch.nn import CrossEntropyLoss
@@ -21,33 +22,32 @@ pjoin = os.path.join
 LOG_UNCERT = False
 
 
-class MyLoop(ActiveLearningLoop):
-    def step(self) -> bool:
-        pool = self.dataset.pool
-        assert self.max_sample == -1
-        if len(pool) > 0:
+class BetaBALD(BALD):
+    def __init__(self, beta, *args, **kwargs):
+        self.beta = beta
+        super().__init__(*args, **kwargs)
 
-            # Limit number of samples
-            if self.max_sample != -1 and self.max_sample < len(pool):
-                indices = np.random.choice(len(pool), self.max_sample, replace=False)
-                pool = torchdata.Subset(pool, indices)
-            else:
-                indices = np.arange(len(pool))
+    @requireprobs
+    def compute_score(self, predictions):
+        """
+        Compute the score according to the heuristic.
 
-            probs = self.get_probabilities(pool, **self.kwargs)
-            if probs is not None:
-                if isinstance(probs, types.GeneratorType):
-                    self.uncertainty = self.heuristic.get_uncertainties_generator(probs)
-                elif len(probs) > 0:
-                    self.uncertainty = self.heuristic.get_uncertainties(probs)
-                else:
-                    return False
-                to_label = self.heuristic.reorder_indices(self.uncertainty)
-                to_label = indices[np.array(to_label)]
-                if len(to_label) > 0:
-                    self.dataset.label(to_label[: self.ndata_to_label])
-                    return True
-        return False
+        Args:
+            predictions (ndarray): Array of predictions
+
+        Returns:
+            Array of scores.
+        """
+        assert predictions.ndim >= 3
+        # [n_sample, n_class, ..., n_iterations]
+
+        expected_entropy = - np.mean(np.sum(xlogy(predictions, predictions), axis=1),
+                                     axis=-1)  # [batch size, ...]
+        expected_p = np.mean(predictions, axis=-1)  # [batch_size, n_classes, ...]
+        entropy_expected_p = - np.sum(xlogy(expected_p, expected_p),
+                                      axis=1)  # [batch size, ...]
+        bald_acq = entropy_expected_p - self.beta * expected_entropy
+        return bald_acq
 
 
 class ActiveLearning(torch.nn.Module):
@@ -73,15 +73,26 @@ class ActiveLearning(torch.nn.Module):
                                                                     patience=10,
                                                                     verbose=True)
         self.criterion = CrossEntropyLoss()
-        self.heuristic = get_heuristic(exp_dict['heuristic'])
+        shuffle_prop = exp_dict.get('shuffle_prop', 0.0)
+        if exp_dict['heuristic'] == 'betabald':
+            max_sample = -1
+            self.heuristic = BetaBALD(beta=exp_dict['beta'], shuffle_prop=shuffle_prop)
+        elif exp_dict['heuristic'] == 'batch_bald':
+            max_sample = 10000
+            self.heuristic = BatchBALD(num_samples=exp_dict['query_size'],
+                                       shuffle_prop=shuffle_prop)
+        else:
+            max_sample = -1
+            self.heuristic = get_heuristic(exp_dict['heuristic'], shuffle_prop=shuffle_prop)
         self.wrapper = ModelWrapper(self.backbone, criterion=self.criterion)
         self.wrapper.add_metric('cls_report', lambda: ClassificationReport(exp_dict["num_classes"]))
-        self.loop = MyLoop(None, self.wrapper.predict_on_dataset_generator,
+        self.loop = ActiveLearningLoop(None, self.wrapper.predict_on_dataset,
                            heuristic=self.heuristic,
                            ndata_to_label=exp_dict['query_size'],
                            batch_size=1,
                            iterations=exp_dict['iterations'],
-                           use_cuda=True)
+                           use_cuda=True,
+                           max_sample=max_sample)
 
         self.calib_set = get_dataset('calib', exp_dict['dataset'])
         self.valid_set = get_dataset('val', exp_dict['dataset'])
@@ -153,3 +164,21 @@ class ActiveLearning(torch.nn.Module):
         self.active_dataset_settings = state_dict["dataset"]
         if self.active_dataset is not None:
             self.active_dataset.load_state_dict(self.active_dataset_settings)
+
+
+class CalibratedActiveLearning(ActiveLearning):
+    def val_on_loader(self, loader, savedir=None):
+        val_data = loader.dataset
+        self.calibrator.calibrate(self.calib_set, self.valid_set,
+                                  batch_size=16, epoch=10, use_cuda=True,
+                                  double_fit=True)
+        calibrated_model = ModelWrapper(self.calibrator.calibrated_model,
+                                        None)
+        if self.calibrate:
+            self.loop.get_probabilities = calibrated_model.predict_on_dataset
+        self.loop.step()
+        self.wrapper.test_on_dataset(val_data, batch_size=self.batch_size, use_cuda=True)
+        metrics = self.wrapper.metrics
+        mets = self._format_metrics(metrics, 'test')
+        mets.update({'num_samples': len(self.active_dataset)})
+        return mets
