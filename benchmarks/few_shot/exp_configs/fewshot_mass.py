@@ -6,8 +6,9 @@ import numpy as np
 fewshot_boilerplate = {
         'benchmark':'fewshot',
         'episodic': True,
-        # 'dataset': {'path':'/mnt/datasets/public/research/synbols/default_n=100000_2020-Apr-09.h5py',
-        'dataset': {'path':'/mnt/datasets/public/research/synbols/plain_n=1000000.npz',
+        'hidden_size': 64,
+        'dataset': {'path':'/mnt/datasets/public/research/synbols/default_n=100000_2020-Apr-09.h5py',
+        # 'dataset': {'path':'/mnt/datasets/public/research/synbols/plain_n=1000000.npz',
                         'name': 'fewshot_synbols',
                         'task': 'char',
                         # start 5-way 5-shot 15-query
@@ -60,17 +61,11 @@ fewshot_char_MAML = {
 }
 
 fewshot_char_RelationNet = {
-        'lr':[0.005, 0.001, 0.0005, 0.0001],
+        'lr':[0.1, 0.05, 0.01, 0.001, 0.0001],
         'batch_size':[1],
         'model': "RelationNet",
-        # 'backbone': "resnet18",
+        'backbone': "conv4",
         'max_epoch': 1000,
-        # 'imagenet_pretraining': [False, True],
-        "depth1":3,
-        "depth2":3,
-        "depth3":3,
-        "ni":100,
-        "no":5,
 }
 
 fewshot_char_MAML = {
@@ -89,7 +84,6 @@ EXP_GROUPS = {}
 EXP_GROUPS['fewshot_char_ProtoNet'] = hu.cartesian_exp_group(
         dict(fewshot_boilerplate, **fewshot_char_ProtoNet)
 )
-
 
 EXP_GROUPS['fewshot_char_MAML'] = np.random.choice(hu.cartesian_exp_group(
         dict(fewshot_boilerplate, **fewshot_char_MAML)),

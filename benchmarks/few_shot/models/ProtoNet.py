@@ -10,7 +10,7 @@ import os
 class ProtoNet(torch.nn.Module):
     def __init__(self, exp_dict):
         super().__init__()
-        self.backbone = get_backbone(exp_dict)
+        self.backbone = get_backbone(exp_dict, feature_extractor=True)
         self.backbone.cuda()
 
         # self.temp=0
@@ -30,21 +30,19 @@ class ProtoNet(torch.nn.Module):
         _loss = 0
         _total = 0
 
-        self.temp += 1
+        # self.temp += 1
         self.backbone.train()
         for episode in tqdm(loader):
 
+            ## Boilerplate
             episode = episode[0] # undo collate
             # plot_episode(episode, classes_first=False, epoch=self.temp)
-            self.optimizer.zero_grad()
             support_set = episode["support_set"].cuda(non_blocking=False)
             query_set = episode["query_set"].cuda(non_blocking=False)
 
             ss, nclasses, c, h, w = support_set.size()
             qs, nclasses, c, h, w = query_set.size()
 
-            support_embeddings = self.backbone(support_set.view(ss * nclasses, c, h, w)).view(ss * nclasses, -1)
-            query_embeddings = self.backbone(query_set.view(qs * nclasses, c, h, w)).view(qs*nclasses, -1)
             absolute_labels = episode["targets"]
             relative_labels = absolute_labels.clone()
             
@@ -52,6 +50,12 @@ class ProtoNet(torch.nn.Module):
             support_relative_labels = torch.arange(episode['nclasses']).view(1, -1).repeat(episode['support_size'], 1).cuda().view(-1)
             query_relative_labels = torch.arange(episode['nclasses']).view(1, -1).repeat(episode['query_size'], 1).cuda().view(-1)
 
+            ## Training
+            self.optimizer.zero_grad()
+            
+            support_embeddings = self.backbone(support_set.view(ss * nclasses, c, h, w)).view(ss * nclasses, -1)
+            query_embeddings = self.backbone(query_set.view(qs * nclasses, c, h, w)).view(qs*nclasses, -1)
+            
             logits = prototype_distance(support_embeddings, query_embeddings, support_relative_labels)
             loss = F.cross_entropy(logits, query_relative_labels.long())
             _loss += float(loss)
@@ -59,6 +63,7 @@ class ProtoNet(torch.nn.Module):
             _total += 1
             loss.backward()
             self.optimizer.step()
+        
         return {"train_loss": float(_loss) / _total}
 
     @torch.no_grad()
@@ -70,6 +75,8 @@ class ProtoNet(torch.nn.Module):
         _targets = []
         self.backbone.eval()
         for episode in tqdm(loader):
+            
+            ## Boilerplate
             episode = episode[0] # undo collate
             support_set = episode["support_set"].cuda(non_blocking=False)
             query_set = episode["query_set"].cuda(non_blocking=False)
@@ -80,8 +87,6 @@ class ProtoNet(torch.nn.Module):
             if ss != episode["support_size"] or qs != episode["query_size"]:
                 raise(RuntimeError("The dataset is too small for the current support and query sizes"))
 
-            support_embeddings = self.backbone(support_set.view(ss * nclasses, c, h, w)).view(ss * nclasses, -1)
-            query_embeddings = self.backbone(query_set.view(qs * nclasses, c, h, w)).view(qs*nclasses, -1)
             absolute_labels = episode["targets"]
             relative_labels = absolute_labels.clone()
             
@@ -89,6 +94,10 @@ class ProtoNet(torch.nn.Module):
             support_relative_labels = torch.arange(episode['nclasses']).view(1, -1).repeat(episode['support_size'], 1).cuda().view(-1)
             query_relative_labels = torch.arange(episode['nclasses']).view(1, -1).repeat(episode['query_size'], 1).cuda().view(-1)
 
+            ## Testing
+            support_embeddings = self.backbone(support_set.view(ss * nclasses, c, h, w)).view(ss * nclasses, -1)
+            query_embeddings = self.backbone(query_set.view(qs * nclasses, c, h, w)).view(qs*nclasses, -1)
+            
             logits = prototype_distance(support_embeddings, query_embeddings, support_relative_labels)
             loss = F.cross_entropy(logits, query_relative_labels.long())
             preds = logits.max(-1)[1]
@@ -96,6 +105,7 @@ class ProtoNet(torch.nn.Module):
             _accuracy += float((preds == query_relative_labels).float().sum())
             _total += qs * nclasses
         self.scheduler.step(_loss / _total)
+        
         return {"val_loss": _loss / _total, 
                 "val_accuracy": 100*(_accuracy / _total)}
 

@@ -3,7 +3,7 @@ import torch.nn.functional as F
 # from sklearn.metrics import confusion_matrix
 from tqdm import tqdm
 import numpy as np
-from .modules.RelationNet import RelationNet as _RelationNet
+from .modules.RelationNet import make_RelationNet, RelationNet_acc 
 from .backbones import get_backbone
 import os
 
@@ -11,8 +11,17 @@ class RelationNet(torch.nn.Module):
     def __init__(self, exp_dict):
         super().__init__()
         
-        #self.backbone = get_backbone(exp_dict)
-        self.backbone = _RelationNet(exp_dict)
+        _F = get_backbone(exp_dict, 
+                            architecture="conv4",
+                            hidden_size=exp_dict["hidden_size"],
+                            feature_extractor=True)
+        _G = get_backbone(exp_dict,
+                            architecture="mlp3",
+                            hidden_size=2*exp_dict["hidden_size"],
+                            output_size=1,
+                            feature_extractor=False)
+        
+        self.backbone = make_RelationNet(exp_dict, _F, _G)
         
         self.backbone.cuda()
         
@@ -22,6 +31,7 @@ class RelationNet(torch.nn.Module):
                                             momentum=0.9,
                                             nesterov=True)
         
+        
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer,
                                                                     mode='min',
                                                                     factor=0.1,
@@ -30,39 +40,56 @@ class RelationNet(torch.nn.Module):
 
     def train_on_loader(self, loader):
         _loss = 0
+        _accuracy = 0
         _total = 0
 
-        self.temp += 1
+        # self.temp += 1
         self.backbone.train()
         for episode in tqdm(loader):
 
+            ## Boilerplate
             episode = episode[0] # undo collate
             # plot_episode(episode, classes_first=False, epoch=self.temp)
-            self.optimizer.zero_grad()
             support_set = episode["support_set"].cuda(non_blocking=False)
             query_set = episode["query_set"].cuda(non_blocking=False)
 
             ss, nclasses, c, h, w = support_set.size()
             qs, nclasses, c, h, w = query_set.size()
 
-            # support_embeddings = self.backbone(support_set.view(ss * nclasses, c, h, w)).view(ss * nclasses, -1)
-            # query_embeddings = self.backbone(query_set.view(qs * nclasses, c, h, w)).view(qs*nclasses, -1)
             absolute_labels = episode["targets"]
             relative_labels = absolute_labels.clone()
             
             # TODO: use episode['targets']
-            support_relative_labels = torch.arange(episode['nclasses']).view(1, -1).repeat(episode['support_size'], 1).cuda().view(-1)
-            query_relative_labels = torch.arange(episode['nclasses']).view(1, -1).repeat(episode['query_size'], 1).cuda().view(-1)
+            support_rel_labels = torch.arange(episode['nclasses']).view(1, -1).repeat(
+                episode['support_size'], 1).cuda().view(-1)
+            query_rel_labels = torch.arange(episode['nclasses']).view(1, -1).repeat(
+                episode['query_size'], 1).cuda().view(-1)
+            
+            ## Forward Pass
+            self.optimizer.zero_grad()
+            support_set = support_set.view(ss * nclasses, c, h, w)
+            query_set = query_set.view(qs * nclasses, c, h, w)
+            score = self.backbone(support_set, query_set, support_rel_labels)
 
-            # logits = prototype_distance(support_embeddings, query_embeddings, support_relative_labels)
-            # loss = F.cross_entropy(logits, query_relative_labels.long())
-            # _loss += float(loss)
-            # loss = F.cross_entropy(logits, query_relative_labels.long())
-            # _total += 1
+            # print(score)
+
+            ## create labels
+            support_y = support_rel_labels.unsqueeze(0).expand(qs*nclasses, -1) 
+            query_y = query_rel_labels.unsqueeze(1).expand(-1, ss*nclasses)
+            labels = torch.eq(support_y, query_y).float() 
+
+            ## loss and bprop
+            loss = ((labels - score)**2).mean()
             loss.backward()
             self.optimizer.step()
-        
-        return {"train_loss": float(_loss) / _total}
+
+            accuracy = RelationNet_acc(support_rel_labels, query_rel_labels, score)
+            _accuracy += float(accuracy)
+            _loss += float(loss)
+            _total += 1
+
+        return {"train_loss": float(_loss) / _total,
+                "train_accuracy": 100*(float(_accuracy) / _total)}
 
     @torch.no_grad()
     def val_on_loader(self, loader, savedir=None):
@@ -71,8 +98,11 @@ class RelationNet(torch.nn.Module):
         _loss = 0
         _logits = []
         _targets = []
+        
         self.backbone.eval()
         for episode in tqdm(loader):
+            
+            ## Boilerplate
             episode = episode[0] # undo collate
             support_set = episode["support_set"].cuda(non_blocking=False)
             query_set = episode["query_set"].cuda(non_blocking=False)
@@ -81,26 +111,38 @@ class RelationNet(torch.nn.Module):
             qs, nclasses, c, h, w = query_set.size()
 
             if ss != episode["support_size"] or qs != episode["query_size"]:
-                raise(RuntimeError("The dataset is too small for the current support and query sizes"))
+                raise(RuntimeError(
+                    "The dataset is too small for the current support and query sizes"))
 
-            support_embeddings = self.backbone(support_set.view(ss * nclasses, c, h, w)).view(ss * nclasses, -1)
-            query_embeddings = self.backbone(query_set.view(qs * nclasses, c, h, w)).view(qs*nclasses, -1)
             absolute_labels = episode["targets"]
             relative_labels = absolute_labels.clone()
             
             # TODO: use episode['targets']
-            support_relative_labels = torch.arange(episode['nclasses']).view(1, -1).repeat(episode['support_size'], 1).cuda().view(-1)
-            query_relative_labels = torch.arange(episode['nclasses']).view(1, -1).repeat(episode['query_size'], 1).cuda().view(-1)
+            support_rel_labels = torch.arange(episode['nclasses']).view(1, -1).repeat(
+                episode['support_size'], 1).cuda().view(-1)
+            query_rel_labels = torch.arange(episode['nclasses']).view(1, -1).repeat(
+                episode['query_size'], 1).cuda().view(-1)
 
-            logits = prototype_distance(support_embeddings, query_embeddings, support_relative_labels)
-            loss = F.cross_entropy(logits, query_relative_labels.long())
-            preds = logits.max(-1)[1]
+            ## Forward pass
+            support_set = support_set.view(ss * nclasses, c, h, w)
+            query_set = query_set.view(qs * nclasses, c, h, w)
+            score = self.backbone(support_set, query_set, support_rel_labels)
+            
+            ## create labels
+            support_y = support_rel_labels.unsqueeze(0).expand(qs*nclasses, -1) 
+            query_y = query_rel_labels.unsqueeze(1).expand(-1, ss*nclasses)
+            labels = torch.eq(support_y, query_y).float() 
+
+            ## loss and eval 
+            loss = ((labels - score)**2).mean()
+            accuracy = RelationNet_acc(support_rel_labels, query_rel_labels, score)
             _loss += float(loss) * qs * nclasses
-            _accuracy += float((preds == query_relative_labels).float().sum())
+            _accuracy += float(accuracy) * qs * nclasses
             _total += qs * nclasses
+        
         self.scheduler.step(_loss / _total)
         
-        return {"val_loss": _loss / _total, 
+        return {"val_loss": _loss / _total,
                 "val_accuracy": 100*(_accuracy / _total)}
 
     def get_state_dict(self):
