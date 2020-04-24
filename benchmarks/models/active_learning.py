@@ -9,6 +9,7 @@ import torch.utils.data as torchdata
 from baal import ModelWrapper
 from baal.active import ActiveLearningLoop, get_heuristic
 from baal.active.heuristics import BALD, requireprobs, xlogy, BatchBALD
+from baal.bayesian.dropout import patch_module
 from baal.calibration import DirichletCalibrator
 from baal.utils.metrics import ClassificationReport
 from torch.nn import CrossEntropyLoss
@@ -56,6 +57,7 @@ class ActiveLearning(torch.nn.Module):
         self.backbone = models.vgg16(pretrained=exp_dict["imagenet_pretraining"], progress=True)
         num_ftrs = self.backbone.classifier[-1].in_features
         self.backbone.classifier[-1] = torch.nn.Linear(num_ftrs, exp_dict["num_classes"])
+        self.backbone = patch_module(self.backbone)
         self.initial_weights = deepcopy(self.backbone.state_dict())
         self.backbone.cuda()
 
