@@ -8,11 +8,14 @@ logging.basicConfig(level=logging.INFO)
 
 
 def _extract_axis(y, axis_name, max_val):
+    if axis_name is None:
+        return [None] * max_val
+
     counter = Counter([attr[axis_name] for attr in y])
     return [e for e, _ in counter.most_common(max_val)]
 
 
-def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n_col=30, rng=np.random):
+def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n_col=40, rng=np.random):
     fig = plt.figure(name)
     plt.axis('off')
     plt.tight_layout()
@@ -20,10 +23,10 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
     v_values = _extract_axis(y, v_axis, n_row)
     attr_map = defaultdict(list)
     for i, attr in enumerate(y):
-        attr_map[(attr[h_axis], attr[v_axis])].append(i)
+        attr_map[(attr.get(h_axis), attr.get(v_axis))].append(i)
 
-    h_values = rng.choice(h_values, np.minimum(n_col, len(h_values)), replace=False)
-    v_values = rng.choice(v_values, np.minimum(n_row, len(v_values)), replace=False)
+    # h_values = rng.choice(h_values, np.minimum(n_col, len(h_values)), replace=False)
+    # v_values = rng.choice(v_values, np.minimum(n_row, len(v_values)), replace=False)
 
     img_grid = []
     blank_image = np.zeros(x.shape[1:], dtype=x.dtype)
@@ -33,7 +36,7 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
         for h_value in h_values:
             if (h_value, v_value) in attr_map.keys():
 
-                idx = attr_map[(h_value, v_value)][0]
+                idx = attr_map[(h_value, v_value)].pop()
                 img_row.append(x[idx])
             else:
                 img_row.append(blank_image)
@@ -50,9 +53,9 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
 
 
 if __name__ == "__main__":
-    x, mask, y, splits = load_h5('../default_n=100000_2020-Apr-27.h5py')
+    x, mask, y, splits = load_h5('../all_languages_n=10000_2020-Apr-27.h5py')
     print(splits)
     print(x.shape)
-    plot_dataset(x, y)
+    plot_dataset(x, y, v_axis=None)
     # plt.savefig("dataset.png")
     plt.show()
