@@ -3,7 +3,7 @@ import numpy as np
 import json
 import os
 from torchvision import transforms as tt
-from torchvision.datasets import MNIST
+from torchvision.datasets import MNIST, SVHN
 from PIL import Image
 import torch
 import h5py
@@ -61,7 +61,19 @@ def get_dataset(split, exp_dict):
         ret = MNIST('/mnt/datasets/public/research/pau', train=(split=="train"), transform=transform, download=True)
         exp_dict["num_classes"] = 10 # FIXME: this is hacky
         return ret
-
+    elif dataset_dict["name"] == "svhn":
+        transform = []
+        if dataset_dict["augmentation"] and split == "train":
+            transform += [tt.RandomResizedCrop(size=(dataset_dict["height"], dataset_dict["width"]), scale=(0.8, 1)),
+                         tt.RandomHorizontalFlip(),
+                         tt.ColorJitter(0.4, 0.4, 0.4, 0.4)]
+        transform += [tt.ToTensor(),
+                      tt.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]
+        transform = tt.Compose(transform)
+        split_dict = {'train': 'train', 'test': 'test', 'val': 'test'}
+        ret = SVHN('/mnt/datasets/public/research', split=split_dict[split], transform=transform, download=True)
+        exp_dict["num_classes"] = 10 # FIXME: this is hacky
+        return ret
     else:
         raise ValueError
 
@@ -136,7 +148,10 @@ class SynbolsNpz(Dataset):
         self.train_fraction = train_fraction
         self.val_fraction = val_fraction
         self.test_fraction = 1 - train_fraction - val_fraction
-        self.data = np.load(self.path, allow_pickle=True) 
+        data = np.load(self.path, allow_pickle=True) 
+        self.x = data['x']
+        self.y = data['y']
+        del(data)
         if transform is None:
             self.transform = lambda x: x
         else:
