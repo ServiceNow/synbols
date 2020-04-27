@@ -33,15 +33,7 @@ if __name__ == "__main__":
     fg = Gradient(types=('radial',), random_color=color_sampler(brightness_range=(0.1, 0.9)))
     # fg = NoPattern()
 
-    scale = lambda: np.exp(np.random.randn() * 0.3) * 0.2
-
-    def tr(rng):
-        if rng.rand() > 0.1:
-            return tuple(rng.rand(2) * 2 - 1)
-        else:
-            return 10
-
-    kwargs = dict(foreground=fg, background=bg, translation=tr, resolution=(32, 32), n_symbols=1)
+    kwargs = dict(foreground=fg, background=bg, resolution=(32, 32), n_symbols=1)
 
     # kwargs = dict()
 

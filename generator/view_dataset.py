@@ -50,7 +50,8 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
 
 
 if __name__ == "__main__":
-    x, mask, y = load_h5('../segmentation_n=10000_2020-Apr-10.h5py')
+    x, mask, y, splits = load_h5('../default_n=100000_2020-Apr-27.h5py')
+    print(splits)
     print(x.shape)
     plot_dataset(x, y)
     # plt.savefig("dataset.png")

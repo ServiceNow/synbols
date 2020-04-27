@@ -28,9 +28,9 @@ def basic_image_sampler(alphabet=None, char=None, font=None, background=None, fo
             _font = _select(rng.choice(_alphabet.fonts), font, rng)
             _is_bold = _select(rng.choice([True, False]), is_bold, rng)
             _is_slant = _select(rng.choice([True, False]), is_slant, rng)
-            _rotation = _select(rng.randn() * 0.1, rotation, rng)
-            _scale = _select(np.exp(rng.randn() * 0.2), scale, rng)
-            _translation = _select(tuple(rng.rand(2) * 2 - 1), translation, rng)
+            _rotation = _select(rng.randn() * 0.3, rotation, rng)
+            _scale = _select(0.6 * np.exp(rng.randn() * 0.2), scale, rng)
+            _translation = _select(tuple(rng.rand(2) * 1.8 - 0.9), translation, rng)
             _foreground = _select(Gradient(), foreground, rng)
 
             symbols.append(Symbol(alphabet=_alphabet, char=_char, font=_font, foreground=_foreground,
