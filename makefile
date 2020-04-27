@@ -31,6 +31,7 @@ datasets:
 	generator/generate_dataset.py --dataset=tiny --n_samples=10000 &
 	generator/generate_dataset.py --dataset=segmentation --n_samples=100000 &
 	generator/generate_dataset.py --dataset=missing-symbol --n_samples=100000 &
+	generator/generate_dataset.py --dataset=all_languages --n_samples=1000000 &
 	wait
 
 splits:

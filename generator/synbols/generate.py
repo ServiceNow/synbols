@@ -130,6 +130,11 @@ def generate_segmentation_dataset(n_samples, resolution=(64, 64)):
     return dataset_generator(attr_generator, n_samples)
 
 
+def all_languages(n_samples):
+    attr_sampler = basic_image_sampler()
+    return dataset_generator(attr_sampler, n_samples)
+
+
 def missing_symbol_dataset(n_samples):
     alphabet = ALPHABET_MAP['latin']
     bg = MultiGradient(alpha=0.5, n_gradients=2, types=('linear', 'radial'))
@@ -151,4 +156,5 @@ DATASET_GENERATOR_MAP = {
     'segmentation': generate_segmentation_dataset,
     'missing-symbol': missing_symbol_dataset,
     'tiny': generate_tiny_dataset,
+    'all_languages': all_languages,
 }
