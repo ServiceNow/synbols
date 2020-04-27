@@ -35,3 +35,7 @@ datasets:
 
 splits:
 	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/generate_splits.py"
+
+
+font_check:
+	$(SYNBOLS_RUN) sh -c "cd /local; python generator/run_font_checks.py"

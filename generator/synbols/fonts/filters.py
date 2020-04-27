@@ -6,20 +6,26 @@ from ..drawing import Image, SolidColor, Symbol
 
 def make_test_symbol(char, font, is_slant=False, is_bold=False):
     symbol = Symbol(alphabet="foo", char=char, font=font, foreground=SolidColor((1, 1, 1,)), is_slant=is_slant,
-                    is_bold=is_bold, rotation=0, scale=(1, 1), translation=(0, 0), rng=np.random.RandomState(42))
+                    is_bold=is_bold, rotation=0, scale=1, translation=(0, 0), rng=np.random.RandomState(42))
     return Image([symbol], background=SolidColor((0, 0, 0,)), inverse_color=False, resolution=(16, 16),
-                 pixel_noise_scale=0)
+                 pixel_noise_scale=0).make_image()
 
 
-def check_errors(font, alphabet):
+def check_errors(font, alphabet, max_chars=None):
     """Checks for empty canvas, slant or bold issues."""
     empty_count = 0
     no_bold_count = 0
     no_slant_count = 0
-    for char in alphabet.symbols:
-        plain = make_test_symbol(font=font, char=char, is_bold=False).make_image()
-        bold = make_test_symbol(font=font, char=char, is_bold=True).make_image()
-        slant = make_test_symbol(font=font, char=char, is_slant=True).make_image()
+    no_case_count = 0
+
+    char_list = alphabet.symbols
+    if max_chars is not None:
+        char_list = np.random.choice(char_list, min(max_chars, len(char_list)), replace=False)
+
+    for char in char_list:
+        plain = make_test_symbol(font=font, char=char)
+        bold = make_test_symbol(font=font, char=char, is_bold=True)
+        slant = make_test_symbol(font=font, char=char, is_slant=True)
 
         if plain.sum() == 0:
             empty_count += 1
@@ -29,28 +35,56 @@ def check_errors(font, alphabet):
 
         if np.abs(plain - slant).sum() == 0:
             no_slant_count += 1
-    return empty_count, no_bold_count, no_slant_count
+
+        if char.swapcase() != char:
+            swap_case = make_test_symbol(font=font, char=char.swapcase())
+            if np.abs(plain - swap_case).sum() == 0:
+                no_case_count += 1
+
+    all_good = (empty_count + no_bold_count + no_slant_count + no_case_count) == 0
+
+    return dict(empty_count=empty_count,
+                no_bold_count=no_bold_count,
+                no_slant_count=no_slant_count,
+                no_case_count=no_case_count,
+                all_good=all_good)
 
 
-def filter_fonts(alphabet):
+def eval_all_font_properties(alphabet_map, max_chars=None):
     """
-    Runs a bunch of checks on the fonts for an a
-
+    Runs a bunch of checks on all fonts for all alphabets
     """
-    blacklist = set()
 
-    for i, font in enumerate(alphabet.fonts):
-        logging.info("Checking font %s for alphabet %s (%d/%d)", font, alphabet.name, i + 1, len(alphabet.fonts))
-        empty_count, no_bold_count, no_slant_count = check_errors(font, alphabet)
-        if empty_count + no_bold_count + no_slant_count == 0:
-            logging.info("    Supports all characters")
-        else:
-            logging.info("    Empty Count: %d", empty_count)
-            logging.info("    No Bold Count: %d", no_bold_count)
-            logging.info("    No Slant Count: %d", no_slant_count)
+    property_map = {}
 
-            # TODO: Somethimes glyphs fail to render and produce a square with a X inside. Would be good to detect that.
+    for i, alphabet in enumerate(alphabet_map.values()):
+        logging.info("%2d/%d alphabet %s, %d fonts, %d symbols",
+                     i + 1, len(alphabet_map), alphabet.name, len(alphabet.fonts), len(alphabet.symbols))
+        # whitelist[alphabet.name] = filter_fonts(alphabet)[0]
 
-    whitelist = set(alphabet.fonts).difference(blacklist)
+        property_map[alphabet.name] = {}
 
-    return list(whitelist), list(blacklist)
+        good_count = 0
+        for i, font in enumerate(alphabet.all_fonts):
+            if max_chars is not None:
+                n_chars = min(max_chars, len(alphabet.symbols))
+            else:
+                n_chars = alphabet.symbols
+
+            logging.debug("Checking font %s for alphabet %s (%d/%d)", font, alphabet.name, i + 1, len(alphabet.fonts))
+            font_properties = check_errors(font, alphabet, max_chars=max_chars)
+            property_map[alphabet.name][font] = font_properties
+
+            if font_properties['all_good']:
+                good_count += 1
+                logging.debug("    Supports all characters")
+            else:
+                logging.info("Errors for font %s of alphabet %s.", font, alphabet.name)
+                for key, val in font_properties.items():
+                    if (val > 0) and (key != 'all_good'):
+                        logging.info("    %s: %d / %d", key, val, n_chars)
+
+        logging.info("%d / %d fonts pass all tests", good_count, len(alphabet.fonts))
+        logging.info("============================")
+
+    return property_map
