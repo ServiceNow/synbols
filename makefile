@@ -11,6 +11,10 @@ docker:
 font-cache:
 	rm alphabet_fonts.cache; $(SYNBOLS_RUN) sh -c "cd /local; python -c 'from synbols.fonts import ALPHABET_MAP'"
 
+font-licenses:
+	$(SYNBOLS_RUN) cat font_licenses.csv
+	@echo "All licenses were automatically extracted based on the directory structure of the Google Fonts repository (https://github.com/google/fonts). Refer to this repository for license details."
+
 view-dataset:
 	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/view_dataset.py"
 	open dataset.png
