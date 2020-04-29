@@ -25,7 +25,7 @@ EXP_GROUPS = {
                 'initial_pool': 2000,
                 'seed': 1337,
                 'uncertainty_config': {'is_bold': {}}}}),
-'active_char_betabald':
+    'active_char_betabald':
         hu.cartesian_exp_group({
             'lr': [0.001],
             'batch_size': [32],
@@ -49,7 +49,7 @@ EXP_GROUPS = {
                 'initial_pool': 2000,
                 'seed': 1337,
                 'uncertainty_config': {'is_bold': {}}}}),
-'active_char_shuffle':
+    'active_char_shuffle':
         hu.cartesian_exp_group({
             'lr': [0.001],
             'batch_size': [32],
@@ -79,6 +79,33 @@ EXP_GROUPS = {
             'batch_size': [32],
             'model': "calibrated_active_learning",
             'calibrate': True,
+            'seed': [1337, 1338, 1339, 1340],
+            'mu': 1e-3,
+            'reg_factor': 1e-4,
+            'backbone': "vgg16",
+            'num_classes': 52,
+            'query_size': [100],
+            'learning_epoch': 10,
+            'heuristic': ['bald', 'random', 'entropy'],
+            'iterations': [20],
+            'max_epoch': 2000,
+            'imagenet_pretraining': [True],
+            'dataset': {
+                'path': '/mnt/datasets/public/research/synbols/missing-symbol_n=100000_2020-Apr-10.h5py',
+                'name': 'active_learning',
+                'task': 'char',
+                'initial_pool': 2000,
+                'seed': 1337,
+                'uncertainty_config': {'is_bold': {}}}}),
+    'active_char_mixup':
+        hu.cartesian_exp_group({
+            'lr': [0.001],
+            'batch_size': [32],
+            'model': "mixup_active_learning",
+            'calibrate': False,
+            'mixup_layer_name': 'classifier.2',
+            'mixup_seed': 1337,
+            'mixup_alpha': [2, 3],
             'seed': [1337, 1338, 1339, 1340],
             'mu': 1e-3,
             'reg_factor': 1e-4,

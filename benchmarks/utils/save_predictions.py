@@ -107,31 +107,31 @@ def main():
     # Train
     start, end = 0, 70000
     aleatoric_idx = np.array(bit)[ds.indices[start:end]].astype(np.bool)
-    for _ in range(warmup):
+    for w in range(warmup):
         model.train_on_loader(DataLoader(al_dataset, batch_size=32, num_workers=0))
         model.val_on_loader(DataLoader(val, batch_size=32, num_workers=0))
 
-    pool_pred = model.wrapper.predict_on_dataset(al_dataset._dataset, 32,
-                                                 iterations=exp_dict['iterations'],
-                                                 use_cuda=True, workers=4)
-    left, right = LeftRightBALD().compute_score(pool_pred)
-    d = {
-        'aleatoric_pred': pool_pred[aleatoric_idx],
-        'norma_pred': pool_pred[~aleatoric_idx],
-        'all_pred': pool_pred,
-        'aleatoric_left': left[aleatoric_idx],
-        'normal_left': left[~aleatoric_idx],
-        'left': left,
-        'aleatoric_right': right[aleatoric_idx],
-        'normal_right': right[~aleatoric_idx],
-        'right': right,
-        'aleatoric_idx': aleatoric_idx
-    }
-    pickle.dump(d, open('/mnt/projects/bayesian-active-learning/synbols_ckpt/preds.pkl', 'wb'))
-
-    pprint({k: np.mean(v) for k, v in d.items() if 'pred' not in k})
-    print(f"Aleatoric BALD:", np.mean(d['aleatoric_left'] - d['aleatoric_right']))
-    print(f"Normal BALD:", np.mean(d['normal_left'] - d['normal_right']))
+        pool_pred = model.wrapper.predict_on_dataset(al_dataset._dataset, 32,
+                                                     iterations=exp_dict['iterations'],
+                                                     use_cuda=True, workers=4)
+        left, right = LeftRightBALD().compute_score(pool_pred)
+        d = {
+            'aleatoric_pred': pool_pred[aleatoric_idx],
+            'norma_pred': pool_pred[~aleatoric_idx],
+            'all_pred': pool_pred,
+            'aleatoric_left': left[aleatoric_idx],
+            'normal_left': left[~aleatoric_idx],
+            'left': left,
+            'aleatoric_right': right[aleatoric_idx],
+            'normal_right': right[~aleatoric_idx],
+            'right': right,
+            'aleatoric_idx': aleatoric_idx
+        }
+        pprint({k: np.mean(v) for k, v in d.items() if 'pred' not in k})
+        print(f"Aleatoric BALD:", np.mean(d['aleatoric_left'] - d['aleatoric_right']))
+        print(f"Normal BALD:", np.mean(d['normal_left'] - d['normal_right']))
+        pickle.dump(d, open(f'/mnt/projects/bayesian-active-learning/synbols_ckpt/preds_{w}.pkl',
+                            'wb'))
 
 
 if __name__ == '__main__':

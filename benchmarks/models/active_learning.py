@@ -1,17 +1,17 @@
 import os
-import types
+import warnings
 from copy import deepcopy
 
 import h5py
 import numpy as np
 import torch
-import torch.utils.data as torchdata
 from baal import ModelWrapper
 from baal.active import ActiveLearningLoop, get_heuristic
 from baal.active.heuristics import BALD, requireprobs, xlogy, BatchBALD
 from baal.bayesian.dropout import patch_module
 from baal.calibration import DirichletCalibrator
 from baal.utils.metrics import ClassificationReport
+from torch import nn
 from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader
 from torchvision import models
@@ -89,12 +89,12 @@ class ActiveLearning(torch.nn.Module):
         self.wrapper = ModelWrapper(self.backbone, criterion=self.criterion)
         self.wrapper.add_metric('cls_report', lambda: ClassificationReport(exp_dict["num_classes"]))
         self.loop = ActiveLearningLoop(None, self.wrapper.predict_on_dataset,
-                           heuristic=self.heuristic,
-                           ndata_to_label=exp_dict['query_size'],
-                           batch_size=1,
-                           iterations=exp_dict['iterations'],
-                           use_cuda=True,
-                           max_sample=max_sample)
+                                       heuristic=self.heuristic,
+                                       ndata_to_label=exp_dict['query_size'],
+                                       batch_size=1,
+                                       iterations=exp_dict['iterations'],
+                                       use_cuda=True,
+                                       max_sample=max_sample)
 
         self.calib_set = get_dataset('calib', exp_dict['dataset'])
         self.valid_set = get_dataset('val', exp_dict['dataset'])
@@ -184,3 +184,76 @@ class CalibratedActiveLearning(ActiveLearning):
         mets = self._format_metrics(metrics, 'test')
         mets.update({'num_samples': len(self.active_dataset)})
         return mets
+
+
+def get_lambda(alpha, rng_state: np.random.RandomState):
+    return rng_state.beta(alpha, alpha)
+
+
+def get_mixup_params(input, alpha, rng, rng_numpy):
+    lmb = get_lambda(alpha, rng_numpy)
+    permutation = torch.randperm(input.size(0), generator=rng, device=input.device)
+    return lmb, permutation
+
+
+def patch_layer_mixup(module, name, alpha, seed):
+    mods = dict(module.named_modules())
+    if '.' in name:
+        splitted = name.split('.')
+        mod_name = splitted[0]
+        name = '.'.join(splitted[1:])
+        patch_layer_mixup(mods[mod_name], name, alpha, seed)
+    else:
+        l = mods[name]
+        module.add_module(name, MixUpLayer(l, alpha, seed))
+
+    return module
+
+
+class MixUpLayer(nn.Module):
+    def __init__(self, layer, alpha, seed):
+        self.layer = layer
+        self.alpha = alpha
+        self.rng = torch.Generator()
+        self.rng.manual_seed(seed)
+        self.rng_numpy = np.random.RandomState(self.seed)
+        super().__init__()
+
+    def forward(self, input: torch.Tensor):
+        if self.training:
+            lmb, permutation = get_mixup_params(input, self.alpha, self.rng, self.rng_numpy)
+            input_perm = input[permutation, ...]
+            input = lmb * input_perm + (1 - lmb) * input_perm
+        out = self.layer(input)
+        return out
+
+
+class MixUpCriterion(MixUpLayer):
+    def forward(self, input: torch.Tensor, target: torch.Tensor):
+        if self.training:
+            lmb, permutation = get_mixup_params(input, self.alpha, self.rng, self.rng_numpy)
+            target_perm = target[permutation]
+            loss = lmb * self.layer(input, target)
+            loss = loss + (1 - lmb) * self.layer(input, target_perm)
+        else:
+            loss = self.criterion(input, target)
+        return loss
+
+
+class MixUpActiveLearning(ActiveLearning):
+    def __init__(self, exp_dict):
+        super().__init__(exp_dict)
+        self.alpha = exp_dict.get('mixup_alpha', 0.0)
+        self.mixup_seed = exp_dict.get('mixup_seed', 1337)
+        self.mixup_layer_name = exp_dict.get('mixup_layer_name')
+
+        self.criterion = MixUpCriterion(self.criterion, self.alpha, self.mixup_seed)
+
+
+        if self.mixup_layer_name is not None:
+            self.wrapper.model = patch_layer_mixup(self.wrapper.model,
+                                                   self.mixup_layer_name,
+                                                   self.alpha,
+                                                   self.mixup_seed)
+        else:
+            warnings.warn('NO MIXUP', UserWarning)
