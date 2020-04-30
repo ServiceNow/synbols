@@ -121,13 +121,13 @@ def generate_camouflage_dataset(n_samples, alphabet='latin', **kwarg):
 
 def generate_segmentation_dataset(n_samples, alphabet='latin', resolution=(64, 64), **kwarg):
     def scale(rng):
-        return np.exp(rng.randn() * 0.1) * 0.3
+        return np.exp(rng.randn() * 0.2) * 0.15
 
     def n_symbols(rng):
         return rng.choice(list(range(3, 10)))
 
     attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], resolution=resolution, scale=scale,
-                                         n_symbols=5)
+                                         is_bold=False, n_symbols=5)
     return dataset_generator(attr_generator, n_samples)
 
 
