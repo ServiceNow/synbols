@@ -112,7 +112,7 @@ class ActiveLearning(torch.nn.Module):
             if self.active_dataset_settings is not None:
                 self.active_dataset.load_state_dict(self.active_dataset_settings)
             self.loop.dataset = self.active_dataset
-
+        self.criterion.train()
         self.wrapper.train_on_dataset(self.active_dataset, self.optimizer, self.batch_size,
                                       epoch=self.learning_epoch, use_cuda=True)
 
@@ -122,6 +122,7 @@ class ActiveLearning(torch.nn.Module):
     def val_on_loader(self, loader, savedir=None):
         val_data = loader.dataset
         self.loop.step()
+        self.criterion.eval()
         self.wrapper.test_on_dataset(val_data, batch_size=self.batch_size, use_cuda=True)
         metrics = self.wrapper.metrics
         mets = self._format_metrics(metrics, 'test')
@@ -212,18 +213,19 @@ def patch_layer_mixup(module, name, alpha, seed):
 
 class MixUpLayer(nn.Module):
     def __init__(self, layer, alpha, seed):
+        super().__init__()
         self.layer = layer
         self.alpha = alpha
+        self.seed = seed
         self.rng = torch.Generator()
-        self.rng.manual_seed(seed)
+        self.rng.manual_seed(self.seed)
         self.rng_numpy = np.random.RandomState(self.seed)
-        super().__init__()
 
     def forward(self, input: torch.Tensor):
         if self.training:
             lmb, permutation = get_mixup_params(input, self.alpha, self.rng, self.rng_numpy)
             input_perm = input[permutation, ...]
-            input = lmb * input_perm + (1 - lmb) * input_perm
+            input = lmb * input + (1 - lmb) * input_perm
         out = self.layer(input)
         return out
 
@@ -248,7 +250,6 @@ class MixUpActiveLearning(ActiveLearning):
         self.mixup_layer_name = exp_dict.get('mixup_layer_name')
 
         self.criterion = MixUpCriterion(self.criterion, self.alpha, self.mixup_seed)
-
 
         if self.mixup_layer_name is not None:
             self.wrapper.model = patch_layer_mixup(self.wrapper.model,
