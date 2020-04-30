@@ -1,9 +1,12 @@
+#!/usr/bin/env python
+
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict, Counter
 from synbols.data_io import load_npz, load_h5
 import logging
 from synbols.utils import flatten_attr
+import sys
 
 logging.basicConfig(level=logging.INFO)
 
@@ -92,8 +95,13 @@ def view_split(split_mask, attr_list, attr_keys, name):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        file_path = sys.argv[1]
+    else:
+        file_path = '../segmentation_n=100000_2020-Apr-30.h5py'
+
     print('read dataset')
-    x, mask, attr_list, splits = load_h5('../tiny_n=1000_2020-Apr-30.h5py')
+    x, mask, attr_list, splits = load_h5(file_path)
     print("x.shape:", x.shape)
 
     attr_list = [flatten_attr(attr) for attr in attr_list]
