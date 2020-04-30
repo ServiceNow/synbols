@@ -96,7 +96,7 @@ def generate_plain_dataset(n_samples, alphabet='latin', **kwargs):
 def generate_tiny_dataset(n_samples, alphabet='latin', **kwarg):
     fg = SolidColor((1, 1, 1))
     bg = SolidColor((0, 0, 0))
-    attr_sampler = basic_image_sampler(alphabet == ALPHABET_MAP[alphabet], background=bg, foreground=fg, is_bold=False,
+    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg, is_bold=False,
                                        scale=1.3, resolution=(8, 8), is_gray=True)
     return dataset_generator(attr_sampler, n_samples)
 
