@@ -25,7 +25,7 @@ def check_errors(font, alphabet, max_chars=None):
     for char in char_list:
         plain = make_test_symbol(font=font, char=char)
         bold = make_test_symbol(font=font, char=char, is_bold=True)
-        slant = make_test_symbol(font=font, char=char, is_slant=True)
+        # slant = make_test_symbol(font=font, char=char, is_slant=True)
 
         if plain.sum() == 0:
             empty_count += 1
@@ -33,8 +33,8 @@ def check_errors(font, alphabet, max_chars=None):
         if np.abs(plain - bold).sum() == 0:
             no_bold_count += 1
 
-        if np.abs(plain - slant).sum() == 0:
-            no_slant_count += 1
+        # if np.abs(plain - slant).sum() == 0:
+        #     no_slant_count += 1
 
         if char.swapcase() != char:
             swap_case = make_test_symbol(font=font, char=char.swapcase())
