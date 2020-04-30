@@ -97,7 +97,7 @@ def generate_tiny_dataset(n_samples, alphabet='latin', **kwarg):
     fg = SolidColor((1, 1, 1))
     bg = SolidColor((0, 0, 0))
     attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg, is_bold=False,
-                                       scale=1.3, resolution=(8, 8), is_gray=True)
+                                       is_slant=False, scale=1, resolution=(8, 8), is_gray=True)
     return dataset_generator(attr_sampler, n_samples)
 
 
@@ -121,7 +121,7 @@ def generate_camouflage_dataset(n_samples, alphabet='latin', **kwarg):
 
 def generate_segmentation_dataset(n_samples, alphabet='latin', resolution=(64, 64), **kwarg):
     def scale(rng):
-        return np.exp(rng.randn() * 0.3) * 0.3
+        return np.exp(rng.randn() * 0.1) * 0.3
 
     def n_symbols(rng):
         return rng.choice(list(range(3, 10)))

@@ -46,6 +46,10 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
 
     img_grid = np.vstack(img_grid)
 
+    if img_grid.shape[-1] == 1:
+        img_grid = img_grid.squeeze(axis=-1)
+        print(img_grid.shape)
+
     plt.imshow(img_grid)
     plt.xlabel(h_axis)
     plt.ylabel(v_axis)
@@ -89,7 +93,7 @@ def view_split(split_mask, attr_list, attr_keys, name):
 
 if __name__ == "__main__":
     print('read dataset')
-    x, mask, attr_list, splits = load_h5('../all_fonts(latin)_n=10000_2020-Apr-30.h5py')
+    x, mask, attr_list, splits = load_h5('../tiny_n=1000_2020-Apr-30.h5py')
     print("x.shape:", x.shape)
 
     attr_list = [flatten_attr(attr) for attr in attr_list]

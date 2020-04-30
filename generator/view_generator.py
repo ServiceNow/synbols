@@ -19,7 +19,9 @@ if __name__ == "__main__":
     fg = Gradient(types=('radial',), random_color=color_sampler(brightness_range=(0.1, 0.9)))
     # fg = NoPattern()
 
-    kwargs = dict(alphabet=ALPHABET_MAP['latin'], foreground=fg, background=bg, resolution=(32, 32), n_symbols=1)
+    kwargs = dict(foreground=fg, background=bg, resolution=(32, 32), n_symbols=1,
+                  scale=lambda rng: 0.7 * np.exp(rng.randn() * 0.1),
+                  is_bold=True)
 
     # kwargs = dict()
 
