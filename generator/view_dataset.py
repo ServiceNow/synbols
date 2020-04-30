@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict, Counter
 from synbols.data_io import load_npz, load_h5
 import logging
+from synbols.utils import flatten_attr
 
 logging.basicConfig(level=logging.INFO)
 
@@ -34,7 +35,7 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
     for v_value in v_values:
         img_row = []
         for h_value in h_values:
-            if (h_value, v_value) in attr_map.keys():
+            if len(attr_map[(h_value, v_value)]) > 0:
 
                 idx = attr_map[(h_value, v_value)].pop()
                 img_row.append(x[idx])
@@ -52,10 +53,62 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
     fig.tight_layout()
 
 
+def map_to_class_id(values):
+    class_map = {val: i for i, val in enumerate(np.unique(values))}
+    class_id = [class_map[val] for val in values]
+    return np.array(class_id)
+
+
+def view_split(split_mask, attr_list, attr_keys, name):
+    """Plot an histogram of the marginal for each attribute in attr_keys and each subset specified in split_mask"""
+
+    n_mask = split_mask.shape[1]
+
+    ratios = ', '.join(['%.1f%%' % (r * 100) for r in split_mask.mean(axis=0)])
+
+    fig, ax_grid = plt.subplots(n_mask, len(attr_keys), sharex='col', num="split %s, split ratios=%s" % (name, ratios))
+
+    for j, attr_key in enumerate(attr_keys):
+        print('computing histogram for attr %s' % attr_key)
+        values = np.array([attr[attr_key] for attr in attr_list])
+
+        if values.dtype.type is np.str_:
+            values = map_to_class_id(values)
+            n_bins = np.unique(values) + 1
+        else:
+            n_bins = 20
+
+        for i in range(n_mask):
+            sub_values = values[split_mask[:, i]]
+            ax = ax_grid[i, j]
+            if i + 1 == n_mask:
+                ax.set_xlabel(attr_key)
+
+            ax.hist(sub_values, bins=n_bins)
+
+
 if __name__ == "__main__":
-    x, mask, y, splits = load_h5('../all_languages_n=10000_2020-Apr-27.h5py')
-    print(splits)
-    print(x.shape)
-    plot_dataset(x, y, v_axis=None)
+    print('read dataset')
+    x, mask, attr_list, splits = load_h5('../all_fonts(latin)_n=10000_2020-Apr-30.h5py')
+    print("x.shape:", x.shape)
+
+    attr_list = [flatten_attr(attr) for attr in attr_list]
+    print("list of attributes:")
+    for attr in attr_list[0].keys():
+        print("  " + attr)
+
+    for split_name, split in splits.items():
+        print("making statistics for %s." % split_name)
+        view_split(split, attr_list, ['char', 'font', 'scale', 'rotation'],
+                   split_name)
+
+    # print("plotting images of the dataset")
+    # for i, mask in enumerate(splits['random'].T):
+    #     idx = np.arange(len(mask))[mask]
+    #     print(i, len(idx))
+    #     sub_x = x[idx]
+    #     sub_attr_list = np.array(attr_list)[idx]
+    #     # plt.figure("Random split %d" % i)
+    plot_dataset(x, attr_list, v_axis=None, h_axis='font')
     # plt.savefig("dataset.png")
     plt.show()
