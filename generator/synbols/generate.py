@@ -107,10 +107,14 @@ def generate_default_dataset(n_samples, alphabet='latin', **kwarg):
 
 
 def generate_camouflage_dataset(n_samples, alphabet='latin', **kwarg):
-    fg = Camouflage(stroke_angle=0.5)
-    bg = Camouflage(stroke_angle=1.5)
-    attr_sampler = basic_image_sampler(
-        alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg, is_slant=False, is_bold=True, scale=1.3)
+    def attr_sampler():
+        angle = np.random.rand() * np.pi * 2
+        fg = Camouflage(stroke_angle=angle)
+        bg = Camouflage(stroke_angle=angle + 2 + np.random.randn() * 0.5)
+        scale = 0.7 * np.exp(np.random.randn() * 0.1)
+        return basic_image_sampler(
+            alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg, is_bold=True,
+            scale=scale)()
 
     return dataset_generator(attr_sampler, n_samples)
 
