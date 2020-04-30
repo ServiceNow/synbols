@@ -31,7 +31,7 @@ view_font_clusters:
 datasets:
 	generator/generate_dataset.py --n_samples=100000 &
 	generator/generate_dataset.py --dataset=camouflage --n_samples=100000 &
-	generator/generate_dataset.py --dataset=tiny --n_samples=10000 > tiny.log &
+	generator/generate_dataset.py --dataset=tiny --n_samples=10000 &
 	generator/generate_dataset.py --dataset=segmentation --n_samples=100000  &
 	generator/generate_dataset.py --dataset=missing-symbol --n_samples=100000 &
 	generator/generate_dataset.py --dataset=less_variations --n_samples=100000 &
