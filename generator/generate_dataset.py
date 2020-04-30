@@ -12,6 +12,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', help='name of the predefined dataset', default='default')
 parser.add_argument('--n_samples', help='number of samples to generate', type=int, default=10000)
 parser.add_argument('--no_docker', help="Don't run in docker", action='store_true')
+parser.add_argument('--alphabet', help='of the alphabet to use', default='default')
 
 
 def _docker_run(cmd):
@@ -34,13 +35,17 @@ if __name__ == "__main__":
     else:
 
         from synbols.generate import DATASET_GENERATOR_MAP
-        from synbols.data_io import write_npz, write_h5
+        from synbols.data_io import write_h5
 
         logging.info("Generating %d samples from %s dataset", args.n_samples, args.dataset)
 
-        ds_generator = DATASET_GENERATOR_MAP[args.dataset](args.n_samples)
+        if args.alphabet == 'default':
+            alphabet = 'latin'
+            file_path = '%s_n=%d_%s' % (args.dataset, args.n_samples, datetime.now().strftime("%Y-%b-%d"))
+        else:
+            alphabet = args.alphabet
+            file_path = '%s(%s)_n=%d_%s' % (args.dataset, alphabet, args.n_samples, datetime.now().strftime("%Y-%b-%d"))
 
-        file_path = '%s_n=%d_%s' % (args.dataset, args.n_samples, datetime.now().strftime("%Y-%b-%d"))
+        ds_generator = DATASET_GENERATOR_MAP[args.dataset](args.n_samples, alphabet=alphabet)
 
         write_h5(file_path + ".h5py", ds_generator)
-        # write_npz(file_path, ds_generator)

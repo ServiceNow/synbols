@@ -1,5 +1,6 @@
 from icu import LocaleData
 import logging
+import numpy as np
 
 
 def _filter_fonts(all_fonts, font_properties, font_cluters):
@@ -16,7 +17,7 @@ def _filter_fonts(all_fonts, font_properties, font_cluters):
             if len(white_cluster) > 0:
                 kept_font = white_cluster.pop()
                 logging.info("Cluster of size %d, %d are in the white list, keeping %s", len(cluster),
-                             len(white_cluster),
+                             len(white_cluster) + 1,
                              kept_font)
             else:
                 logging.info("Cluster of size %d, none are in the whitelist", len(cluster))
@@ -61,22 +62,22 @@ def get_char_set(language):
     return list(char_set)
 
 
-# def _blacklist_from_cluster():
-#     """Blacklist every redundant font in clusters (keep the first one of each cluster)"""
-#     if path.exists(FONT_CLUSTERS_PATH):
-#         logging.info('loading blacklist')
-#         with open(FONT_CLUSTERS_PATH) as fd:
-#             clusters = json.load(fd)
-#             for cluster in clusters:
-#                 font_names, values = zip(*cluster)
-#                 main_font_idx = np.argmin(values)
-#                 for i, font_name in enumerate(font_names):
-#                     if i == main_font_idx:
-#                         pass
-#                         logging.info("keeping %s", font_name)
-#                     else:
-#                         FONT_BLACKLIST.append(font_name)
-#                         logging.info("blacklisting %s", font_name)
+def flatten_attr(attr, ctxt=None):
+    flat_dict = {}
+    if isinstance(attr, (list, tuple, np.ndarray)):
+        for i, val in enumerate(attr):
+            flat_dict.update(flatten_attr(val, ctxt + '[%d]' % i))
+
+    elif isinstance(attr, dict):
+        for key, val in attr.items():
+            if ctxt is None:
+                sub_ctxt = key
+            else:
+                sub_ctxt = ctxt + '.%s' % key
+            flat_dict.update(flatten_attr(val, sub_ctxt))
+    else:
+        flat_dict = {ctxt: attr}
+    return flat_dict
 
 
 SYMBOL_MAP = {
