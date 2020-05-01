@@ -258,3 +258,8 @@ class MixUpActiveLearning(ActiveLearning):
                                                    self.mixup_seed)
         else:
             warnings.warn('NO MIXUP', UserWarning)
+
+
+class EmbeddingPropActiveLearning(ActiveLearning):
+    # PAU YOUR CODE HERE
+    pass

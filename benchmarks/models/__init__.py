@@ -1,4 +1,5 @@
-from .active_learning import ActiveLearning, CalibratedActiveLearning, MixUpActiveLearning
+from .active_learning import ActiveLearning, CalibratedActiveLearning
+from .active_learning import MixUpActiveLearning, EmbeddingPropActiveLearning
 from .classification import Classification
 from .fewshot import FewShot
 
@@ -14,5 +15,7 @@ def get_model(exp_dict):
         return CalibratedActiveLearning(exp_dict)
     elif exp_dict["model"] == 'mixup_active_learning':
         return MixUpActiveLearning(exp_dict)
+    elif exp_dict["model"] == 'embd_prop_active_learning':
+        return EmbeddingPropActiveLearning(exp_dict)
     else:
         raise ValueError("Model %s not found" % exp_dict["model"])
