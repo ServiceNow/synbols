@@ -20,7 +20,7 @@ def draw_symbol(ctxt, attributes):
 
     Args:
         ctxt: cairo context to draw the image
-        attributes: Object of type Attributes containing information about the image
+        attributes: Object of type Symbol containing information about the image
 
     Returns:
         extent: rectangle containing the text in the coordinate of the context
@@ -330,8 +330,7 @@ class Symbol:
         draw_symbol(ctxt, self)
         self.foreground = fg
         img = _surface_to_array(surface)
-        mask = np.mean(img, axis=2, keepdims=True)
-        return (mask * 255).astype(np.uint8)
+        return np.mean(img, axis=2, keepdims=True).astype(np.uint8)
 
     def attribute_dict(self):
         return dict(
