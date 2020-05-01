@@ -108,6 +108,25 @@ def load_h5(file_path):
         return np.array(fd['x']), np.array(fd['mask']), y, splits
 
 
+def load_attributes_h5(file_path):
+    with h5py.File(file_path, 'r') as fd:
+        # y = [json.loads(attr) for attr in fd['y']]
+        y = list(fd['y'])
+        splits = {}
+        if 'split' in fd.keys():
+            for key in fd['split'].keys():
+                splits[key] = np.array(fd['split'][key])
+
+        return y, splits
+
+
+def load_minibatch_h5(file_path, indices):
+    with h5py.File(file_path, 'r') as fd:
+        x = np.array(fd['x'][indices])
+        mask = np.array(fd['mask'][indices])
+    return x, mask
+
+
 def load_dataset_jpeg_sequential(file_path, max_samples=None):
     logging.info("Opening %s" % file_path)
     with zipfile.ZipFile(file_path) as zf:
@@ -146,7 +165,7 @@ def load_dataset_jpeg_sequential(file_path, max_samples=None):
 def pack_dataset(generator):
     """Turn a the output of a generator of (x,y) pairs into a numpy array containing the full dataset"""
     x, mask, y = zip(*generator)
-    return np.stack(x), y
+    return np.stack(x), np.stack(mask), y
 
 
 def write_jpg_zip(directory, generator):
