@@ -46,17 +46,22 @@ def basic_image_sampler(alphabet=None, char=None, font=None, background=None, fo
     return sampler
 
 
-def attribute_generator(sampler, n_samples):
-    for i in range(n_samples):
-        yield sampler()
+def flatten_mask(masks):
+    flat_mask = np.zeros(masks.shape[:-1])
+
+    for i in range(masks.shape[-1]):
+        flat_mask[(masks[:, :, i] > 2)] = i + 1
+    return flat_mask
 
 
-def dataset_generator(attr_sampler, n_samples):
+def dataset_generator(attr_sampler, n_samples, mask_aggregator=None):
     """High level function generating the dataset from an attribute generator."""
     t0 = t.time()
     for i in range(n_samples):
         attributes = attr_sampler()
         mask = attributes.make_mask()
+        if mask_aggregator is not None:
+            mask = mask_aggregator(mask)
         x = attributes.make_image()
         y = attributes.attribute_dict()
 
@@ -77,12 +82,11 @@ def generate_char_grid(alphabet_name, n_char, n_font, rng=np.random, **kwargs):
 
         chars = rng.choice(alphabet.symbols, n_char, replace=False)
         fonts = rng.choice(alphabet.fonts, n_font, replace=False)
-
         for char in chars:
             for font in fonts:
                 yield basic_image_sampler(alphabet, char, font, rng=rng, **kwargs)()
 
-    return dataset_generator(_attr_generator().__next__, n_char * n_font)
+    return dataset_generator(_attr_generator().__next__, n_char * n_font, flatten_mask)
 
 
 def generate_plain_dataset(n_samples, alphabet='latin', **kwargs):
@@ -127,8 +131,8 @@ def generate_segmentation_dataset(n_samples, alphabet='latin', resolution=(64, 6
         return rng.choice(list(range(3, 10)))
 
     attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], resolution=resolution, scale=scale,
-                                         is_bold=False, n_symbols=5)
-    return dataset_generator(attr_generator, n_samples)
+                                         is_bold=False, n_symbols=n_symbols)
+    return dataset_generator(attr_generator, n_samples, flatten_mask)
 
 
 def all_chars(n_samples, **kwarg):
