@@ -43,9 +43,10 @@ def get_dataset(split, exp_dict):
                          tt.RandomHorizontalFlip(),
                          tt.ColorJitter(0.4, 0.4, 0.4, 0.4)]
         transform += [tt.ToTensor(),
-                      tt.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]
+                      tt.Normalize([0.5] * dataset_dict["channels"], 
+                                    [0.5] * dataset_dict["channels"])]
         transform = tt.Compose(transform)
-        ret = SynbolsHDF5(dataset_dict["path"], split, dataset_dict["task"], transform)
+        ret = SynbolsHDF5(dataset_dict["path"], split, dataset_dict["task"], transform, ood=dataset_dict["ood"])
         exp_dict["num_classes"] = len(ret.labelset) # FIXME: this is hacky
         return ret
     elif dataset_dict["name"] == "mnist":
@@ -176,7 +177,23 @@ class SynbolsNpz(Dataset):
             np.savez(path, {'x': self.x, 'y': self.y})
             print("Done...")
 
-    def make_splits(self, json=False, seed=42):
+    def make_splits(self, mask=None, json=False, seed=42):
+        if mask is None:
+            if self.split == 'train':
+                start = 0
+                end = int(self.train_fraction * len(self.x))
+            elif self.split == 'val':
+                start = int(self.train_fraction * len(self.x))
+                end = int((self.train_fraction +self.val_fraction) * len(self.x))
+            elif self.split == 'test':
+                start = int((self.train_fraction + self.val_fraction) * len(self.x))
+                end = len(self.x) 
+            rng = np.random.RandomState(seed) #TODO: fix this dangerous thing
+            indices = rng.permutation(len(self.x))
+            indices = indices[start:end]
+        else:
+            indices = np.arange(len(self.x)) # 0....nsamples
+            indices = indices[mask[:, ["train", "val", "test"].index(self.split)]]
         print("Converting json strings to labels...")
         if json:
             with multiprocessing.Pool(8) as pool:
@@ -187,20 +204,11 @@ class SynbolsNpz(Dataset):
         self.y = _y
         self.labelset = list(sorted(set(self.y)))
         self.y = np.array([self.labelset.index(y) for y in self.y])
-        if self.split == 'train':
-            start = 0
-            end = int(self.train_fraction * len(self.x))
-        elif self.split == 'val':
-            start = int(self.train_fraction * len(self.x))
-            end = int((self.train_fraction +self.val_fraction) * len(self.x))
-        elif self.split == 'test':
-            start = int((self.train_fraction + self.val_fraction) * len(self.x))
-            end = len(self.x) 
-        rng = np.random.RandomState(seed)
-        indices = rng.permutation(len(self.x))
-        self.x = self.x[indices[start:end]]
-        self.y = self.y[indices[start:end]]
-
+        self.x = self.x[indices]
+        self.y = self.y[indices]
+        # import pylab
+        # pylab.hist(self.y, bins=np.arange(len(self.labelset)))
+        # pylab.savefig('hist_%s.png' % self.split)
     def __getitem__(self, item):
         return self.transform(self.x[item]), self.y[item]
 
@@ -208,7 +216,7 @@ class SynbolsNpz(Dataset):
         return len(self.x)
 
 class SynbolsHDF5(SynbolsNpz):
-    def __init__(self, path, split, key='font', transform=None, train_fraction=0.6, val_fraction=0.4):
+    def __init__(self, path, split, key='font', transform=None, train_fraction=0.6, val_fraction=0.4, ood=False):
         self.path = path
         self.split = split
         self.task = key
@@ -223,9 +231,15 @@ class SynbolsHDF5(SynbolsNpz):
         with h5py.File(path, 'r') as data:
             self.x = data['x'][...]
             self.y = data['y'][...]
-            del(data)
+            mask = None
+            if "split" in data:
+                if ood:
+                    mask = data["split"]["stratified_%s" %key][...]
+                else:
+                    mask = data["split"]["random"][...]
+            self.make_splits(mask=mask, json=True)
+
         print("Done.")
-        self.make_splits(json=True)
 
 if __name__ == '__main__':
     synbols = SynbolsHDF5('/mnt/datasets/public/research/synbols/camouflage_n=100000_2020-Apr-09.h5py', 'val')

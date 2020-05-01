@@ -1,124 +1,5 @@
 from haven import haven_utils as hu
 
-# Define exp groups for parameter search
-EXP_GROUPS = {'font':
-                hu.cartesian_exp_group({
-                    'lr':[0.1],
-                    'batch_size':[256],
-                    'model': "classification",
-                    'backbone': "resnet18",
-                    'max_epoch': 100,
-                    'imagenet_pretraining': False,
-                    'episodic': False,
-                    'dataset': {'path':'/mnt/datasets/public/research/synbols/latin_res=32x32_n=100000.npz',
-                                'name': 'synbols',
-                                'task': 'font'}}),
-                'font_pretrained': hu.cartesian_exp_group({
-                    'lr':[0.01],
-                    'batch_size':[256],
-                    'model': "classification",
-                    'backbone': "resnet18",
-                    'max_epoch': 100,
-                    'episodic': False,
-                    'imagenet_pretraining': [True],
-                    'dataset': {'path':'/mnt/datasets/public/research/synbols/latin_res=32x32_n=100000.npz',
-                                'name': 'synbols',
-                                'task': 'font'}}),
-                'font_plain':
-                    hu.cartesian_exp_group({
-                        'lr':[0.2, 0.1],
-                        'batch_size':[512],
-                        'model': "classification",
-                        'backbone': {"name": "resnet18",
-                                        "imagenet_pretraining": False},
-                        'max_epoch': 100,
-                        'episodic': False,
-                        'dataset': {'path':'/mnt/datasets/public/research/synbols/plain_n=1000000.npz',
-                                    'height': 32,
-                                    'width': 32,
-                                    'augmentation': False,
-                                    'name': 'synbols_npz',
-                                    'task': 'font'}}),
-                    'font_pretrained': hu.cartesian_exp_group({
-                        'lr':[0.01],
-                        'batch_size':[256],
-                        'model': "classification",
-                        'backbone': "resnet18",
-                        'max_epoch': 100,
-                        'episodic': False,
-                        'imagenet_pretraining': [True],
-                        'dataset': {'path':'/mnt/datasets/public/research/synbols/latin_res=32x32_n=100000.npz',
-                                    'name': 'synbols',
-                                    'task': 'font'}}),                
-                    'char_camouflage': hu.cartesian_exp_group({
-                        'lr':[0.2],
-                        'batch_size':[512],
-                        'model': "classification",
-                        'backbone': "resnet18",
-                        'max_epoch': 100,
-                        'episodic': False,
-                        'imagenet_pretraining': [False],
-                        'dataset': {'path': '/mnt/datasets/public/research/pau/synbols/camouflage_n=100000', 
-                                    'name': 'synbols_folder',
-                                    'task': 'char'}}),   
-                                                 
-                    'camouflage_mlp': hu.cartesian_exp_group({
-                        'lr':[0.2],
-                        'batch_size':[512],
-                        'model': "classification",
-                        'backbone': {"name": "mlp",
-                                     "depth": 3,
-                                     "hidden_size": 4096},
-                        'max_epoch': 100,
-                        'episodic': False,
-                        'imagenet_pretraining': [False],
-                        'dataset': {'path': '/mnt/datasets/public/research/synbols/camouflage_n=100000.npz', 
-                                    'name': 'synbols_npz',
-                                    'width': 32,
-                                    'height': 32,
-                                    'task': 'char'}}), 
-                    'camouflage_vgg': hu.cartesian_exp_group({
-                        'lr':[0.2],
-                        'batch_size':[128],
-                        'model': "classification",
-                        'backbone': {"name": "efficientnet",
-                                     "type": "efficientnet-b4",
-                                       "imagenet_pretraining": True},
-                        'max_epoch': 100,
-                        'episodic': False,
-                        'dataset': {'path': '/mnt/datasets/public/research/synbols/camouflage_n=100000.npz', 
-                                    'name': 'synbols_npz',
-                                    'width': 32,
-                                    'height': 32,
-                                    'augmentation': True}}),
-                    'default_warn': hu.cartesian_exp_group({
-                        'lr':[0.0001],
-                        'batch_size':[128],
-                        'model': "classification",
-                        'backbone': {"name": "conv4"},
-                        'max_epoch': 100,
-                        'episodic': False,
-                        'dataset': {'path': '/mnt/datasets/public/research/synbols/default_n=100000.npz', 
-                                    'name': 'synbols_npz',
-                                    'task': 'char',
-                                    'width': 32,
-                                    'height': 32,
-                                    'augmentation': True}}),
-                    'mnist': hu.cartesian_exp_group({
-                        'lr':[0.2],
-                        'batch_size':[256],
-                        'model': "classification",
-                        'backbone': {"name": "vgg16",
-                                     "type": "efficientnet-b4",
-                                       "imagenet_pretraining": True},
-                        'max_epoch': 100,
-                        'episodic': False,
-                        'dataset': {
-                                    'name': 'mnist',
-                                    'width': 28,
-                                    'height': 28,
-                                    'augmentation': True}}),
-                }
 baselines = []
 resnet18 = {"name": "resnet18", "imagenet_pretraining": False}
 resnet50 = {"name": "resnet50", "imagenet_pretraining": False}
@@ -135,14 +16,18 @@ for augmentation in [False]:
         "width": 32,
         "height": 32,
         "channels": 1,
-        "augmentation": augmentation
+        "augmentation": augmentation,
+        "ood": False,
+        "task": "char"
     }
     svhn = {
         "name": "svhn",
         "width": 32,
         "height": 32,
         "channels": 3,
-        "augmentation": augmentation
+        "augmentation": augmentation,
+        "ood": False,
+        "task": "char"
     }
     default_1M = {
         "name": "synbols_hdf5",
@@ -151,7 +36,8 @@ for augmentation in [False]:
         "channels": 3,
         "path": "/mnt/datasets/public/research/synbols/default_n=1000000_2020-Apr-09.h5py",
         "task": "char",
-        "augmentation": augmentation
+        "augmentation": augmentation,
+        "ood": False,
     }
     default = {
         "name": "synbols_hdf5",
@@ -160,6 +46,37 @@ for augmentation in [False]:
         "channels": 3,
         "path": "/mnt/datasets/public/research/synbols/default_n=100000_2020-Apr-09.h5py",
         "task": "char",
+        "augmentation": augmentation,
+        "ood": False,
+    }
+    default_ood = {
+        "name": "synbols_hdf5",
+        "width": 32,
+        "height": 32,
+        "channels": 3,
+        "path": "/mnt/datasets/public/research/synbols/default_n=100000_2020-Apr-16.h5py",
+        "task": "char",
+        "ood": True,
+        "augmentation": augmentation
+    }
+    default_font = {
+        "name": "synbols_hdf5",
+        "width": 32,
+        "height": 32,
+        "channels": 3,
+        "path": "/mnt/datasets/public/research/synbols/default_n=100000_2020-Apr-16.h5py",
+        "task": "font",
+        "ood": False,
+        "augmentation": augmentation
+    }
+    default_ood_1M = {
+        "name": "synbols_hdf5",
+        "width": 32,
+        "height": 32,
+        "channels": 3,
+        "path": "/mnt/datasets/public/research/synbols/default_n=1000000_2020-Apr-16.h5py",
+        "task": "char",
+        "ood": True,
         "augmentation": augmentation
     }
     camouflage = {
@@ -173,12 +90,13 @@ for augmentation in [False]:
     }
     tiny = {
         "name": "synbols_hdf5",
-        "width": 32,
-        "height": 32,
-        "channels": 3,
-        "path": "/mnt/datasets/public/research/synbols/camouflage_n=100000_2020-Apr-09.h5py",
+        "width": 8,
+        "height": 8,
+        "channels": 1,
+        "path": "/mnt/datasets/public/research/synbols/tiny_n=10000_2020-Apr-16.h5py",
         "task": "char",
-        "augmentation": augmentation
+        "augmentation": augmentation,
+        "ood": False,
     }
     plain = {
         "name": "synbols_npz",
@@ -187,13 +105,15 @@ for augmentation in [False]:
         "channels": 3,
         "path": "/mnt/datasets/public/research/synbols/plain_n=1000000.npz",
         "task": "char",
-        "augmentation": augmentation
+        "augmentation": augmentation,
+        "ood": False,
     }
-    for dataset in [svhn, mnist, plain, default, camouflage, default_1M]:
-        for lr in [0.001, 0.0001, 0.00001]:
+    for lr in [0.001, 0.0001, 0.00001]:
+        for dataset in []:#svhn, mnist, plain, default, camouflage, default_1M, default_font, default_ood, default_ood_1M]:
             for backbone in [resnet18, resnet50, mlp, warn, conv4]:
                     baselines += [{'lr':lr,
-                                'batch_size': 512,
+                                'batch_size': 256,
+                                'amp': 1,
                                 'model': "classification",
                                 'backbone': backbone,
                                 'max_epoch': 100,
@@ -201,10 +121,35 @@ for augmentation in [False]:
                                 'dataset': dataset}]
             baselines += [{'lr': lr,
                         'batch_size':256,
+                        'amp': 1,
                         'model': "classification",
                         'backbone': vgg16,
                         'max_epoch': 100,
                         'episodic': False,
                         'dataset': dataset}]
-                
+        for dataset in [tiny]: 
+            for backbone in [mlp, conv4]:
+                baselines += [{'lr': lr,
+                            'batch_size':512,
+                            'model': "classification",
+                            'backbone': backbone,
+                            'max_epoch': 100,
+                            'episodic': False,
+                            'dataset': dataset}]
+EXP_GROUPS = {}            
 EXP_GROUPS["baselines"] = baselines
+EXP_GROUPS["default_font"] = [{'lr': 0.001,
+                        'batch_size':256,
+                        'amp': 3,
+                        'model': "classification",
+                        'backbone': warn,
+                        'max_epoch': 100,
+                        'episodic': False,
+                        'dataset': default_font}]
+EXP_GROUPS["debug"] = [{'lr': 0.001,
+                        'batch_size':128,
+                        'model': "classification",
+                        'backbone': mlp,
+                        'max_epoch': 100,
+                        'episodic': False,
+                        'dataset': default_font}]
