@@ -169,6 +169,27 @@ class ActiveLearning(torch.nn.Module):
 
 
 class CalibratedActiveLearning(ActiveLearning):
+    def train_on_loader(self, loader: DataLoader):
+        self.wrapper.load_state_dict(self.initial_weights)
+        if self.active_dataset is None:
+            self.active_dataset = loader.dataset
+            if self.active_dataset_settings is not None:
+                self.active_dataset.load_state_dict(self.active_dataset_settings)
+            self.loop.dataset = self.active_dataset
+
+        hist, best_weight = self.wrapper.train_and_test_on_datasets(self.active_dataset,
+                                                                    self.optimizer,
+                                                                    self.batch_size,
+                                                                    epoch=self.learning_epoch,
+                                                                    use_cuda=True,
+                                                                    return_best_weights=True,
+                                                                    patience=5)
+
+        self.wrapper.load_state_dict(best_weight)
+
+        metrics = self.wrapper.metrics
+        return self._format_metrics(metrics, 'train')
+
     def val_on_loader(self, loader, savedir=None):
         val_data = loader.dataset
         self.calibrator.calibrate(self.calib_set, self.valid_set,
