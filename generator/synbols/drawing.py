@@ -34,13 +34,24 @@ def draw_symbol(ctxt, attributes):
     slant = cairo.FontSlant.OBLIQUE if attributes.is_slant else cairo.FontSlant.NORMAL
     char = attributes.char
 
-    ctxt.set_font_size(attributes.scale)
+    ctxt.set_font_size(1)
+    ctxt.select_font_face(attributes.font, cairo.FONT_SLANT_NORMAL, weight)
+
+    extent = ctxt.text_extents(char)
+    font_size = attributes.scale / max(extent.width, extent.height)  # normalize font size
+    ctxt.set_font_size(font_size)
+
+    # extent = ctxt.text_extents(char)
+    # print(max(extent.width, extent.height))
+    # print()
+    font_matrix = ctxt.get_font_matrix()
 
     # set slant to normal and perform it manually. There seems to be some issues with system italic
-    ctxt.select_font_face(attributes.font, cairo.FONT_SLANT_NORMAL, weight)
     if slant != cairo.FONT_SLANT_NORMAL:
-        mtx = cairo.Matrix(1, 0.2, 0., 1)
-        ctxt.set_font_matrix(ctxt.get_font_matrix().multiply(mtx))
+        font_matrix = font_matrix.multiply(cairo.Matrix(1, 0.2, 0., 1))
+
+    font_matrix.rotate(attributes.rotation)
+    ctxt.set_font_matrix(font_matrix)
 
     extent = ctxt.text_extents(char)
 
@@ -49,9 +60,6 @@ def draw_symbol(ctxt, attributes):
     ctxt.translate(-extent.x_bearing, -extent.y_bearing)
     ctxt.translate(translate[0], translate[1])
 
-    ctxt.rotate(attributes.rotation)
-
-    # ctxt.rectangle(0, 0, 0.1, 0.1)
     ctxt.show_text(char)
 
     ctxt.clip()
@@ -323,7 +331,7 @@ class Symbol:
         self.foreground = fg
         img = _surface_to_array(surface)
         mask = np.mean(img, axis=2, keepdims=True)
-        return (mask*255).astype(np.uint8)
+        return (mask * 255).astype(np.uint8)
 
     def attribute_dict(self):
         return dict(

@@ -5,6 +5,8 @@ from PIL import Image
 from os import path
 import logging
 import h5py
+from datetime import datetime
+from synbols.stratified_splits import make_default_splits
 
 
 def load_npz(file_path):
@@ -56,16 +58,30 @@ class H5Stack:
         self.i += 1
 
 
-def write_h5(file_path, generator):
+def add_splits(fd, split_dict, random_seed):
+    for split_name, split in split_dict.items():
+        ds = fd.create_dataset("split/%s" % split_name, data=split)
+        ds.attrs['timestamp'] = datetime.now().strftime("%Y-%b-%d_%H:%M:%S")
+        ds.attrs['seed'] = random_seed
+
+
+def write_h5(file_path, dataset_generator, split_function=None, ratios=(0.6, 0.2, 0.2), random_seed=42):
     with h5py.File(file_path, 'w', libver='latest') as fd:
         x_stack = H5Stack(fd, 'x')
         mask_stack = H5Stack(fd, 'mask')
         y_stack = H5Stack(fd, 'y')
 
-        for i, (x, mask, y) in enumerate(generator):
+        for i, (x, mask, y) in enumerate(dataset_generator):
             x_stack.add(x)
             mask_stack.add(mask)
             y_stack.add(json.dumps(y))
+
+        attr_list = [json.loads(attr) for attr in fd['y']]
+
+        if split_function is None:
+            split_function = make_default_splits
+
+        add_splits(fd, split_function(attr_list, ratios, random_seed), random_seed)
 
 
 def load_h5(file_path):

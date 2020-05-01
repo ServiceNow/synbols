@@ -28,9 +28,9 @@ def basic_image_sampler(alphabet=None, char=None, font=None, background=None, fo
             _font = _select(rng.choice(_alphabet.fonts), font, rng)
             _is_bold = _select(rng.choice([True, False]), is_bold, rng)
             _is_slant = _select(rng.choice([True, False]), is_slant, rng)
-            _rotation = _select(rng.randn() * 0.1, rotation, rng)
-            _scale = _select(np.exp(rng.randn() * 0.2), scale, rng)
-            _translation = _select(tuple(rng.rand(2) * 2 - 1), translation, rng)
+            _rotation = _select(rng.randn() * 0.3, rotation, rng)
+            _scale = _select(0.6 * np.exp(rng.randn() * 0.2), scale, rng)
+            _translation = _select(tuple(rng.rand(2) * 1.8 - 0.9), translation, rng)
             _foreground = _select(Gradient(), foreground, rng)
 
             symbols.append(Symbol(alphabet=_alphabet, char=_char, font=_font, foreground=_foreground,
@@ -85,53 +85,82 @@ def generate_char_grid(alphabet_name, n_char, n_font, rng=np.random, **kwargs):
     return dataset_generator(_attr_generator().__next__, n_char * n_font)
 
 
-def generate_plain_dataset(n_samples):
-    alphabet = ALPHABET_MAP['latin']
+def generate_plain_dataset(n_samples, alphabet='latin', **kwargs):
+    alphabet = ALPHABET_MAP[alphabet]
     attr_sampler = basic_image_sampler(
         alphabet=alphabet, background=NoPattern(), foreground=SolidColor((1, 1, 1,)), is_slant=False,
         is_bold=False, rotation=0, scale=1., translation=(0., 0.), inverse_color=False, pixel_noise_scale=0.)
     return dataset_generator(attr_sampler, n_samples)
 
 
-def generate_tiny_dataset(n_samples):
+def generate_tiny_dataset(n_samples, alphabet='latin', **kwarg):
     fg = SolidColor((1, 1, 1))
     bg = SolidColor((0, 0, 0))
-    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP['latin'], background=bg, foreground=fg, is_bold=False,
-                                       scale=1.3, resolution=(8, 8), is_gray=True)
+    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg, is_bold=False,
+                                       is_slant=False, scale=1, resolution=(8, 8), is_gray=True)
     return dataset_generator(attr_sampler, n_samples)
 
 
-def generate_default_dataset(n_samples):
-    alphabet = ALPHABET_MAP['latin']
-    attr_sampler = basic_image_sampler(alphabet=alphabet)
+def generate_default_dataset(n_samples, alphabet='latin', **kwarg):
+    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet])
     return dataset_generator(attr_sampler, n_samples)
 
 
-def generate_camouflage_dataset(n_samples):
-    alphabet = ALPHABET_MAP['latin']
-    fg = Camouflage(stroke_angle=0.5)
-    bg = Camouflage(stroke_angle=1.5)
-    attr_sampler = basic_image_sampler(
-        alphabet=alphabet, background=bg, foreground=fg, is_slant=False, is_bold=True, scale=1.3)
+def generate_camouflage_dataset(n_samples, alphabet='latin', **kwarg):
+    def attr_sampler():
+        angle = np.random.rand() * np.pi * 2
+        fg = Camouflage(stroke_angle=angle)
+        bg = Camouflage(stroke_angle=angle + 2 + np.random.randn() * 0.5)
+        scale = 0.7 * np.exp(np.random.randn() * 0.1)
+        return basic_image_sampler(
+            alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg, is_bold=True,
+            scale=scale)()
 
     return dataset_generator(attr_sampler, n_samples)
 
 
-def generate_segmentation_dataset(n_samples, resolution=(64, 64)):
-    alphabet = ALPHABET_MAP['latin']
-
+def generate_segmentation_dataset(n_samples, alphabet='latin', resolution=(64, 64), **kwarg):
     def scale(rng):
-        return np.exp(rng.randn() * 0.3) * 0.3
+        return np.exp(rng.randn() * 0.2) * 0.15
 
     def n_symbols(rng):
         return rng.choice(list(range(3, 10)))
 
-    attr_generator = basic_image_sampler(alphabet=alphabet, resolution=resolution, scale=scale, n_symbols=5)
+    attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], resolution=resolution, scale=scale,
+                                         is_bold=False, n_symbols=5)
     return dataset_generator(attr_generator, n_samples)
 
 
-def missing_symbol_dataset(n_samples):
-    alphabet = ALPHABET_MAP['latin']
+def all_chars(n_samples, **kwarg):
+    symbols_list = []
+    for alphabet in ALPHABET_MAP.values():
+        symbols = alphabet.symbols[:200]
+        logging.info("Using %d/%d symbols from alphabet %s", len(symbols), len(alphabet.symbols), alphabet.name)
+        symbols_list.extend(zip(symbols, [alphabet] * len(symbols)))
+
+    def attr_sampler():
+        char, alphabet = symbols_list[np.random.choice(len(symbols_list))]
+        return basic_image_sampler(alphabet=alphabet, char=char)()
+
+    return dataset_generator(attr_sampler, n_samples)
+
+
+def all_fonts(n_samples, **kwarg):
+    font_list = []
+    for alphabet in ALPHABET_MAP.values():
+        fonts = alphabet.fonts[:500]
+        logging.info("Using %d/%d fonts from alphabet %s", len(fonts), len(alphabet.fonts), alphabet.name)
+
+        font_list.extend(zip(fonts, [alphabet] * len(fonts)))
+
+    def attr_sampler():
+        font, alphabet = font_list[np.random.choice(len(font_list))]
+        return basic_image_sampler(alphabet=alphabet, font=font, is_bold=False, is_slant=False)()
+
+    return dataset_generator(attr_sampler, n_samples)
+
+
+def missing_symbol_dataset(n_samples, alphabet='latin', **kwarg):
     bg = MultiGradient(alpha=0.5, n_gradients=2, types=('linear', 'radial'))
 
     def tr(rng):
@@ -140,7 +169,15 @@ def missing_symbol_dataset(n_samples):
         else:
             return 10
 
-    attr_generator = basic_image_sampler(alphabet=alphabet, translation=tr, background=bg)
+    attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], translation=tr, background=bg)
+    return dataset_generator(attr_generator, n_samples)
+
+
+def less_variations(n_samples, alphabet='latin', **kwarg):
+    attr_generator = basic_image_sampler(
+        alphabet=ALPHABET_MAP[alphabet], is_bold=False, is_slant=False,
+        scale=lambda rng: 0.5 * np.exp(rng.randn() * 0.1),
+        rotation=lambda rng: rng.randn() * 0.1)
     return dataset_generator(attr_generator, n_samples)
 
 
@@ -151,4 +188,7 @@ DATASET_GENERATOR_MAP = {
     'segmentation': generate_segmentation_dataset,
     'missing-symbol': missing_symbol_dataset,
     'tiny': generate_tiny_dataset,
+    'all_fonts': all_fonts,
+    'all_chars': all_chars,
+    'less_variations': less_variations,
 }
