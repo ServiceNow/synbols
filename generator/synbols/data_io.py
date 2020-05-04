@@ -26,10 +26,11 @@ def write_npz(file_path, generator):
 
 
 class H5Stack:
-    def __init__(self, file, name, chunk_size=100, compression="gzip"):
+    def __init__(self, file, name, n_samples, chunk_size=10, compression="gzip"):
         self.dset = None
         self.file = file
         self.name = name
+        self.n_samples = n_samples
         self.chunk_size = chunk_size
         self.compression = compression
         self.i = 0
@@ -47,7 +48,7 @@ class H5Stack:
                 dtype = x.dtype
 
             self.dset = self.file.create_dataset(
-                self.name, (self.chunk_size,) + shape, dtype=dtype, maxshape=(None,) + shape,
+                self.name, (self.n_samples,) + shape, dtype=dtype, maxshape=(self.n_samples,) + shape,
                 chunks=(self.chunk_size,) + shape, compression=self.compression)
 
         dset = self.dset
@@ -58,6 +59,12 @@ class H5Stack:
         self.i += 1
 
 
+# chunk, compressed, no-n_samples: write speed = 8 ms / image (including creation of image)
+# no-chunk, compressed, n_samples: write speed = 113 ms / image (including creation of image)
+# chunk, compressed, n_samples: write speed = 8 ms / image
+
+# chunked(100), read speed = 0.15 ms / image
+
 def add_splits(fd, split_dict, random_seed):
     for split_name, split in split_dict.items():
         ds = fd.create_dataset("split/%s" % split_name, data=split)
@@ -65,16 +72,18 @@ def add_splits(fd, split_dict, random_seed):
         ds.attrs['seed'] = random_seed
 
 
-def write_h5(file_path, dataset_generator, split_function=None, ratios=(0.6, 0.2, 0.2), random_seed=42):
+def write_h5(file_path, dataset_generator, n_samples, split_function=None, ratios=(0.6, 0.2, 0.2), random_seed=42):
     with h5py.File(file_path, 'w', libver='latest') as fd:
-        x_stack = H5Stack(fd, 'x')
-        mask_stack = H5Stack(fd, 'mask')
-        y_stack = H5Stack(fd, 'y')
+        x_stack = H5Stack(fd, 'x', n_samples)
+        mask_stack = H5Stack(fd, 'mask', n_samples)
+        y_stack = H5Stack(fd, 'y', n_samples)
 
         for i, (x, mask, y) in enumerate(dataset_generator):
             x_stack.add(x)
             mask_stack.add(mask)
-            y_stack.add(json.dumps(y))
+            attr_str = json.dumps(y)
+            # logging.info("attr_str len = %d", len(attr_str))
+            y_stack.add(attr_str)
 
         attr_list = [json.loads(attr) for attr in fd['y']]
 
