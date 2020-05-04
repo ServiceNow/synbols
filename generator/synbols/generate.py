@@ -84,7 +84,7 @@ def generate_char_grid(alphabet_name, n_char, n_font, rng=np.random, **kwargs):
         fonts = rng.choice(alphabet.fonts, n_font, replace=False)
         for char in chars:
             for font in fonts:
-                yield basic_image_sampler(alphabet, char, font, rng=rng, **kwargs)()
+                yield basic_image_sampler(alphabet, char=char, font=font, rng=rng, **kwargs)()
 
     return dataset_generator(_attr_generator().__next__, n_char * n_font, flatten_mask)
 
@@ -123,15 +123,33 @@ def generate_camouflage_dataset(n_samples, alphabet='latin', **kwarg):
     return dataset_generator(attr_sampler, n_samples)
 
 
-def generate_segmentation_dataset(n_samples, alphabet='latin', resolution=(64, 64), **kwarg):
+def generate_segmentation_dataset(n_samples, alphabet='latin', resolution=(128, 128), **kwarg):
     def scale(rng):
-        return np.exp(rng.randn() * 0.2) * 0.15
+        return 0.1 * np.exp(rng.randn() * 0.4)
 
     def n_symbols(rng):
-        return rng.choice(list(range(3, 10)))
+        return rng.choice(list(range(3, 20)))
 
     attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], resolution=resolution, scale=scale,
                                          is_bold=False, n_symbols=n_symbols)
+    return dataset_generator(attr_generator, n_samples, flatten_mask)
+
+
+def generate_couting_dataset(n_samples, alphabet='latin', resolution=(128, 128), **kwarg):
+    def scale(rng):
+        return 0.1 * np.exp(rng.randn() * 0.4)
+
+    def n_symbols(rng):
+        return rng.choice(list(range(3, 20)))
+
+    def char_sampler(rng):
+        if rng.rand() < 0.3:
+            return rng.choice(ALPHABET_MAP[alphabet].symbols)
+        else:
+            return 'k'
+
+    attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], char=char_sampler, resolution=resolution,
+                                         scale=scale, is_bold=False, n_symbols=n_symbols)
     return dataset_generator(attr_generator, n_samples, flatten_mask)
 
 
@@ -190,6 +208,7 @@ DATASET_GENERATOR_MAP = {
     'default': generate_default_dataset,
     'camouflage': generate_camouflage_dataset,
     'segmentation': generate_segmentation_dataset,
+    'counting': generate_couting_dataset,
     'missing-symbol': missing_symbol_dataset,
     'tiny': generate_tiny_dataset,
     'all_fonts': all_fonts,
