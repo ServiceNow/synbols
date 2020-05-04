@@ -105,6 +105,12 @@ def generate_tiny_dataset(n_samples, alphabet='latin', **kwarg):
     return dataset_generator(attr_sampler, n_samples)
 
 
+def generate_large_translation(n_samples, alphabet='latin', **kwarg):
+    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], scale=0.5,
+                                       translation=lambda rng: rng.rand(2) * 4 - 2)
+    return dataset_generator(attr_sampler, n_samples)
+
+
 def generate_default_dataset(n_samples, alphabet='latin', **kwarg):
     attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet])
     return dataset_generator(attr_sampler, n_samples)
@@ -135,7 +141,7 @@ def generate_segmentation_dataset(n_samples, alphabet='latin', resolution=(128, 
     return dataset_generator(attr_generator, n_samples, flatten_mask)
 
 
-def generate_couting_dataset(n_samples, alphabet='latin', resolution=(128, 128), **kwarg):
+def generate_counting_dataset(n_samples, alphabet='latin', resolution=(128, 128), **kwarg):
     def scale(rng):
         return 0.1 * np.exp(rng.randn() * 0.4)
 
@@ -208,10 +214,11 @@ DATASET_GENERATOR_MAP = {
     'default': generate_default_dataset,
     'camouflage': generate_camouflage_dataset,
     'segmentation': generate_segmentation_dataset,
-    'counting': generate_couting_dataset,
+    'counting': generate_counting_dataset,
     'missing-symbol': missing_symbol_dataset,
+    'large-translation': generate_large_translation,
     'tiny': generate_tiny_dataset,
-    'all_fonts': all_fonts,
-    'all_chars': all_chars,
-    'less_variations': less_variations,
+    'all-fonts': all_fonts,
+    'all-chars': all_chars,
+    'less-variations': less_variations,
 }
