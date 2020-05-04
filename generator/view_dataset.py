@@ -3,7 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict, Counter
-from synbols.data_io import load_npz, load_h5
+from synbols.data_io import load_h5, load_attributes_h5
 import logging
 from synbols.utils import flatten_attr
 import sys
@@ -100,8 +100,19 @@ if __name__ == "__main__":
     else:
         file_path = '../segmentation_n=100000_2020-Apr-30.h5py'
 
-    print('read dataset')
+    print('load attributes')
+    import time as t
+
+    t0 = t.time()
+    attr_list, split = load_attributes_h5(file_path)
+    t1 = t.time()
+    print("took %.2fs" % (t1 - t0))
+
+    print('load dataset')
+
     x, mask, attr_list, splits = load_h5(file_path)
+    t2 = t.time()
+    print("took %.3fs" % (t2 - t1))
     print("x.shape:", x.shape)
 
     attr_list = [flatten_attr(attr) for attr in attr_list]
