@@ -107,7 +107,7 @@ def generate_tiny_dataset(n_samples, alphabet='latin', **kwarg):
 
 def generate_large_translation(n_samples, alphabet='latin', **kwarg):
     attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], scale=0.5,
-                                       translation=lambda rng: rng.rand(2) * 4 - 2)
+                                       translation=lambda rng: tuple(rng.rand(2) * 4 - 2))
     return dataset_generator(attr_sampler, n_samples)
 
 
