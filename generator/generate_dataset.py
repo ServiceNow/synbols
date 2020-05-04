@@ -13,6 +13,8 @@ parser.add_argument('--dataset', help='name of the predefined dataset', default=
 parser.add_argument('--n_samples', help='number of samples to generate', type=int, default=10000)
 parser.add_argument('--no_docker', help="Don't run in docker", action='store_true')
 parser.add_argument('--alphabet', help='of the alphabet to use', default='default')
+parser.add_argument('--resolution', help="""Image resolution e.g.: "32x32". Defaults to the dataset's default.""",
+                    default='default')
 
 
 def _docker_run(cmd):
@@ -48,4 +50,4 @@ if __name__ == "__main__":
 
         ds_generator = DATASET_GENERATOR_MAP[args.dataset](args.n_samples, alphabet=alphabet)
 
-        write_h5(file_path + ".h5py", ds_generator)
+        write_h5(file_path + ".h5py", ds_generator, args.n_samples)
