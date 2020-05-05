@@ -3,7 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict, Counter
-from synbols.data_io import load_npz, load_h5
+from synbols.data_io import load_h5, load_attributes_h5, load_minibatch_h5
 import logging
 from synbols.utils import flatten_attr
 import sys
@@ -98,9 +98,11 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         file_path = sys.argv[1]
     else:
-        file_path = '../segmentation_n=100000_2020-Apr-30.h5py'
+        file_path = '../partly-occluded_n=10000_2020-May-05.h5py'
 
-    print('read dataset')
+
+    print('load dataset')
+
     x, mask, attr_list, splits = load_h5(file_path)
     print("x.shape:", x.shape)
 
@@ -114,13 +116,6 @@ if __name__ == "__main__":
         view_split(split, attr_list, ['char', 'font', 'scale', 'rotation'],
                    split_name)
 
-    # print("plotting images of the dataset")
-    # for i, mask in enumerate(splits['random'].T):
-    #     idx = np.arange(len(mask))[mask]
-    #     print(i, len(idx))
-    #     sub_x = x[idx]
-    #     sub_attr_list = np.array(attr_list)[idx]
-    #     # plt.figure("Random split %d" % i)
     plot_dataset(x, attr_list, v_axis=None, h_axis='font')
     # plt.savefig("dataset.png")
     plt.show()

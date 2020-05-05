@@ -46,17 +46,51 @@ def basic_image_sampler(alphabet=None, char=None, font=None, background=None, fo
     return sampler
 
 
-def attribute_generator(sampler, n_samples):
-    for i in range(n_samples):
-        yield sampler()
+def flatten_mask(masks):
+    flat_mask = np.zeros(masks.shape[:-1])
+
+    for i in range(masks.shape[-1]):
+        flat_mask[(masks[:, :, i] > 2)] = i + 1
+    return flat_mask
 
 
-def dataset_generator(attr_sampler, n_samples):
+def add_occlusion(attr_sampler, occlusion_prob=1., occlusion_char=None, rotation=None, scale=None, translation=None,
+                  foreground=None, rng=np.random):
+    occlusion_chars = ['■', '▲', '▼', '●']
+
+    def sampler():
+        image = attr_sampler()
+
+        if rng.rand() < occlusion_prob:
+            _scale = _select(0.6 * np.exp(rng.randn() * 0.1), scale, rng)
+            _translation = _select(tuple(rng.rand(2) * 6 - 3), translation, rng)
+        else:
+            # A bit hacky, but this allows the list mask to have the same shape and stack correctly in the h5py
+            _scale = 0.1
+            _translation = 10
+
+        _occlusion_char = _select(rng.choice(occlusion_chars), occlusion_char, rng)
+        _rotation = _select(rng.rand() * np.pi * 2, rotation, rng)
+        _foreground = _select(Gradient(), foreground, rng)
+
+        occlusion = Symbol(ALPHABET_MAP['latin'], _occlusion_char, font='Arial', foreground=_foreground,
+                           rotation=_rotation, scale=_scale, translation=_translation, is_slant=False,
+                           is_bold=False)
+        image.add_symbol(occlusion)
+
+        return image
+
+    return sampler
+
+
+def dataset_generator(attr_sampler, n_samples, mask_aggregator=None):
     """High level function generating the dataset from an attribute generator."""
     t0 = t.time()
     for i in range(n_samples):
         attributes = attr_sampler()
         mask = attributes.make_mask()
+        if mask_aggregator is not None:
+            mask = mask_aggregator(mask)
         x = attributes.make_image()
         y = attributes.attribute_dict()
 
@@ -77,12 +111,11 @@ def generate_char_grid(alphabet_name, n_char, n_font, rng=np.random, **kwargs):
 
         chars = rng.choice(alphabet.symbols, n_char, replace=False)
         fonts = rng.choice(alphabet.fonts, n_font, replace=False)
-
         for char in chars:
             for font in fonts:
-                yield basic_image_sampler(alphabet, char, font, rng=rng, **kwargs)()
+                yield basic_image_sampler(alphabet, char=char, font=font, rng=rng, **kwargs)()
 
-    return dataset_generator(_attr_generator().__next__, n_char * n_font)
+    return dataset_generator(_attr_generator().__next__, n_char * n_font, flatten_mask)
 
 
 def generate_plain_dataset(n_samples, alphabet='latin', **kwargs):
@@ -119,17 +152,41 @@ def generate_camouflage_dataset(n_samples, alphabet='latin', **kwarg):
     return dataset_generator(attr_sampler, n_samples)
 
 
-def generate_segmentation_dataset(n_samples, alphabet='latin', resolution=(64, 64), **kwarg):
+# for segmentation, detection, counting
+# -------------------------------------
+
+def generate_segmentation_dataset(n_samples, alphabet='latin', resolution=(128, 128), **kwarg):
     def scale(rng):
-        return np.exp(rng.randn() * 0.2) * 0.15
+        return 0.1 * np.exp(rng.randn() * 0.4)
 
     def n_symbols(rng):
-        return rng.choice(list(range(3, 10)))
+        return rng.choice(list(range(3, 20)))
 
     attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], resolution=resolution, scale=scale,
-                                         is_bold=False, n_symbols=5)
-    return dataset_generator(attr_generator, n_samples)
+                                         is_bold=False, n_symbols=n_symbols)
+    return dataset_generator(attr_generator, n_samples, flatten_mask)
 
+
+def generate_counting_dataset(n_samples, alphabet='latin', resolution=(128, 128), **kwarg):
+    def scale(rng):
+        return 0.1 * np.exp(rng.randn() * 0.4)
+
+    def n_symbols(rng):
+        return rng.choice(list(range(3, 20)))
+
+    def char_sampler(rng):
+        if rng.rand() < 0.3:
+            return rng.choice(ALPHABET_MAP[alphabet].symbols)
+        else:
+            return 'k'
+
+    attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], char=char_sampler, resolution=resolution,
+                                         scale=scale, is_bold=False, n_symbols=n_symbols)
+    return dataset_generator(attr_generator, n_samples, flatten_mask)
+
+
+# for few-shot learning
+# ---------------------
 
 def all_chars(n_samples, **kwarg):
     symbols_list = []
@@ -160,6 +217,15 @@ def all_fonts(n_samples, **kwarg):
     return dataset_generator(attr_sampler, n_samples)
 
 
+# for active learning
+# -------------------
+
+def generate_large_translation(n_samples, alphabet='latin', **kwarg):
+    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], scale=0.5,
+                                       translation=lambda rng: tuple(rng.rand(2) * 4 - 2))
+    return dataset_generator(attr_sampler, n_samples)
+
+
 def missing_symbol_dataset(n_samples, alphabet='latin', **kwarg):
     bg = MultiGradient(alpha=0.5, n_gradients=2, types=('linear', 'radial'))
 
@@ -172,6 +238,14 @@ def missing_symbol_dataset(n_samples, alphabet='latin', **kwarg):
     attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], translation=tr, background=bg)
     return dataset_generator(attr_generator, n_samples)
 
+
+def generate_partly_occluded(n_samples, alphabet='latin', **kwarg):
+    attr_sampler = add_occlusion(basic_image_sampler(alphabet=ALPHABET_MAP[alphabet]), occlusion_prob=0.2)
+    return dataset_generator(attr_sampler, n_samples)
+
+
+# for font classification
+# -----------------------
 
 def less_variations(n_samples, alphabet='latin', **kwarg):
     attr_generator = basic_image_sampler(
@@ -186,9 +260,12 @@ DATASET_GENERATOR_MAP = {
     'default': generate_default_dataset,
     'camouflage': generate_camouflage_dataset,
     'segmentation': generate_segmentation_dataset,
+    'counting': generate_counting_dataset,
     'missing-symbol': missing_symbol_dataset,
+    'partly-occluded': generate_partly_occluded,
+    'large-translation': generate_large_translation,
     'tiny': generate_tiny_dataset,
-    'all_fonts': all_fonts,
-    'all_chars': all_chars,
-    'less_variations': less_variations,
+    'all-fonts': all_fonts,
+    'all-chars': all_chars,
+    'less-variations': less_variations,
 }
