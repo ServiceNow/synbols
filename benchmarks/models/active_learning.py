@@ -50,6 +50,36 @@ class BetaBALD(BALD):
         bald_acq = entropy_expected_p - self.beta * expected_entropy
         return bald_acq
 
+# designed for vgg only?
+class SelfSupervisedModel(nn.Module):
+    def __init__(self, model, num_cls):
+        super().__init__()
+        self.model = model
+        num_ftrs = self.model.classifier[-1].in_features
+        self.fc = torch.nn.Linear(num_ftrs, num_cls)
+        self.rotatefc = torch.nn.Linear(num_ftrs, 4)
+        self.model.classifier = model.classifier[:-1]
+
+    def forward(self, x):
+        x = self.model(x)
+        if self.training:
+            return [self.fc(x), self.rotatefc(x)]
+        else:
+            return self.fc(x)
+
+class CustomCriterion(nn.Module):
+    def __init__(self, criterion):
+        super().__init__()
+        self.criterion = criterion
+
+    def __call__(self, y, target):
+        if isinstance(target, list):
+            return self.criterion(y[0], target[0]) + self.criterion(y[1], target[1])
+        else:
+            return self.criterion(y, target)
+
+
+
 
 class ActiveLearning(torch.nn.Module):
     def __init__(self, exp_dict):
@@ -179,6 +209,7 @@ class CalibratedActiveLearning(ActiveLearning):
             self.loop.dataset = self.active_dataset
 
         hist, best_weight = self.wrapper.train_and_test_on_datasets(self.active_dataset,
+                                                                    self.valid_set,
                                                                     self.optimizer,
                                                                     self.batch_size,
                                                                     epoch=self.learning_epoch,
@@ -282,5 +313,66 @@ class MixUpActiveLearning(ActiveLearning):
 
 
 class EmbeddingPropActiveLearning(ActiveLearning):
+
     # PAU YOUR CODE HERE
     pass
+
+
+
+class CSGHMCActiveLearning(ActiveLearning):
+    pass
+
+
+class SelfSupervisedActiveLearning(ActiveLearning):
+    def __init__(self, exp_dict):
+        super().__init__(exp_dict=exp_dict)
+        self.backbone = models.vgg16(pretrained=exp_dict["imagenet_pretraining"], progress=True)
+        self.backbone = SelfSupervisedModel(self.backbone, exp_dict["num_classes"])
+
+        # could it work like that
+        self.backbone = patch_module(self.backbone)
+        self.initial_weights = deepcopy(self.backbone.state_dict())
+        self.backbone.cuda()
+
+        self.criterion = CustomCriterion(criterion=CrossEntropyLoss())
+
+        # training parameters
+        self.batch_size = exp_dict['batch_size']
+        self.learning_epoch = exp_dict['learning_epoch']
+        self.optimizer = torch.optim.SGD(self.backbone.parameters(),
+                                         lr=exp_dict['lr'],
+                                         weight_decay=5e-4,
+                                         momentum=0.9,
+                                         nesterov=True)
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer,
+                                                                    mode='min',
+                                                                    factor=0.1,
+                                                                    patience=10,
+                                                                    verbose=True)
+
+        shuffle_prop = exp_dict.get('shuffle_prop', 0.0)
+        if exp_dict['heuristic'] == 'betabald':
+            max_sample = -1
+            self.heuristic = BetaBALD(beta=exp_dict['beta'], shuffle_prop=shuffle_prop)
+        elif exp_dict['heuristic'] == 'batch_bald':
+            max_sample = 10000
+            self.heuristic = BatchBALD(num_samples=exp_dict['query_size'],
+                                       shuffle_prop=shuffle_prop)
+        else:
+            max_sample = -1
+            self.heuristic = get_heuristic(exp_dict['heuristic'], shuffle_prop=shuffle_prop)
+        self.wrapper = ModelWrapper(self.backbone, criterion=self.criterion)
+        self.wrapper.add_metric('cls_report', lambda: ClassificationReport(exp_dict["num_classes"]))
+        self.loop = ActiveLearningLoop(None, self.wrapper.predict_on_dataset,
+                                       heuristic=self.heuristic,
+                                       ndata_to_label=exp_dict['query_size'],
+                                       batch_size=1,
+                                       iterations=exp_dict['iterations'],
+                                       use_cuda=True,
+                                       max_sample=max_sample)
+
+        self.valid_set = get_dataset('val', exp_dict['dataset'])
+
+        self.active_dataset = None
+        self.active_dataset_settings = None
+

@@ -4,12 +4,25 @@ from typing import Dict
 import numpy as np
 
 from datasets.synbols import Synbols
+from torchvision.transforms import functional
 
 SLANT_MAP = {
     'italic',
     'normal',
     'oblique'
 }
+
+class Transfomer:
+    def __init__(self, transform):
+
+        self.transform = transform
+
+    def __call__(self, img, label):
+        rotation = np.random.choice(4, 1)
+        img = functional.rotate(functional.to_pil_image(img), rotation * 90)
+        img = functional.to_tensor(img)
+        img = self.transform(img)
+        return img, (label, rotation)
 
 
 class Attributes:
@@ -50,13 +63,24 @@ class Attributes:
 
 class AleatoricSynbols(Synbols):
     def __init__(self, uncertainty_config: Dict, path, split, key='font', transform=None, p=0.5,
-                 seed=None, n_classes=None):
+                 seed=None, n_classes=None, pixel_sigma=0, pixel_p=0, self_supervised=False):
+
         super().__init__(path=path, split=split, key=key, transform=transform)
         self.uncertainty_config = uncertainty_config
         self.p = p
         self.seed = seed
         self.noise_classes = n_classes
         self.rng = np.random.RandomState(self.seed)
+
+        if self.pixel_p > 0 and split == 'train':
+            self.transform = self._add_pixel_noise()
+        if self.p > 0 and len(uncertainty_config) == 0:
+            self.y = self._shuffle_label()
+        elif self.p > 0:
+            self._create_aleatoric_noise()
+        self.self_supervised = self_supervised and split=='train'
+        self.transformer = Transfomer(transform=transform)
+
 
     def get_splits(self, source):
         if self.split == 'train':
@@ -104,7 +128,10 @@ class AleatoricSynbols(Synbols):
         self.y[y_flag] = targets
 
     def __getitem__(self, item):
-        return self.transform(self.x[item]), self.y[item]
+        if self.self_supervised:
+            return self.transformer(self.x[item], self.y[item])
+        else:
+            return self.transform(self.x[item]), self.y[item]
 
     def __len__(self):
         return len(self.x)
@@ -126,9 +153,19 @@ class AleatoricSynbols(Synbols):
 
 
 if __name__ == '__main__':
+
+    from torchvision.transforms import ToTensor
     synbols = AleatoricSynbols(uncertainty_config={'is_bold': {}},
-                               p=0.05,
+                               p=0.0,
                                key='char',
-                               n_classes=5,
                                path='/mnt/datasets/public/research/synbols/old/latin_res=32x32_n=100000.npz',
-                               split='train')
+                               split='train',
+                               self_supervised=True,
+                               transform=ToTensor())
+
+    from torch.utils.data import DataLoader
+
+    loader = DataLoader(synbols, batch_size=2)
+    for img, label in loader:
+        print(label)
+        break
