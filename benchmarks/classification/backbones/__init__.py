@@ -81,7 +81,7 @@ def get_backbone(exp_dict):
             backbone._modules['conv1'] = torch.nn.Conv2d(exp_dict["dataset"]["channels"], 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         return backbone
     elif backbone_name == "warn":
-        backbone = WideResNetAttention(28, 4, nclasses, 0.1, 3, 4, reg_w=0.001,
+        backbone = WideResNetAttention(28, 10, nclasses, 0.1, 3, 4, reg_w=0.001,
                  attention_type="softmax")
         if exp_dict["dataset"]["channels"] != 3:
             backbone._modules['conv0'] = torch.nn.Conv2d(exp_dict["dataset"]["channels"], 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)

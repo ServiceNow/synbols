@@ -2,7 +2,7 @@ import numpy as np
 
 from synbols.data_io import pack_dataset
 from synbols.drawing import Camouflage, color_sampler, Gradient, MultiGradient, NoPattern, SolidColor
-from synbols.generate import generate_char_grid, dataset_generator, basic_image_sampler, add_occlusion
+from synbols.generate import generate_char_grid
 from synbols.fonts import ALPHABET_MAP
 
 from view_dataset import plot_dataset
@@ -19,14 +19,17 @@ if __name__ == "__main__":
     fg = Gradient(types=('radial',), random_color=color_sampler(brightness_range=(0.1, 0.9)))
     # fg = NoPattern()
 
-    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP['latin'])
-    attr_sampler = add_occlusion(attr_sampler, occlusion_prob=0.2)
-    x, mask, y = pack_dataset(dataset_generator(attr_sampler, 1000))
-    # x, mask, y = pack_dataset(generate_char_grid('latin', n_font=15, n_char=20, **kwargs))
-    print(mask.shape, x.shape)
-    mask = mask.astype(np.float) / 256
+    kwargs = dict(foreground=fg, background=bg, resolution=(64, 64), n_symbols=3,
+                  scale=lambda rng: 0.5 * np.exp(rng.randn() * 0.2),
+                  is_bold=False)
 
-    plot_dataset(x, y, name='latin', h_axis='char', v_axis=None, rng=np.random.RandomState(42))
-    # plot_dataset(mask, y, name='mask', h_axis='char', v_axis='font', rng=np.random.RandomState(42))
+    # kwargs = dict()
+
+    x, mask, y = pack_dataset(generate_char_grid('latin', n_font=15, n_char=20, **kwargs))
+    print(mask.shape, x.shape)
+    mask = mask.astype(np.float)/256
+
+    plot_dataset(x, y, name='latin', h_axis='char', v_axis='font', rng=np.random.RandomState(42))
+    plot_dataset(mask, y, name='mask', h_axis='char', v_axis='font', rng=np.random.RandomState(42))
 
     plt.show()

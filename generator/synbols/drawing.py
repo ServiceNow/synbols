@@ -279,9 +279,6 @@ class Image:
 
         return data
 
-    def add_symbol(self, symbol):
-        self.symbols.append(symbol)
-
 
 class Symbol:
     """Class containing attributes describing the image
@@ -337,7 +334,7 @@ class Symbol:
 
     def attribute_dict(self):
         return dict(
-            alphabet=self.alphabet.name,
+            # alphabet=self.alphabet.name,
             char=self.char,
             font=self.font,
             is_bold=str(self.is_bold),
