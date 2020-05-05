@@ -46,7 +46,7 @@ def get_dataset(split, exp_dict):
                       tt.Normalize([0.5] * dataset_dict["channels"], 
                                     [0.5] * dataset_dict["channels"])]
         transform = tt.Compose(transform)
-        ret = SynbolsHDF5(dataset_dict["path"], split, dataset_dict["task"], transform, ood=dataset_dict["ood"])
+        ret = SynbolsHDF5(dataset_dict["path"], split, dataset_dict["task"], transform, mask=dataset_dict["mask"])
         exp_dict["num_classes"] = len(ret.labelset) # FIXME: this is hacky
         return ret
     elif dataset_dict["name"] == "mnist":
@@ -216,10 +216,11 @@ class SynbolsNpz(Dataset):
         return len(self.x)
 
 class SynbolsHDF5(SynbolsNpz):
-    def __init__(self, path, split, key='font', transform=None, train_fraction=0.6, val_fraction=0.4, ood=False):
+    def __init__(self, path, split, key='font', transform=None, train_fraction=0.6, val_fraction=0.4, mask=None):
         self.path = path
         self.split = split
         self.task = key
+        self.mask = mask
         self.train_fraction = train_fraction
         self.val_fraction = val_fraction
         self.test_fraction = 1 - train_fraction - val_fraction
@@ -231,12 +232,9 @@ class SynbolsHDF5(SynbolsNpz):
         with h5py.File(path, 'r') as data:
             self.x = data['x'][...]
             self.y = data['y'][...]
-            mask = None
             if "split" in data:
-                if ood:
-                    mask = data["split"]["stratified_%s" %key][...]
-                else:
-                    mask = data["split"]["random"][...]
+                if mask is not None:
+                    mask = data["split"][mask][...]
             self.make_splits(mask=mask, json=True)
 
         print("Done.")
