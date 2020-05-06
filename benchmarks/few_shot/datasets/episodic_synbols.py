@@ -21,8 +21,9 @@ class EpisodicSynbols(EpisodicDataset):
             Exception('not implemented')
         self.x = dataset.x
         self.name = "synbols"
+        #TODO: Make the dataset the same size
         super().__init__(dataset.y, sampler, size, dataset.transform)
-
+        # temp
     def sample_images(self, indices):
         return [self.transforms(self.x[i]) for i in indices]
 
