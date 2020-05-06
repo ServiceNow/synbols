@@ -282,6 +282,6 @@ class SynbolsHDF5(SynbolsNpz):
                     _partition_map = get_stratified(self.y, fn, tomap=False)
                     partition_map = stratified_splits.compositional_split(_partition_map, partition_map)
             mask = partition_map
-        return mask
+        return mask==1
 if __name__ == '__main__':
     synbols = SynbolsHDF5('/mnt/datasets/public/research/synbols/camouflage_n=100000_2020-Apr-09.h5py', 'val')
