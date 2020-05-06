@@ -49,6 +49,36 @@ for seed in [3, 42, 123]:
         "augmentation": augmentation,
         "mask": "random",
     }
+    default_old = {
+        "name": "synbols_hdf5",
+        "width": 32,
+        "height": 32,
+        "channels": 3,
+        "path": "/mnt/datasets/public/research/synbols/old/default_n=100000_2020-Apr-16.h5py",
+        "task": "char",
+        "augmentation": augmentation,
+        "mask": "random",
+    }
+    stratified_scale = {
+        "name": "synbols_hdf5",
+        "width": 32,
+        "height": 32,
+        "channels": 3,
+        "path": "/mnt/datasets/public/research/synbols/default_n=100000_2020-Apr-30.h5py",
+        "task": "char",
+        "augmentation": augmentation,
+        "mask": "stratified_scale",
+    }
+    stratified_rotation = {
+        "name": "synbols_hdf5",
+        "width": 32,
+        "height": 32,
+        "channels": 3,
+        "path": "/mnt/datasets/public/research/synbols/default_n=100000_2020-Apr-30.h5py",
+        "task": "char",
+        "augmentation": augmentation,
+        "mask": "compositional_char_rotation",
+    }
     compositional_char_font = {
         "name": "synbols_hdf5",
         "width": 32,
@@ -173,10 +203,10 @@ EXP_GROUPS["default_font"] = [{'lr': 0.001,
                         'amp': 1,
                         'min_lr_decay': 1e-3,
                         'model': "classification",
-                        'backbone': warn,
+                        'backbone': resnet18,
                         'max_epoch': 100,
                         'episodic': False,
-                        'dataset': compositional_char_font}]
+                        'dataset': default}]
 EXP_GROUPS["debug"] = [{'lr': 0.001,
                         'batch_size':128,
                         'model': "classification",

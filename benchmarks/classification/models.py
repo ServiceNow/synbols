@@ -28,7 +28,7 @@ class Classification(torch.nn.Module):
         self.min_lr = exp_dict["lr"] * exp_dict["min_lr_decay"]
         self.optimizer = torch.optim.Adam(self.backbone.parameters(),
                                             lr=exp_dict['lr'],
-                                            weight_decay=5e-4)
+                                            weight_decay=1e-4)
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer,
                                                                     mode='min',
                                                                     factor=0.1,
