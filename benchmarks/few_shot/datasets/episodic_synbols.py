@@ -12,11 +12,11 @@ except:
     from classification import datasets as cls_dataset
 
 class EpisodicSynbols(EpisodicDataset):
-    def __init__(self, path, split, sampler, size, key='font', transform=None):
+    def __init__(self, path, split, sampler, size, key='font', transform=None, mask=None):
         if 'npz' in path:
             dataset = SynbolsNpz(path, split, key, transform)
         elif 'h5py' in path:
-            dataset = cls_dataset.SynbolsHDF5(path, split, key, transform)
+            dataset = cls_dataset.SynbolsHDF5(path, split, key, transform, mask=mask)
         else:
             Exception('not implemented')
         self.x = dataset.x

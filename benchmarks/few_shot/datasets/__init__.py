@@ -27,6 +27,7 @@ def get_dataset(split, exp_dict):
                                 sampler=sampler, 
                                 size=dataset_dict["%s_iters" %split], 
                                 key=dataset_dict["task"], 
-                                transform=transform)
+                                transform=transform,
+                                mask=exp_dict['dataset']['mask'])
     else:
         raise ValueError("Dataset %s not found" % dataset_dict["name"])

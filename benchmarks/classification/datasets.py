@@ -194,7 +194,6 @@ class SynbolsNpz(Dataset):
         else:
             indices = np.arange(len(self.x)) # 0....nsamples
             indices = indices[mask[:, ["train", "val", "test"].index(self.split)]]
-            
         print("Converting json strings to labels...")
         if json:
             with multiprocessing.Pool(8) as pool:
@@ -235,13 +234,7 @@ class SynbolsHDF5(SynbolsNpz):
             self.y = data['y'][...]
             if "split" in data:
                 if mask is not None:
-                    if mask=="stratified_char_font":
-                        mask1 = data['split']['stratified_char'][...] 
-                        mask2 = data['split']['stratified_font'][...]
-                        mask = mask1 * mask2
-                    else:
-                        mask = data["split"][mask][...]
-            
+                    mask = data["split"][mask][...]
             self.make_splits(mask=mask, json=True)
 
         print("Done.")
