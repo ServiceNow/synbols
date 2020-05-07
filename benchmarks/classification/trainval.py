@@ -13,7 +13,9 @@ from exp_configs import EXP_GROUPS
 from models import get_model
 import pandas as pd
 import pprint
-
+import torch
+import numpy as np
+torch.backends.cudnn.benchmark = True
 
 def trainval(exp_dict, savedir_base, reset=False):
     # bookkeeping
@@ -22,6 +24,9 @@ def trainval(exp_dict, savedir_base, reset=False):
     # get experiment directory
     exp_id = hu.hash_dict(exp_dict)
     savedir = os.path.join(savedir_base, exp_id)
+
+    np.random.seed(exp_dict["seed"])
+    torch.manual_seed(exp_dict["seed"])
 
     if reset:
         # delete and backup experiment
@@ -108,6 +113,9 @@ def trainval(exp_dict, savedir_base, reset=False):
         hu.save_pkl(score_list_path, score_list)
         print("Checkpoint Saved: %s" % savedir)
 
+        if model.is_end():
+            print("Early stopping")
+            break
     print('experiment completed')
 
 if __name__ == "__main__":
@@ -144,10 +152,10 @@ if __name__ == "__main__":
         # launch jobs
         # TODO: define experiment-wise
         from haven import haven_jobs as hjb
-        run_command = ('python trainval.py -ei <exp_id> -sb %s -nw 1' %  (args.savedir_base))
+        run_command = ('python trainval.py -ei <exp_id> -sb %s -nw %d' %  (args.savedir_base, args.num_workers))
         job_config = {
             'volume': '/mnt:/mnt',
-            'image': 'images.borgy.elementai.net/issam/main',
+            'image': 'images.borgy.elementai.net/pau/pytorch:1.3.1py3-cuda10-cudnn7',
             'gpu': '1',
             'mem': '16',
             'bid': '0',

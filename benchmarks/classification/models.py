@@ -25,17 +25,24 @@ class Classification(torch.nn.Module):
         self.exp_dict = exp_dict
         self.backbone = get_backbone(exp_dict)
         self.backbone.cuda()
-        
+        self.min_lr = exp_dict["lr"] * exp_dict["min_lr_decay"]
         self.optimizer = torch.optim.Adam(self.backbone.parameters(),
                                             lr=exp_dict['lr'],
-                                            weight_decay=5e-4)
+                                            weight_decay=1e-4)
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer,
                                                                     mode='min',
                                                                     factor=0.1,
                                                                     patience=10,
+                                                                    min_lr=self.min_lr,
                                                                     verbose=True)
         if self.exp_dict["amp"] > 0:
             self.backbone, self.optimizer = amp.initialize(self.backbone, self.optimizer, opt_level="O%d" %self.exp_dict["amp"])
+
+    def is_end(self):
+        for param_group in self.optimizer.param_groups:
+            lr = param_group['lr']
+        return lr <= self.min_lr
+
 
     def backward(self, loss):
         if self.exp_dict["amp"] > 0:
@@ -121,9 +128,13 @@ class Classification(torch.nn.Module):
         state["model"] = self.backbone.state_dict()
         state["optimizer"] = self.optimizer.state_dict()
         state["scheduler"] = self.scheduler.state_dict()
+        if self.exp_dict["amp"] > 0:
+            state["amp"] = amp.state_dict()
         return state
 
     def set_state_dict(self, state_dict):
         self.backbone.load_state_dict(state_dict["model"])
         self.optimizer.load_state_dict(state_dict["optimizer"])
         self.scheduler.load_state_dict(state_dict["scheduler"])
+        if self.exp_dict["amp"] > 0:
+            amp.load_state_dict(state_dict["amp"])

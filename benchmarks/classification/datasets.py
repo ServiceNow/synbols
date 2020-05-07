@@ -8,7 +8,10 @@ from PIL import Image
 import torch
 import h5py
 import multiprocessing
-
+import sys
+from os.path import dirname
+sys.path.insert(0, dirname(dirname(dirname(__file__))))
+from generator.synbols import stratified_splits
 
 def get_dataset(split, exp_dict):
     dataset_dict = exp_dict["dataset"]
@@ -46,7 +49,7 @@ def get_dataset(split, exp_dict):
                       tt.Normalize([0.5] * dataset_dict["channels"], 
                                     [0.5] * dataset_dict["channels"])]
         transform = tt.Compose(transform)
-        ret = SynbolsHDF5(dataset_dict["path"], split, dataset_dict["task"], transform, ood=dataset_dict["ood"])
+        ret = SynbolsHDF5(dataset_dict["path"], split, dataset_dict["task"], transform, mask=dataset_dict["mask"])
         exp_dict["num_classes"] = len(ret.labelset) # FIXME: this is hacky
         return ret
     elif dataset_dict["name"] == "mnist":
@@ -177,7 +180,7 @@ class SynbolsNpz(Dataset):
             np.savez(path, {'x': self.x, 'y': self.y})
             print("Done...")
 
-    def make_splits(self, mask=None, json=False, seed=42):
+    def make_splits(self, mask=None, seed=42):
         if mask is None:
             if self.split == 'train':
                 start = 0
@@ -192,16 +195,9 @@ class SynbolsNpz(Dataset):
             indices = rng.permutation(len(self.x))
             indices = indices[start:end]
         else:
-            indices = np.arange(len(self.x)) # 0....nsamples
-            indices = indices[mask[:, ["train", "val", "test"].index(self.split)]]
-        print("Converting json strings to labels...")
-        if json:
-            with multiprocessing.Pool(8) as pool:
-                _y = pool.map(_read_json_key, zip(self.y, [self.task] * len(self.y)))
-        else:
-            _y = [y[self.task] for y in self.y]
-        print("Done.")
-        self.y = _y
+            mask = mask[:, ["train", "val", "test"].index(self.split)]
+            indices = np.arange(len(self.y)) # 0....nsamples
+            indices = indices[mask]
         self.labelset = list(sorted(set(self.y)))
         self.y = np.array([self.labelset.index(y) for y in self.y])
         self.x = self.x[indices]
@@ -215,11 +211,23 @@ class SynbolsNpz(Dataset):
     def __len__(self):
         return len(self.x)
 
+def get_stratified(values, fn, ratios=[0.6,0.2,0.2], tomap=True):
+    vfield = list(map(fn, values))
+    if isinstance(vfield[0], float):
+        pmap = stratified_splits.percentile_partition(vfield, ratios)
+    else:
+        pmap = stratified_splits.unique_class_based_partition(vfield, ratios, rng=np.random)
+    if tomap:
+        return stratified_splits.partition_map_to_mask(pmap)
+    else:
+        return pmap
+
 class SynbolsHDF5(SynbolsNpz):
-    def __init__(self, path, split, key='font', transform=None, train_fraction=0.6, val_fraction=0.4, ood=False):
+    def __init__(self, path, split, key='font', transform=None, train_fraction=0.6, val_fraction=0.4, mask=None):
         self.path = path
         self.split = split
         self.task = key
+        self.mask = mask
         self.train_fraction = train_fraction
         self.val_fraction = val_fraction
         self.test_fraction = 1 - train_fraction - val_fraction
@@ -230,16 +238,50 @@ class SynbolsHDF5(SynbolsNpz):
         print("Loading hdf5...")
         with h5py.File(path, 'r') as data:
             self.x = data['x'][...]
-            self.y = data['y'][...]
-            mask = None
+            y = data['y'][...]
+            print("Converting json strings to labels...")
+            with multiprocessing.Pool(8) as pool:
+                self.y = pool.map(json.loads, y)
+            print("Done converting.")
             if "split" in data:
-                if ood:
-                    mask = data["split"]["stratified_%s" %key][...]
+                if mask is not None:
+                    if mask in data['split']:
+                        mask = data["split"][mask][...]
+                    else:
+                        mask = self.parse_mask(mask)
+
+            self.y = [y[self.task] for y in self.y]
+            self.make_splits(mask=mask)
+            print("Done reading hdf5.")
+    def parse_mask(self, mask):
+        args = mask.split("_")[1:]
+        if "stratified" in mask:
+            mask = 1
+            for arg in args:
+                if arg == 'translation-x':
+                    fn = lambda x: x['translation'][0]
+                elif arg == 'translation-y':
+                    fn = lambda x: x['translation'][1]
                 else:
-                    mask = data["split"]["random"][...]
-            self.make_splits(mask=mask, json=True)
-
-        print("Done.")
-
+                    fn = lambda x: x[arg]
+                mask *= get_stratified(self.y, fn)
+        elif "compositional" in mask:
+            partition_map = None
+            if len(args) != 2:
+                raise RuntimeError("Compositional splits must contain two fields to compose")
+            for arg in args:
+                if arg == 'translation-x':
+                    fn = lambda x: x['translation'][0]
+                elif arg == 'translation-y':
+                    fn = lambda x: x['translation'][1]
+                else:
+                    fn = lambda x: x[arg]
+                if partition_map is None:
+                    partition_map = get_stratified(self.y, fn, tomap=False)
+                else:
+                    _partition_map = get_stratified(self.y, fn, tomap=False)
+                    partition_map = stratified_splits.compositional_split(_partition_map, partition_map)
+            mask = partition_map
+        return mask==1
 if __name__ == '__main__':
     synbols = SynbolsHDF5('/mnt/datasets/public/research/synbols/camouflage_n=100000_2020-Apr-09.h5py', 'val')
