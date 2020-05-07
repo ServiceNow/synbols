@@ -43,7 +43,7 @@ datasets:
 active-learning:
 	generator/generate_dataset.py --dataset=missing-symbol --n_samples=100000 &
 	generator/generate_dataset.py --dataset=large-translation --n_samples=100000 &
-	generator/generate_dataset.py --dataset=partly-occluded --n_samples=100000 &
+	generator/generate_dataset.py --dataset=some-large-occlusion --n_samples=100000 &
     wait
 
 segmentation:
