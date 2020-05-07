@@ -50,7 +50,7 @@ def trainval(exp_dict, savedir_base, reset=False):
 
     # Model
     # -----------
-    model = get_model(exp_dict)
+    model = get_model(model_dict=exp_dict['model'], exp_dict=exp_dict, train_set=train_dataset).cuda()
 
     # Checkpoint
     # -----------
@@ -67,34 +67,50 @@ def trainval(exp_dict, savedir_base, reset=False):
         score_list = []
         s_epoch = 0
 
+    vis_loader = DataLoader(train_dataset, shuffle=False, batch_size=1)
+    # model.vis_on_loader(
+    #         vis_loader, savedir=os.path.join(savedir, "images"))
+
     # Train & Val
     # ------------
     print("Starting experiment at epoch %d" % (s_epoch))
 
     for e in range(s_epoch, exp_dict['max_epoch']):
+        # Validate only at the start of each cycle
         score_dict = {}
 
         # Train the model
-        score_dict.update(model.train_on_loader(train_loader))
+        train_dict = model.train_on_loader(train_loader)
 
-        # Validate the model
-        score_dict.update(model.val_on_loader(val_loader, savedir=os.path.join(savedir_base, exp_dict['dataset']['name'])))
-        score_dict["epoch"] = e
+        # Validate and Visualize the model
+        val_dict = model.val_on_loader(val_loader)
+        score_dict.update(val_dict)
+        model.vis_on_loader(
+            vis_loader, savedir=os.path.join(savedir, "images"))
 
-        # Visualize the model
-        # model.vis_on_loader(vis_loader, savedir=savedir+"/images/")
+        # Get new score_dict
+        score_dict.update(train_dict)
+        score_dict["epoch"] = len(score_list)
 
         # Add to score_list and save checkpoint
         score_list += [score_dict]
 
         # Report & Save
         score_df = pd.DataFrame(score_list)
-        print("\n", score_df.tail())
+        print("\n", score_df.tail(), "\n")
         hu.torch_save(model_path, model.get_state_dict())
         hu.save_pkl(score_list_path, score_list)
         print("Checkpoint Saved: %s" % savedir)
 
-    print('experiment completed')
+        # Save Best Checkpoint
+        if "val_score" in score_df.columns and (score_dict.get("val_score", 0) > score_df["val_score"][:-1].fillna(0).max()):
+            hu.save_pkl(os.path.join(
+                savedir, "score_list_best.pkl"), score_list)
+            hu.torch_save(os.path.join(savedir, "model_best.pth"),
+                          model.get_state_dict())
+            print("Saved Best: %s" % savedir)
+
+    print('Experiment completed et epoch %d' % e)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -1,12 +1,10 @@
 
-from . import lcfcn
+from . import semseg
+import torch
 
+def get_model(model_dict, exp_dict=None, train_set=None, savedir=None):
+    if model_dict['name'] in ["semseg"]:
+        model =  semseg.SemSeg(exp_dict, train_set, savedir=savedir)
 
-def get_model(model_dict,  exp_dict, train_set=None):
-    name = model_dict['name']
+    return model
 
-
-    if name == "lcfcn":
-        model =  lcfcn.LCFCN(n_classes=train_set.n_classes).cuda()
-        model.opt = torch.optim.Adam(
-            (model.parameters()), lr=1e-5)

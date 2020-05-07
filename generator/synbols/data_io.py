@@ -4,14 +4,15 @@ import zipfile
 from PIL import Image
 from os import path
 import logging
+import h5py
+from datetime import datetime
+from synbols.stratified_splits import make_default_splits
 
 
 def load_npz(file_path):
     """Load the dataset from compressed numpy format (npz)."""
     dataset = np.load(file_path, allow_pickle=True)
-    y = dataset['y']
-    # y = [json.loads(attr) for attr in y]
-    return dataset['x'], dataset['mask'], y
+    return dataset['x'], dataset['mask'], dataset['y']
 
 
 def write_npz(file_path, generator):
@@ -19,8 +20,111 @@ def write_npz(file_path, generator):
     x = np.stack(x)
     mask = np.stack(mask)
 
+    logging.info("x: %s, %s, mask: %s, %s", x.shape, x.dtype, mask.shape, mask.dtype)
     logging.info("Saving dataset in %s.", file_path)
     np.savez(file_path, x=x, y=y, mask=mask)
+
+
+class H5Stack:
+    def __init__(self, file, name, chunk_size=100, compression="gzip"):
+        self.dset = None
+        self.file = file
+        self.name = name
+        self.chunk_size = chunk_size
+        self.compression = compression
+        self.i = 0
+
+    def add(self, x):
+
+        # create it based on x's information
+        if self.dset is None:
+
+            if isinstance(x, str):
+                shape = ()
+                dtype = h5py.string_dtype(encoding='ascii')
+            else:
+                shape = x.shape
+                dtype = x.dtype
+
+            self.dset = self.file.create_dataset(
+                self.name, (self.chunk_size,) + shape, dtype=dtype, maxshape=(None,) + shape,
+                chunks=(self.chunk_size,) + shape, compression=self.compression)
+
+        dset = self.dset
+        if self.i >= dset.shape[0]:
+            dset.resize(dset.shape[0] + self.chunk_size, 0)
+
+        dset[self.i] = x
+        self.i += 1
+
+
+def add_splits(fd, split_dict, random_seed):
+    for split_name, split in split_dict.items():
+        ds = fd.create_dataset("split/%s" % split_name, data=split)
+        ds.attrs['timestamp'] = datetime.now().strftime("%Y-%b-%d_%H:%M:%S")
+        ds.attrs['seed'] = random_seed
+
+
+def write_h5(file_path, dataset_generator, split_function=None, ratios=(0.6, 0.2, 0.2), random_seed=42):
+    with h5py.File(file_path, 'w', libver='latest') as fd:
+        x_stack = H5Stack(fd, 'x')
+        mask_stack = H5Stack(fd, 'mask')
+        y_stack = H5Stack(fd, 'y')
+
+        for i, (x, mask, y) in enumerate(dataset_generator):
+            x_stack.add(x)
+            mask_stack.add(mask)
+            y_stack.add(json.dumps(y))
+
+        attr_list = [json.loads(attr) for attr in fd['y']]
+
+        if split_function is None:
+            split_function = make_default_splits
+
+        add_splits(fd, split_function(attr_list, ratios, random_seed), random_seed)
+
+
+def load_h5(file_path):
+    """Load the dataset from h5py format
+
+    Args:
+        file_path: path to the hdf5 dataset
+
+    Returns:
+        x: array of shape (n_samples, width, height, n_channels), containing images
+        mask: array of shape (n_samples, width, height, n_symbols), containing the mask of each symbol in the image
+        attributes: list of length n_samples, containing a dictionary of attributes for each images
+        splits: dict of different type of splits for this dataset. Each split is a list of mask for each subset.
+    """
+
+    with h5py.File(file_path, 'r') as fd:
+        y = [json.loads(attr) for attr in fd['y']]
+
+        splits = {}
+        if 'split' in fd.keys():
+            for key in fd['split'].keys():
+                splits[key] = np.array(fd['split'][key])
+
+        return np.array(fd['x']), np.array(fd['mask']), y, splits
+
+
+def load_attributes_h5(file_path):
+    with h5py.File(file_path, 'r') as fd:
+        # y = [json.loads(attr) for attr in fd['y']]
+        y = list(fd['y'])
+        splits = {}
+        if 'split' in fd.keys():
+            for key in fd['split'].keys():
+                splits[key] = np.array(fd['split'][key])
+
+        return y, splits
+
+
+def load_minibatch_h5(file_path, indices):
+    with h5py.File(file_path, 'r') as fd:
+        x = np.array(fd['x'][indices])
+        mask = np.array(fd['mask'][indices])
+    return x, mask
 
 
 def load_dataset_jpeg_sequential(file_path, max_samples=None):
@@ -61,7 +165,7 @@ def load_dataset_jpeg_sequential(file_path, max_samples=None):
 def pack_dataset(generator):
     """Turn a the output of a generator of (x,y) pairs into a numpy array containing the full dataset"""
     x, mask, y = zip(*generator)
-    return np.stack(x), y
+    return np.stack(x), np.stack(mask), y
 
 
 def write_jpg_zip(directory, generator):
