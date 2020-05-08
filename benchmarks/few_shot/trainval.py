@@ -12,10 +12,9 @@ import torchvision.transforms as tt
 from exp_configs import EXP_GROUPS
 from models import get_model
 import pandas as pd
-import pprint
 
 
-def trainval(exp_dict, savedir_base, reset=False):
+def trainval(exp_dict, savedir_base, reset=False, wandb='None', wandb_key='None'):
     # bookkeeping
     # ---------------
 
@@ -30,8 +29,16 @@ def trainval(exp_dict, savedir_base, reset=False):
     # create folder and save the experiment dictionary
     os.makedirs(savedir, exist_ok=True)
     hu.save_json(os.path.join(savedir, "exp_dict.json"), exp_dict)
-    pprint.pprint(exp_dict)
+    print(exp_dict)
     print("Experiment saved in %s" % savedir)
+
+    if wandb is not 'None':
+        # https://docs.wandb.com/quickstart
+        import wandb as logger
+        if wandb_key is not 'None':
+            logger.login(key=wandb_key)
+        logger.init(project=wandb)
+        logger.config.update(exp_dict)
 
     # Dataset
     # -----------
@@ -107,6 +114,9 @@ def trainval(exp_dict, savedir_base, reset=False):
         hu.torch_save(model_path, model.get_state_dict())
         hu.save_pkl(score_list_path, score_list)
         print("Checkpoint Saved: %s" % savedir)
+        if wandb is not 'None':
+            for key, values in score_dict.items():
+                logger.log({key:values})
 
     print('experiment completed')
 
@@ -117,8 +127,11 @@ if __name__ == "__main__":
     parser.add_argument('-sb', '--savedir_base', required=True)
     parser.add_argument("-r", "--reset",  default=0, type=int)
     parser.add_argument("-ei", "--exp_id", default=None)
-    parser.add_argument("-j", "--run_jobs", default=None)
+    parser.add_argument("-v", "--view_experiments", default=None)
+    parser.add_argument("-j", "--run_jobs", type=int, default=None)
     parser.add_argument("-nw", "--num_workers", type=int, default=0)
+    parser.add_argument("-wb", "--wandb", type=str, default='None')
+    parser.add_argument("-wbk", "--wandb_key", type=str, default='None')
 
     args = parser.parse_args()
 
@@ -140,25 +153,34 @@ if __name__ == "__main__":
 
     # Run experiments or View them
     # ----------------------------
-    if args.run_jobs:
+    if args.view_experiments:
+        # view experiments
+        hr.view_experiments(exp_list, savedir_base=args.savedir_base)
+
+    elif args.run_jobs:
         # launch jobs
         # TODO: define experiment-wise
         from haven import haven_jobs as hjb
-        run_command = ('python trainval.py -ei <exp_id> -sb %s -nw 1' %  (args.savedir_base))
+        run_command = ('python trainval.py -ei <exp_id> -sb %s -nw 1 -wb %s -wbk %s' % (
+                args.savedir_base, args.wandb, args.wandb_key))
         job_config = {
-            'volume': '/mnt:/mnt',
+            # 'volume': '/mnt:/mnt',
+            'volume': ["/mnt:/mnt", "/home/optimass:/home/optimass"],
             'image': 'images.borgy.elementai.net/issam/main',
             'gpu': '1',
             'mem': '16',
             'bid': '1',
             'restartable': '1',
-            'cpu': '4'}
+            'cpu': '4',
+        }
         workdir = os.path.dirname(os.path.realpath(__file__))
+
         hjb.run_exp_list_jobs(exp_list, 
                             savedir_base=args.savedir_base, 
                             workdir=workdir,
                             run_command=run_command,
-                            job_config=job_config)
+                            job_config=job_config,
+                            username='optimass')
 
     else:
         # run experiments
@@ -166,4 +188,6 @@ if __name__ == "__main__":
             # do trainval
             trainval(exp_dict=exp_dict,
                     savedir_base=args.savedir_base,
-                    reset=args.reset)
+                    reset=args.reset,
+                    wandb=args.wandb,
+                    wandb_key=args.wandb_key)

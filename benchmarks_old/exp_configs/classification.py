@@ -3,6 +3,7 @@ from haven import haven_utils as hu
 # Define exp groups for parameter search
 EXP_GROUPS = {'font':
                 hu.cartesian_exp_group({
+                    'benchmark':'classification',
                     'lr':[0.1],
                     'batch_size':[256],
                     'model': "classification",
@@ -14,6 +15,7 @@ EXP_GROUPS = {'font':
                                 'name': 'synbols',
                                 'task': 'font'}}),
                 'font_pretrained': hu.cartesian_exp_group({
+                    'benchmark':'classification',
                     'lr':[0.01],
                     'batch_size':[256],
                     'model': "classification",
@@ -26,6 +28,7 @@ EXP_GROUPS = {'font':
                                 'task': 'font'}}),
                 'font_plain':
                     hu.cartesian_exp_group({
+                        'benchmark':'classification',
                         'lr':[0.1],
                         'batch_size':[512],
                         'model': "classification",
@@ -38,6 +41,7 @@ EXP_GROUPS = {'font':
                                     'name': 'synbols_npz',
                                     'task': 'font'}}),
                     'font_pretrained': hu.cartesian_exp_group({
+                        'benchmark':'classification',
                         'lr':[0.01],
                         'batch_size':[256],
                         'model': "classification",
