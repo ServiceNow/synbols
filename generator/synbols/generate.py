@@ -54,29 +54,30 @@ def flatten_mask(masks):
     return flat_mask
 
 
-def add_occlusion(attr_sampler, occlusion_prob=1., occlusion_char=None, rotation=None, scale=None, translation=None,
+def flatten_mask_except_first(masks):
+    return np.stack((masks[:, :, 0], flatten_mask(masks[:, :, 1:])), axis=2)
+
+
+def add_occlusion(attr_sampler, n_occlusion=None, occlusion_char=None, rotation=None, scale=None, translation=None,
                   foreground=None, rng=np.random):
     occlusion_chars = ['■', '▲', '▼', '●']
 
     def sampler():
         image = attr_sampler()
+        _n_occlusion = _select(rng.randint(1, 5), n_occlusion, rng)
 
-        if rng.rand() < occlusion_prob:
-            _scale = _select(0.6 * np.exp(rng.randn() * 0.1), scale, rng)
-            _translation = _select(tuple(rng.rand(2) * 6 - 3), translation, rng)
-        else:
-            # A bit hacky, but this allows the list mask to have the same shape and stack correctly in the h5py
-            _scale = 0.1
-            _translation = 10
+        for i in range(_n_occlusion):
+            _scale = _select(0.3 * np.exp(rng.randn() * 0.1), scale, rng)
+            _translation = _select(tuple(rng.rand(2) * 3 - 1.5), translation, rng)
 
-        _occlusion_char = _select(rng.choice(occlusion_chars), occlusion_char, rng)
-        _rotation = _select(rng.rand() * np.pi * 2, rotation, rng)
-        _foreground = _select(Gradient(), foreground, rng)
+            _occlusion_char = _select(rng.choice(occlusion_chars), occlusion_char, rng)
+            _rotation = _select(rng.rand() * np.pi * 2, rotation, rng)
+            _foreground = _select(Gradient(), foreground, rng)
 
-        occlusion = Symbol(ALPHABET_MAP['latin'], _occlusion_char, font='Arial', foreground=_foreground,
-                           rotation=_rotation, scale=_scale, translation=_translation, is_slant=False,
-                           is_bold=False)
-        image.add_symbol(occlusion)
+            occlusion = Symbol(ALPHABET_MAP['latin'], _occlusion_char, font='Arial', foreground=_foreground,
+                               rotation=_rotation, scale=_scale, translation=_translation, is_slant=False,
+                               is_bold=False)
+            image.add_symbol(occlusion)
 
         return image
 
@@ -239,9 +240,24 @@ def missing_symbol_dataset(n_samples, alphabet='latin', **kwarg):
     return dataset_generator(attr_generator, n_samples)
 
 
-def generate_partly_occluded(n_samples, alphabet='latin', **kwarg):
-    attr_sampler = add_occlusion(basic_image_sampler(alphabet=ALPHABET_MAP[alphabet]), occlusion_prob=0.2)
-    return dataset_generator(attr_sampler, n_samples)
+def generate_some_large_occlusions(n_samples, alphabet='latin', **kwarg):
+    def n_occlusion(rng):
+        if rng.rand() < 0.2:
+            return 1
+        else:
+            return 0
+
+    attr_sampler = add_occlusion(basic_image_sampler(alphabet=ALPHABET_MAP[alphabet]),
+                                 n_occlusion=n_occlusion,
+                                 scale=lambda rng: 0.6 * np.exp(rng.randn() * 0.1),
+                                 translation=lambda rng: tuple(rng.rand(2) * 6 - 3))
+    return dataset_generator(attr_sampler, n_samples, flatten_mask_except_first)
+
+
+def generate_many_small_occlusions(n_samples, alphabet='latin', **kwarg):
+    attr_sampler = add_occlusion(basic_image_sampler(alphabet=ALPHABET_MAP[alphabet]),
+                                 n_occlusion=lambda rng: rng.randint(0, 5))
+    return dataset_generator(attr_sampler, n_samples, flatten_mask_except_first)
 
 
 # for font classification
@@ -262,7 +278,8 @@ DATASET_GENERATOR_MAP = {
     'segmentation': generate_segmentation_dataset,
     'counting': generate_counting_dataset,
     'missing-symbol': missing_symbol_dataset,
-    'partly-occluded': generate_partly_occluded,
+    'some-large-occlusion': generate_some_large_occlusions,
+    'many-small-occlusion': generate_many_small_occlusions,
     'large-translation': generate_large_translation,
     'tiny': generate_tiny_dataset,
     'all-fonts': all_fonts,
