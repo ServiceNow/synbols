@@ -130,3 +130,6 @@ dmypy.json
 .vscode/
 *.npy
 explore.ipynb
+
+# images
+*.png
