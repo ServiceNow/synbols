@@ -10,7 +10,7 @@ import h5py
 import multiprocessing
 import sys
 from os.path import dirname
-sys.path.insert(0, dirname(dirname(dirname(__file__))))
+sys.path.insert(0, '/mnt/datasets/public/research/pau/synbols')
 from generator.synbols import stratified_splits
 
 def get_dataset(split, exp_dict):
@@ -49,7 +49,7 @@ def get_dataset(split, exp_dict):
                       tt.Normalize([0.5] * dataset_dict["channels"], 
                                     [0.5] * dataset_dict["channels"])]
         transform = tt.Compose(transform)
-        ret = SynbolsHDF5(dataset_dict["path"], split, dataset_dict["task"], transform, mask=dataset_dict["mask"])
+        ret = SynbolsHDF5(dataset_dict["path"], split, dataset_dict["task"], transform, mask=dataset_dict["mask"], trim_size=dataset_dict.get("trim_size", None))
         exp_dict["num_classes"] = len(ret.labelset) # FIXME: this is hacky
         return ret
     elif dataset_dict["name"] == "mnist":
@@ -145,13 +145,11 @@ class SynbolsFolder(Dataset):
         return len(self.x)
 
 class SynbolsNpz(Dataset):
-    def __init__(self, path, split, key='font', transform=None, train_fraction=0.6, val_fraction=0.4):
+    def __init__(self, path, split, key='font', transform=None, ratios=[0.6, 0.2, 0.2]):
         self.path = path
         self.split = split
         self.task = key
         self.train_fraction = train_fraction
-        self.val_fraction = val_fraction
-        self.test_fraction = 1 - train_fraction - val_fraction
         data = np.load(self.path, allow_pickle=True) 
         self.x = data['x']
         self.y = data['y']
@@ -164,6 +162,7 @@ class SynbolsNpz(Dataset):
             self.save_load_cache()
         else:
             self.make_splits()
+
 
     def save_load_cache(self):
         path = "/tmp/%s_%s_%s.npz" %(os.path.basename(self.path), self.task, self.split) 
@@ -184,12 +183,12 @@ class SynbolsNpz(Dataset):
         if mask is None:
             if self.split == 'train':
                 start = 0
-                end = int(self.train_fraction * len(self.x))
+                end = int(self.ratios[0] * len(self.x))
             elif self.split == 'val':
-                start = int(self.train_fraction * len(self.x))
-                end = int((self.train_fraction +self.val_fraction) * len(self.x))
+                start = int(self.ratios[0] * len(self.x))
+                end = int((self.ratios[0] +self.ratios[1]) * len(self.x))
             elif self.split == 'test':
-                start = int((self.train_fraction + self.val_fraction) * len(self.x))
+                start = int((self.ratios[0] + self.ratios[1]) * len(self.x))
                 end = len(self.x) 
             rng = np.random.RandomState(seed) #TODO: fix this dangerous thing
             indices = rng.permutation(len(self.x))
@@ -223,14 +222,12 @@ def get_stratified(values, fn, ratios=[0.6,0.2,0.2], tomap=True):
         return pmap
 
 class SynbolsHDF5(SynbolsNpz):
-    def __init__(self, path, split, key='font', transform=None, train_fraction=0.6, val_fraction=0.4, mask=None):
+    def __init__(self, path, split, key='font', transform=None, ratios=[0.6,0.2,0.2], mask=None, trim_size=None):
         self.path = path
         self.split = split
         self.task = key
         self.mask = mask
-        self.train_fraction = train_fraction
-        self.val_fraction = val_fraction
-        self.test_fraction = 1 - train_fraction - val_fraction
+        self.ratios = ratios
         if transform is None:
             self.transform = lambda x: x
         else:
@@ -250,9 +247,36 @@ class SynbolsHDF5(SynbolsNpz):
                     else:
                         mask = self.parse_mask(mask)
 
+
             self.y = [y[self.task] for y in self.y]
+            
+            self.trim_size = trim_size
+            if trim_size is not None and len(self.x) > self.trim_size:
+                mask = self.trim_dataset(mask)
+
             self.make_splits(mask=mask)
             print("Done reading hdf5.")
+
+    def trim_dataset(self, mask):
+        labelset = np.sort(np.unique(self.y))
+        counts = np.array([np.count_nonzero(self.y == y) for y in labelset])
+        ind = np.argsort(counts)[::-1]
+        labelset = labelset[ind]
+        counts = counts[ind]
+        # counts_sum = np.cumsum(counts)
+        cut_ind = 0
+        ratios = np.zeros(3) 
+        target_ratios = np.array(self.ratios) * self.trim_size
+        current_mask = np.zeros_like(mask)
+        while (ratios < target_ratios).any():
+            current_mask = current_mask | (mask & (np.array(self.y) == labelset[cut_ind])[:, None])
+            ratios = current_mask.sum(0)
+            cut_ind += 1
+            if cut_ind == len(labelset):
+                raise RuntimeError("Couldn't trim the dataset to the required size")
+        return current_mask
+
+
     def parse_mask(self, mask):
         args = mask.split("_")[1:]
         if "stratified" in mask:
