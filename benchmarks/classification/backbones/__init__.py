@@ -12,7 +12,7 @@ class GAP(torch.nn.Module):
     def forward(self, x):
         return x.mean(3).mean(2)
 class Conv4(torch.nn.Module):
-    def __init__(self, in_h, in_w, channels, output_size):
+    def __init__(self, in_h, in_w, channels, output_size, gap=True):
         super().__init__()
         in_size = min(in_w, in_h)
         ratio = in_size // 4
@@ -22,7 +22,7 @@ class Conv4(torch.nn.Module):
             self.strides = [1, 2, 2, 2]
         elif ratio >= 4:
             self.strides = [1, 2, 2, 1]
-        if ratio >= 2:
+        elif ratio >= 2:
             self.strides = [1, 2, 1, 1]
         else:
             self.strides = [1, 1, 1, 1]
@@ -32,7 +32,11 @@ class Conv4(torch.nn.Module):
             setattr(self, "conv%d" %i, torch.nn.Conv2d(in_ch, self.channels[i], 3, self.strides[i], 1, bias=False))
             setattr(self, "bn%d" %i, torch.nn.BatchNorm2d(self.channels[i]))
             in_ch = self.channels[i]
-        self.out = torch.nn.Linear(self.channels[-1], output_size)
+        self.gap = gap
+        if gap:
+            self.out = torch.nn.Linear(self.channels[-1], output_size)
+        else:
+            self.out = torch.nn.Linear(self.channels[-1] * 4 * 4, output_size)
         
     def forward(self, x):
         for i in range(4):
@@ -40,7 +44,10 @@ class Conv4(torch.nn.Module):
             bn = getattr(self, "bn%d" %i)
             x = conv(x)
             x = F.leaky_relu(bn(x), inplace=True)
-        return self.out(x.mean(3).mean(2))
+        if self.gap:
+            return self.out(x.mean(3).mean(2))
+        else:
+            return self.out(x.view(x.size(0), -1))
 
 class MLP(torch.nn.Module):
     def __init__(self, ni, no, nhidden, depth):
@@ -113,7 +120,9 @@ def get_backbone(exp_dict):
         return Conv4(exp_dict["dataset"]["height"], 
                      exp_dict["dataset"]["width"],
                      exp_dict["dataset"]["channels"],
-                     nclasses)
+                     output_size=nclasses,
+                     gap=exp_dict["backbone"]["gap"],
+                     )
     elif backbone_name == "efficientnet":
         net = EfficientNet.from_pretrained(exp_dict["backbone"]["type"], num_classes=nclasses)
         def weights_init(m):

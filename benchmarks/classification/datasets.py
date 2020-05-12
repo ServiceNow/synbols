@@ -248,32 +248,32 @@ class SynbolsHDF5(SynbolsNpz):
                         mask = self.parse_mask(mask)
 
 
-            self.y = [y[self.task] for y in self.y]
+            self.y = np.array([y[self.task] for y in self.y])
             
             self.trim_size = trim_size
             if trim_size is not None and len(self.x) > self.trim_size:
                 mask = self.trim_dataset(mask)
-
             self.make_splits(mask=mask)
             print("Done reading hdf5.")
 
-    def trim_dataset(self, mask):
+    def trim_dataset(self, mask, rng=np.random.RandomState(42)):
         labelset = np.sort(np.unique(self.y))
         counts = np.array([np.count_nonzero(self.y == y) for y in labelset])
-        ind = np.argsort(counts)[::-1]
-        labelset = labelset[ind]
-        counts = counts[ind]
-        # counts_sum = np.cumsum(counts)
-        cut_ind = 0
-        ratios = np.zeros(3) 
-        target_ratios = np.array(self.ratios) * self.trim_size
+        imxclass_train = int(np.ceil(60000 / len(labelset)))
+        imxclass_val_test = int(np.ceil(20000 / len(labelset)))
+        ind_train = np.arange(mask.shape[0])[mask[:,0]]
+        y_train = self.y[ind_train]
+        ind_train = np.concatenate([np.random.permutation(ind_train[y_train == y])[:imxclass_train] for y in labelset], 0)
+        ind_val = np.arange(mask.shape[0])[mask[:,1]]
+        y_val = self.y[ind_val]
+        ind_val = np.concatenate([np.random.permutation(ind_val[y_val == y])[:imxclass_val_test] for y in labelset], 0)
+        ind_test = np.arange(mask.shape[0])[mask[:,2]]
+        y_test = self.y[ind_test]
+        ind_test = np.concatenate([np.random.permutation(ind_test[y_test == y])[:imxclass_val_test] for y in labelset], 0)
         current_mask = np.zeros_like(mask)
-        while (ratios < target_ratios).any():
-            current_mask = current_mask | (mask & (np.array(self.y) == labelset[cut_ind])[:, None])
-            ratios = current_mask.sum(0)
-            cut_ind += 1
-            if cut_ind == len(labelset):
-                raise RuntimeError("Couldn't trim the dataset to the required size")
+        current_mask[ind_train, 0] = True
+        current_mask[ind_val, 1] = True
+        current_mask[ind_test, 2] = True
         return current_mask
 
 
