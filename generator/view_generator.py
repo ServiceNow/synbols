@@ -2,7 +2,7 @@ import numpy as np
 
 from synbols.data_io import pack_dataset
 from synbols.drawing import Camouflage, color_sampler, Gradient, MultiGradient, NoPattern, SolidColor
-from synbols.generate import generate_char_grid, dataset_generator, basic_image_sampler, add_occlusion
+from synbols.generate import generate_char_grid, dataset_generator, basic_image_sampler, add_occlusion, flatten_mask_except_first
 from synbols.fonts import ALPHABET_MAP
 
 from view_dataset import plot_dataset
@@ -20,8 +20,8 @@ if __name__ == "__main__":
     # fg = NoPattern()
 
     attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP['latin'])
-    attr_sampler = add_occlusion(attr_sampler, occlusion_prob=0.2)
-    x, mask, y = pack_dataset(dataset_generator(attr_sampler, 1000))
+    # attr_sampler = add_occlusion(attr_sampler)
+    x, mask, y = pack_dataset(dataset_generator(attr_sampler, 1000, flatten_mask_except_first))
     # x, mask, y = pack_dataset(generate_char_grid('latin', n_font=15, n_char=20, **kwargs))
     print(mask.shape, x.shape)
     mask = mask.astype(np.float) / 256

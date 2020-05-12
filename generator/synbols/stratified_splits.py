@@ -1,4 +1,5 @@
 import numpy as np
+from synbols.utils import flatten_attr
 
 
 def partition_array(values, ratios):
@@ -17,10 +18,15 @@ def partition_array(values, ratios):
     return partition
 
 
-def random_map(n, ratios, rng=np.random):
+def _ratio_to_sizes(n, ratios):
     np.testing.assert_almost_equal(np.sum(ratios), 1., decimal=3)
     sizes = np.round(np.array(ratios) * n, 0).astype(np.int)
     sizes[0] += n - np.sum(sizes)
+    return sizes
+
+
+def random_map(n, ratios, rng=np.random):
+    sizes = _ratio_to_sizes(n, ratios)
     part_map = np.concatenate([[i] * ni for i, ni in enumerate(sizes)])
     rng.shuffle(part_map)
     return part_map
@@ -45,6 +51,7 @@ def unique_class_based_partition(values, ratios, rng=None):
     return part_map
 
 
+# TODO the code could be simpler with sort
 def percentile_partition(values, ratios):
     """Split according to percentiles of values."""
 
@@ -120,46 +127,94 @@ def verify_part_mask(part_mask, n, ratios, verify_ratios=True):
     np.testing.assert_equal(sum, np.ones_like(sum))
 
 
-if __name__ == "__main__":
+def str_to_id(values):
+    convert = False
+    if isinstance(values, list):
+        if isinstance(values[0], str):
+            convert = True
+    elif isinstance(values, np.ndarray):
+        if values.dtype.type == np.str_:
+            convert = True
 
+    if convert:
+        unique_vals = np.unique(values)
+        val_map = dict(zip(*(unique_vals, list(range(len(unique_vals))))))
+        return np.array([val_map[val] for val in values]), convert
+    else:
+        return values, convert
+
+
+def plot_split_2d(masks, attr_x, attr_y, name_x='x', name_y='y'):
+    for i, mask in enumerate(masks.T):
+        print("    %d, (%.1f%%)" % (np.sum(mask), np.mean(mask) * 100))
+        plt.plot(attr_x[mask], attr_y[mask], '.', markersize=2, alpha=1, label="mask %d" % i)
+
+    plt.xlabel(name_x)
+    plt.ylabel(name_y)
+    legend = plt.legend(loc='best', scatterpoints=1,)
+
+    for lengend_item in legend.legendHandles:
+        lengend_item._legmarker.set_markersize(6)
+
+
+def make_stratified_split(attr_list, axis_name, ratios):
+    values = np.array([attr[axis_name] for attr in attr_list])
+
+    values, is_str = str_to_id(values)
+    if is_str:
+        part_map = unique_class_based_partition(values=values, ratios=ratios, rng=np.random)
+    else:
+        part_map = percentile_partition(values=values, ratios=ratios)
+
+    # print("%s split." % axis_name)
+
+    masks = partition_map_to_mask(part_map)
+    verify_part_mask(masks, len(attr_list), ratios)
+
+    # for mask in masks.T:
+    #     subset = values[mask]
+    # print("    len: %d (%.1f%%), (min: %.3g, max: %.3g)" % (
+    #     len(subset), np.mean(mask) * 100, np.min(subset), np.max(subset)))
+
+    return values, part_map
+
+
+def make_compositional_split(attr_list, axis1_name, axis2_name, ratios):
+    _, part_map_1 = make_stratified_split(attr_list, axis1_name, ratios)
+    _, part_map_2 = make_stratified_split(attr_list, axis2_name, ratios)
+    return compositional_split(part_map_1, part_map_2)
+
+
+if __name__ == "__main__":
     # Example usage and verification of the behavior
-    from synbols.data_io import load_h5
+    from synbols.data_io import load_attributes_h5
     import matplotlib.pyplot as plt
 
-    attr_list = load_h5('../../default_n=2000_2020-Apr-09.h5py')[2]
+    attr_list, _ = load_attributes_h5('../../partly-occluded_n=10000_2020-May-05.h5py')
+    attr_list = [flatten_attr(attr) for attr in attr_list]
+    # ratios = (0.15, 0.05, 0.6, 0.05, 0.15)
+    ratios = (0.2, 0.6, 0.2)
 
-    axis1 = np.array([attr['char'] for attr in attr_list])
-    axis2 = np.array([attr['scale'] for attr in attr_list])
+    axis1_name = 'scale'
+    axis2_name = 'rotation'
 
-    ratios = (0.5, 0.2, 0.3)
+    axis1, part_map_1 = make_stratified_split(attr_list, axis1_name, ratios)
+    axis2, part_map_2 = make_stratified_split(attr_list, axis2_name, ratios)
 
-    part_map_1 = unique_class_based_partition(values=axis1, ratios=ratios)
-    part_map_2 = unique_class_based_partition(values=axis2, ratios=ratios)
+    plt.figure("stratified %s" % axis1_name)
+    plot_split_2d(partition_map_to_mask(part_map_1), axis1, axis2, axis1_name, axis2_name)
 
-    print("char split")
-    for part_mask in partition_map_to_mask(part_map_1):
-        subset = axis1[part_mask]
-        print("axis1 len: %d, (%d unique values) %s" % (len(subset), len(np.unique(subset)), np.unique(subset)))
-
-    print("scale split")
-    for part_mask in partition_map_to_mask(part_map_2):
-        subset = axis2[part_mask]
-        print("axis2 len: %d, (min: %.3g, max: %.3g)" % (len(subset), np.min(subset), np.max(subset)))
+    plt.figure("stratified %s" % axis2_name)
+    plot_split_2d(partition_map_to_mask(part_map_2), axis1, axis2, axis1_name, axis2_name)
 
     print("Compositional split")
-    for part_mask in compositional_split(part_map_1, part_map_2):
-        subset1 = axis1[part_mask]
+    # ratios_adjust = np.array(ratios)**1.6
+    # ratios_adjust /= np.sum(ratios_adjust)
+    # _, part_map_1 = make_stratified_split(attr_list, axis1_name, ratios_adjust)
+    # _, part_map_2 = make_stratified_split(attr_list, axis2_name, ratios_adjust)
+    compositioanl_masks = compositional_split(part_map_1, part_map_2)
 
-        unique_char = np.unique((subset1))
-        char_map = dict(zip(*(unique_char, list(range(len(unique_char))))))
-        char_id = [char_map[char] for char in subset1]
-
-        subset2 = axis2[part_mask]
-        print("axis1 len: %d, (%d unique values)" % (len(subset1), len(np.unique(subset1))))
-        print("axis2 len: %d, (min: %.3g, max: %.3g)" % (len(subset2), np.min(subset2), np.max(subset2)))
-
-        plt.plot(char_id, subset2, '.')
-        plt.xlabel('char')
-        plt.ylabel('scale')
+    plt.figure("compositional split")
+    plot_split_2d(compositioanl_masks, axis1, axis2, axis1_name, axis2_name)
 
     plt.show()
