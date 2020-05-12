@@ -33,6 +33,7 @@ datasets:
 	generator/generate_dataset.py --dataset=camouflage --n_samples=100000 &
 	generator/generate_dataset.py --dataset=tiny --n_samples=10000 &
 	generator/generate_dataset.py --dataset=less-variations --n_samples=100000 &
+	generator/generate_dataset.py --dataset=many-small-occlusion --n_samples=100000 &
 	wait
 	generator/generate_dataset.py --n_samples=1000000 &
 	generator/generate_dataset.py --dataset=all-fonts --n_samples=1000000 &

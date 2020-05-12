@@ -100,7 +100,6 @@ if __name__ == "__main__":
     else:
         file_path = '../partly-occluded_n=10000_2020-May-05.h5py'
 
-
     print('load dataset')
 
     x, mask, attr_list, splits = load_h5(file_path)
