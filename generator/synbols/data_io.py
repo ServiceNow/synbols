@@ -129,8 +129,8 @@ def load_attributes_h5(file_path):
             (n_samples, n_subset) representing a specific partition.
     """
     with h5py.File(file_path, 'r') as fd:
-        # y = [json.loads(attr) for attr in fd['y']]
-        y = list(fd['y'])
+        y = [json.loads(attr) for attr in fd['y']]
+        # y = list(fd['y'])
         splits = {}
         if 'split' in fd.keys():
             for key in fd['split'].keys():
