@@ -76,7 +76,7 @@ class Classification(torch.nn.Module):
             self.optimizer.zero_grad()
             y = y.cuda(non_blocking=True)
             x = x.cuda(non_blocking=False)
-            if self.exp_dict["backbone"]["name"] == "warn":
+            if self.exp_dict["backbone"]["name"] in ["warn"]:
                 logits, regularizer = self.backbone(x)
             else:
                 logits = self.backbone(x)
@@ -103,7 +103,7 @@ class Classification(torch.nn.Module):
             t = time.time()
             y = y.cuda(non_blocking=True)
             x = x.cuda(non_blocking=False)
-            if self.exp_dict["backbone"]["name"] == "warn":
+            if self.exp_dict["backbone"]["name"] in ["warn"]:
                 logits, regularizer = self.backbone(x)
             else:
                 logits = self.backbone(x)
