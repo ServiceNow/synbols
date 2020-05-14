@@ -123,6 +123,45 @@ class Classification(torch.nn.Module):
                 "val_epoch_time": sum(_batch_time),
                 "val_batch_time": np.mean(_batch_time)}
 
+    @torch.no_grad()
+    def test_on_loader(self, loader, tag):
+        self.backbone.eval()
+        _accuracy = 0
+        _total = 0
+        _loss = 0
+        _batch_time = []
+        _labels = []
+        _logits = []
+        for x, y in tqdm(loader):
+            t = time.time()
+            _labels.append(y.numpy())
+            y = y.cuda(non_blocking=True)
+            x = x.cuda(non_blocking=False)
+            if self.exp_dict["backbone"]["name"] in ["warn"]:
+                logits, regularizer = self.backbone(x)
+            else:
+                logits = self.backbone(x)
+                regularizer = 0
+            _logits.append(logits.data.cpu().numpy())
+            preds = logits.data.max(-1)[1]
+            loss = F.cross_entropy(logits, y)
+            _batch_time.append(time.time() - t)
+            _loss += float(loss) * x.size(0)
+            _accuracy += float((preds == y).float().sum())
+            _total += x.size(0)
+        _loss /= _total
+        _accuracy /= _total
+        # self.vis_on_batch(x, y, 'val.png')
+        ret = {"loss": _loss,
+               "accuracy": _accuracy,
+               "logits": np.concatenate(_logits, 0),
+               "labels": np.concatenate(_labels, 0),
+               "label_names": loader.dataset.labelset if hasattr(loader.dataset, "labelset") else None,
+               "epoch_time": sum(_batch_time),
+               "batch_time": np.mean(_batch_time)}
+        ret = {"%s_%s" %(tag, k): v for k,v in ret.items()}
+        return ret
+
     def get_state_dict(self):
         state = {}
         state["model"] = self.backbone.state_dict()

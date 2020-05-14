@@ -226,10 +226,10 @@ for seed in [3, 42, 123]:
                 # default_font_ood,
                 # default_ood,
                 # mnist,
-                # translation_x,
-                # translation_y,
-                # stratified_rotation,
-                # stratified_scale,
+                translation_x,
+                translation_y,
+                stratified_rotation,
+                stratified_scale,
                 # svhn
                 ]
     
@@ -257,18 +257,18 @@ for seed in [3, 42, 123]:
                             'max_epoch': 200,
                             'episodic': False,
                             'dataset': dataset}]
-        for dataset in []: #[tiny]: 
-            for backbone in [mlp, conv4]:
-                baselines += [{'lr': lr,
-                            'batch_size':512,
-                            'amp': 2,
-                            "seed": seed,
-                            'min_lr_decay': 1e-3,
-                            'model': "classification",
-                            'backbone': backbone,
-                            'max_epoch': 200,
-                            'episodic': False,
-                            'dataset': dataset}]
+        # for dataset in [tiny]: 
+        #     for backbone in [mlp, conv4]:
+        #         baselines += [{'lr': lr,
+        #                     'batch_size':512,
+        #                     'amp': 2,
+        #                     "seed": seed,
+        #                     'min_lr_decay': 1e-3,
+        #                     'model': "classification",
+        #                     'backbone': backbone,
+        #                     'max_epoch': 200,
+        #                     'episodic': False,
+        #                     'dataset': dataset}]
 EXP_GROUPS = {}            
 EXP_GROUPS["baselines"] = baselines
 EXP_GROUPS["default_font"] = [{'lr': 0.0001,
@@ -280,7 +280,7 @@ EXP_GROUPS["default_font"] = [{'lr': 0.0001,
                         'backbone': conv4,
                         'max_epoch': 100,
                         'episodic': False,
-                        'dataset': compositional_char_font}]
+                        'dataset': stratified_rotation}]
 EXP_GROUPS["debug"] = [{'lr': 0.001,
                         'batch_size':128,
                         'model': "classification",

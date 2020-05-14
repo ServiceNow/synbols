@@ -40,9 +40,6 @@ def trainval(exp_dict, savedir_base, reset=False, test_only=False):
 
     # Dataset
     # -----------
-    train_dataset = get_dataset('train', exp_dict)
-    val_dataset = get_dataset('val', exp_dict)
-
     # train and val loader
     if exp_dict["episodic"] == False:
         if not test_only:
@@ -56,6 +53,13 @@ def trainval(exp_dict, savedir_base, reset=False, test_only=False):
                                         batch_size=exp_dict['batch_size'],
                                         shuffle=True,
                                         num_workers=args.num_workers) 
+            test_dataset = get_dataset('test', exp_dict)
+            test_loader = DataLoader(test_dataset,
+                                        batch_size=exp_dict['batch_size'],
+                                        shuffle=True,
+                                        num_workers=args.num_workers) 
+            assert(train_dataset.mask == val_dataset.mask)
+            assert(train_dataset.mask == test_dataset.mask)
         else:
             test_dataset = get_dataset('test', exp_dict)
             test_loader = DataLoader(test_dataset,
@@ -95,13 +99,7 @@ def trainval(exp_dict, savedir_base, reset=False, test_only=False):
         score_list = []
         s_epoch = 0
 
-    if test_only:
-        score_dict = model.test_on_loader(test_loader)
-        # Report & Save
-        score_df = pd.DataFrame(score_list)
-        score_list_path = os.path.join(savedir, "score_list_test.pkl")
-        hu.save_pkl(score_list_path, score_list)
-    else:
+    if not test_only:
         # Train & Val
         # ------------
         print("Starting experiment at epoch %d" % (s_epoch))
@@ -129,10 +127,28 @@ def trainval(exp_dict, savedir_base, reset=False, test_only=False):
             hu.save_pkl(score_list_path, score_list)
             print("Checkpoint Saved: %s" % savedir)
 
+
+
             if model.is_end():
                 print("Early stopping")
                 break
         print('experiment completed')
+
+        print("Testing...")
+        score_dict = model.test_on_loader(train_loader, tag="train")
+        score_dict.update(model.test_on_loader(val_loader, tag="val"))
+        score_dict.update(model.test_on_loader(test_loader, tag="test"))
+        # Report & Save
+        score_df = pd.DataFrame([score_dict])
+        score_list_path = os.path.join(savedir, "score_list_test.pkl")
+        hu.save_pkl(score_list_path, score_list)
+    else:
+        print("Testing...")
+        score_dict = model.test_on_loader(test_loader, "test")
+        # Report & Save
+        score_df = pd.DataFrame([score_dict])
+        score_list_path = os.path.join(savedir, "score_list_test.pkl")
+        hu.save_pkl(score_list_path, score_list)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -143,7 +159,7 @@ if __name__ == "__main__":
     parser.add_argument("-ei", "--exp_id", default=None)
     parser.add_argument("-j", "--run_jobs", default=0, type=int)
     parser.add_argument("-nw", "--num_workers", type=int, default=0)
-    parser.add_argument("-to", "--test_only", type=int, default=0)
+    parser.add_argument("-to", "--test_only", type=bool, default=0)
 
     args = parser.parse_args()
 
