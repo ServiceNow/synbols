@@ -42,7 +42,7 @@ def trainval(exp_dict, savedir_base, reset=False, test_only=False):
     # -----------
     # train and val loader
     if exp_dict["episodic"] == False:
-        if not test_only:
+        if (int(test_only) == 0):
             train_dataset = get_dataset('train', exp_dict)
             val_dataset = get_dataset('val', exp_dict)
             train_loader = DataLoader(train_dataset,
@@ -91,6 +91,7 @@ def trainval(exp_dict, savedir_base, reset=False, test_only=False):
 
     if os.path.exists(score_list_path):
         # resume experiment
+        print("Resuming from", model_path)
         model.set_state_dict(hu.torch_load(model_path))
         score_list = hu.load_pkl(score_list_path)
         s_epoch = score_list[-1]['epoch'] + 1
@@ -99,7 +100,7 @@ def trainval(exp_dict, savedir_base, reset=False, test_only=False):
         score_list = []
         s_epoch = 0
 
-    if not test_only:
+    if int(test_only) == 0:
         # Train & Val
         # ------------
         print("Starting experiment at epoch %d" % (s_epoch))
@@ -139,16 +140,14 @@ def trainval(exp_dict, savedir_base, reset=False, test_only=False):
         score_dict.update(model.test_on_loader(val_loader, tag="val"))
         score_dict.update(model.test_on_loader(test_loader, tag="test"))
         # Report & Save
-        score_df = pd.DataFrame([score_dict])
         score_list_path = os.path.join(savedir, "score_list_test.pkl")
-        hu.save_pkl(score_list_path, score_list)
+        hu.save_pkl(score_list_path, score_dict)
     else:
         print("Testing...")
         score_dict = model.test_on_loader(test_loader, "test")
         # Report & Save
-        score_df = pd.DataFrame([score_dict])
         score_list_path = os.path.join(savedir, "score_list_test.pkl")
-        hu.save_pkl(score_list_path, score_list)
+        hu.save_pkl(score_list_path, score_dict)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -159,7 +158,7 @@ if __name__ == "__main__":
     parser.add_argument("-ei", "--exp_id", default=None)
     parser.add_argument("-j", "--run_jobs", default=0, type=int)
     parser.add_argument("-nw", "--num_workers", type=int, default=0)
-    parser.add_argument("-to", "--test_only", type=bool, default=0)
+    parser.add_argument("-to", "--test_only", type=int, default=0)
 
     args = parser.parse_args()
 
