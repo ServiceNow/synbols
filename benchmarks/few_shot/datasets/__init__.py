@@ -31,7 +31,9 @@ def get_dataset(split, exp_dict):
                                 transform=transform,
                                 mask=exp_dict['dataset']['mask'])
     elif dataset_dict["name"] == "miniimagenet":
-        transform = tt.Compose([tt.ToPILImage(), tt.ToTensor()])
+        transform = torchvision.transforms.Compose([torchvision.transforms.ToPILImage(),
+                                            torchvision.transforms.Resize((84,84)),
+                                            torchvision.transforms.ToTensor()])
         sampler = FewShotSampler(nclasses=dataset_dict["nclasses_%s" %split],
                                  support_size=dataset_dict["support_size_%s" %split],
                                  query_size=dataset_dict["query_size_%s" %split],
