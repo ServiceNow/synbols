@@ -17,7 +17,7 @@ import torch
 import numpy as np
 torch.backends.cudnn.benchmark = True
 
-def trainval(exp_dict, savedir_base, reset=False):
+def trainval(exp_dict, savedir_base, reset=False, test_only=False):
     # bookkeeping
     # ---------------
 
@@ -40,19 +40,32 @@ def trainval(exp_dict, savedir_base, reset=False):
 
     # Dataset
     # -----------
-    train_dataset = get_dataset('train', exp_dict)
-    val_dataset = get_dataset('val', exp_dict)
-
     # train and val loader
     if exp_dict["episodic"] == False:
-        train_loader = DataLoader(train_dataset,
-                                    batch_size=exp_dict['batch_size'],
-                                    shuffle=True,
-                                    num_workers=args.num_workers) 
-        val_loader = DataLoader(val_dataset,
-                                    batch_size=exp_dict['batch_size'],
-                                    shuffle=True,
-                                    num_workers=args.num_workers) 
+        if (int(test_only) == 0):
+            train_dataset = get_dataset('train', exp_dict)
+            val_dataset = get_dataset('val', exp_dict)
+            train_loader = DataLoader(train_dataset,
+                                        batch_size=exp_dict['batch_size'],
+                                        shuffle=True,
+                                        num_workers=args.num_workers) 
+            val_loader = DataLoader(val_dataset,
+                                        batch_size=exp_dict['batch_size'],
+                                        shuffle=True,
+                                        num_workers=args.num_workers) 
+            test_dataset = get_dataset('test', exp_dict)
+            test_loader = DataLoader(test_dataset,
+                                        batch_size=exp_dict['batch_size'],
+                                        shuffle=True,
+                                        num_workers=args.num_workers) 
+            assert(train_dataset.mask == val_dataset.mask)
+            assert(train_dataset.mask == test_dataset.mask)
+        else:
+            test_dataset = get_dataset('test', exp_dict)
+            test_loader = DataLoader(test_dataset,
+                                        batch_size=exp_dict['batch_size'],
+                                        shuffle=True,
+                                        num_workers=args.num_workers) 
     else: # to support episodes TODO: move inside each model
         from datasets.episodic_dataset import EpisodicDataLoader
         train_loader = EpisodicDataLoader(train_dataset,
@@ -78,6 +91,7 @@ def trainval(exp_dict, savedir_base, reset=False):
 
     if os.path.exists(score_list_path):
         # resume experiment
+        print("Resuming from", model_path)
         model.set_state_dict(hu.torch_load(model_path))
         score_list = hu.load_pkl(score_list_path)
         s_epoch = score_list[-1]['epoch'] + 1
@@ -86,37 +100,54 @@ def trainval(exp_dict, savedir_base, reset=False):
         score_list = []
         s_epoch = 0
 
-    # Train & Val
-    # ------------
-    print("Starting experiment at epoch %d" % (s_epoch))
+    if int(test_only) == 0:
+        # Train & Val
+        # ------------
+        print("Starting experiment at epoch %d" % (s_epoch))
 
-    for e in range(s_epoch, exp_dict['max_epoch']):
-        score_dict = {}
+        for e in range(s_epoch, exp_dict['max_epoch']):
+            score_dict = {}
 
-        # Train the model
-        score_dict.update(model.train_on_loader(train_loader))
+            # Train the model
+            score_dict.update(model.train_on_loader(train_loader))
 
-        # Validate the model
-        score_dict.update(model.val_on_loader(val_loader, savedir=os.path.join(savedir_base, exp_dict['dataset']['name'])))
-        score_dict["epoch"] = e
+            # Validate the model
+            score_dict.update(model.val_on_loader(val_loader, savedir=os.path.join(savedir_base, exp_dict['dataset']['name'])))
+            score_dict["epoch"] = e
 
-        # Visualize the model
-        # model.vis_on_loader(vis_loader, savedir=savedir+"/images/")
+            # Visualize the model
+            # model.vis_on_loader(vis_loader, savedir=savedir+"/images/")
 
-        # Add to score_list and save checkpoint
-        score_list += [score_dict]
+            # Add to score_list and save checkpoint
+            score_list += [score_dict]
 
+            # Report & Save
+            score_df = pd.DataFrame(score_list)
+            print("\n", score_df.tail())
+            hu.torch_save(model_path, model.get_state_dict())
+            hu.save_pkl(score_list_path, score_list)
+            print("Checkpoint Saved: %s" % savedir)
+
+
+
+            if model.is_end():
+                print("Early stopping")
+                break
+        print('experiment completed')
+
+        print("Testing...")
+        score_dict = model.test_on_loader(train_loader, tag="train")
+        score_dict.update(model.test_on_loader(val_loader, tag="val"))
+        score_dict.update(model.test_on_loader(test_loader, tag="test"))
         # Report & Save
-        score_df = pd.DataFrame(score_list)
-        print("\n", score_df.tail())
-        hu.torch_save(model_path, model.get_state_dict())
-        hu.save_pkl(score_list_path, score_list)
-        print("Checkpoint Saved: %s" % savedir)
-
-        if model.is_end():
-            print("Early stopping")
-            break
-    print('experiment completed')
+        score_list_path = os.path.join(savedir, "score_list_test.pkl")
+        hu.save_pkl(score_list_path, score_dict)
+    else:
+        print("Testing...")
+        score_dict = model.test_on_loader(test_loader, "test")
+        # Report & Save
+        score_list_path = os.path.join(savedir, "score_list_test.pkl")
+        hu.save_pkl(score_list_path, score_dict)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -127,6 +158,7 @@ if __name__ == "__main__":
     parser.add_argument("-ei", "--exp_id", default=None)
     parser.add_argument("-j", "--run_jobs", default=0, type=int)
     parser.add_argument("-nw", "--num_workers", type=int, default=0)
+    parser.add_argument("-to", "--test_only", type=int, default=0)
 
     args = parser.parse_args()
 
@@ -152,7 +184,7 @@ if __name__ == "__main__":
         # launch jobs
         # TODO: define experiment-wise
         from haven import haven_jobs as hjb
-        run_command = ('python trainval.py -ei <exp_id> -sb %s -nw %d' %  (args.savedir_base, args.num_workers))
+        run_command = ('python trainval.py -ei <exp_id> -sb %s -nw %d -to %d' %  (args.savedir_base, args.num_workers, args.test_only))
         job_config = {
             'volume': '/mnt:/mnt',
             'image': 'images.borgy.elementai.net/pau/pytorch:1.3.1py3-cuda10-cudnn7',
@@ -174,4 +206,5 @@ if __name__ == "__main__":
             # do trainval
             trainval(exp_dict=exp_dict,
                     savedir_base=args.savedir_base,
-                    reset=args.reset)
+                    reset=args.reset,
+                    test_only=args.test_only)

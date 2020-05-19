@@ -215,14 +215,14 @@ def get_stratified(values, fn, ratios=[0.6,0.2,0.2], tomap=True):
     if isinstance(vfield[0], float):
         pmap = stratified_splits.percentile_partition(vfield, ratios)
     else:
-        pmap = stratified_splits.unique_class_based_partition(vfield, ratios, rng=np.random)
+        pmap = stratified_splits.unique_class_based_partition(vfield, ratios, rng=np.random.RandomState(42))
     if tomap:
         return stratified_splits.partition_map_to_mask(pmap)
     else:
         return pmap
 
 class SynbolsHDF5(SynbolsNpz):
-    def __init__(self, path, split, key='font', transform=None, ratios=[0.6,0.2,0.2], mask=None, trim_size=None):
+    def __init__(self, path, split, key='font', transform=None, ratios=[0.2,0.6,0.2], mask=None, trim_size=None):
         self.path = path
         self.split = split
         self.task = key
@@ -242,42 +242,42 @@ class SynbolsHDF5(SynbolsNpz):
             print("Done converting.")
             if "split" in data:
                 if mask is not None:
-                    if mask in data['split']:
+                    if mask in data['split'] and (ratios == [0.6, 0.2, 0.2] or mask == "random"):
                         mask = data["split"][mask][...]
                     else:
-                        mask = self.parse_mask(mask)
+                        mask = self.parse_mask(mask, ratios=ratios)
 
 
-            self.y = [y[self.task] for y in self.y]
+            self.y = np.array([y[self.task] for y in self.y])
             
             self.trim_size = trim_size
             if trim_size is not None and len(self.x) > self.trim_size:
                 mask = self.trim_dataset(mask)
-
             self.make_splits(mask=mask)
             print("Done reading hdf5.")
 
-    def trim_dataset(self, mask):
+    def trim_dataset(self, mask, rng=np.random.RandomState(42)):
         labelset = np.sort(np.unique(self.y))
         counts = np.array([np.count_nonzero(self.y == y) for y in labelset])
-        ind = np.argsort(counts)[::-1]
-        labelset = labelset[ind]
-        counts = counts[ind]
-        # counts_sum = np.cumsum(counts)
-        cut_ind = 0
-        ratios = np.zeros(3) 
-        target_ratios = np.array(self.ratios) * self.trim_size
+        imxclass_train = int(np.ceil(60000 / len(labelset)))
+        imxclass_val_test = int(np.ceil(20000 / len(labelset)))
+        ind_train = np.arange(mask.shape[0])[mask[:,0]]
+        y_train = self.y[ind_train]
+        ind_train = np.concatenate([np.random.permutation(ind_train[y_train == y])[:imxclass_train] for y in labelset], 0)
+        ind_val = np.arange(mask.shape[0])[mask[:,1]]
+        y_val = self.y[ind_val]
+        ind_val = np.concatenate([np.random.permutation(ind_val[y_val == y])[:imxclass_val_test] for y in labelset], 0)
+        ind_test = np.arange(mask.shape[0])[mask[:,2]]
+        y_test = self.y[ind_test]
+        ind_test = np.concatenate([np.random.permutation(ind_test[y_test == y])[:imxclass_val_test] for y in labelset], 0)
         current_mask = np.zeros_like(mask)
-        while (ratios < target_ratios).any():
-            current_mask = current_mask | (mask & (np.array(self.y) == labelset[cut_ind])[:, None])
-            ratios = current_mask.sum(0)
-            cut_ind += 1
-            if cut_ind == len(labelset):
-                raise RuntimeError("Couldn't trim the dataset to the required size")
+        current_mask[ind_train, 0] = True
+        current_mask[ind_val, 1] = True
+        current_mask[ind_test, 2] = True
         return current_mask
 
 
-    def parse_mask(self, mask):
+    def parse_mask(self, mask, ratios):
         args = mask.split("_")[1:]
         if "stratified" in mask:
             mask = 1
@@ -288,7 +288,7 @@ class SynbolsHDF5(SynbolsNpz):
                     fn = lambda x: x['translation'][1]
                 else:
                     fn = lambda x: x[arg]
-                mask *= get_stratified(self.y, fn)
+                mask *= get_stratified(self.y, fn, ratios=ratios)
         elif "compositional" in mask:
             partition_map = None
             if len(args) != 2:
@@ -306,6 +306,10 @@ class SynbolsHDF5(SynbolsNpz):
                     _partition_map = get_stratified(self.y, fn, tomap=False)
                     partition_map = stratified_splits.compositional_split(_partition_map, partition_map)
             mask = partition_map
-        return mask==1
+        mask = mask.astype(bool)
+        new_mask = np.zeros_like(mask)
+        for i, split in enumerate(np.argsort(ratios)[::-1]):
+            new_mask[:, i] = mask[:, split]
+        return new_mask
 if __name__ == '__main__':
     synbols = SynbolsHDF5('/mnt/datasets/public/research/synbols/camouflage_n=100000_2020-Apr-09.h5py', 'val')

@@ -7,7 +7,8 @@ vgg16 = {"name": "vgg16", "imagenet_pretraining": False}
 mlp = {"name": "mlp", "depth": 3, "hidden_size": 256}
 warn = {"name": "warn"}
 wrn = {"name": "wrn"}
-conv4 = {"name": "conv4"}
+conv4_gap = {"name": "conv4", "gap": True}
+conv4 = {"name": "conv4", "gap": False}
 efficientnet = {"name": "efficientnet",
                 "type": "efficientnet-b4"}
 augmentation = False
@@ -214,27 +215,27 @@ for seed in [3, 42, 123]:
         "mask": "random"
     }
     datasets = [
-                camouflage,
+                # camouflage,
                 compositional_char_font,
                 compositional_rotation_scale,
                 compositional_translation_x_y,
-                default,
-                default_1M,
-                default_1M_font,
-                default_font,
-                default_font_ood,
-                default_ood,
-                mnist,
+                # default,
+                # default_1M,
+                # default_1M_font,
+                # default_font,
+                # default_font_ood,
+                # default_ood,
+                # mnist,
                 translation_x,
                 translation_y,
                 stratified_rotation,
                 stratified_scale,
-                svhn
+                # svhn
                 ]
     
     for lr in [0.001, 0.0001, 0.00001]:
         for dataset in datasets:
-            for backbone in []: #[resnet18, mlp, conv4, vgg16]:
+            for backbone in [resnet18, mlp, conv4, conv4_gap, vgg16]:
                 baselines += [{'lr':lr,
                             'batch_size': 512,
                             'min_lr_decay': 1e-3,
@@ -245,7 +246,7 @@ for seed in [3, 42, 123]:
                             'max_epoch': 200,
                             'episodic': False,
                             'dataset': dataset}]
-            for backbone in [warn]:
+            for backbone in [wrn]:
                 baselines += [{'lr':lr,
                             'batch_size': 128,
                             'min_lr_decay': 1e-3,
@@ -256,18 +257,18 @@ for seed in [3, 42, 123]:
                             'max_epoch': 200,
                             'episodic': False,
                             'dataset': dataset}]
-        for dataset in []: #[tiny]: 
-            for backbone in [mlp, conv4]:
-                baselines += [{'lr': lr,
-                            'batch_size':512,
-                            'amp': 2,
-                            "seed": seed,
-                            'min_lr_decay': 1e-3,
-                            'model': "classification",
-                            'backbone': backbone,
-                            'max_epoch': 200,
-                            'episodic': False,
-                            'dataset': dataset}]
+        # for dataset in [tiny]: 
+        #     for backbone in [mlp, conv4]:
+        #         baselines += [{'lr': lr,
+        #                     'batch_size':512,
+        #                     'amp': 2,
+        #                     "seed": seed,
+        #                     'min_lr_decay': 1e-3,
+        #                     'model': "classification",
+        #                     'backbone': backbone,
+        #                     'max_epoch': 200,
+        #                     'episodic': False,
+        #                     'dataset': dataset}]
 EXP_GROUPS = {}            
 EXP_GROUPS["baselines"] = baselines
 EXP_GROUPS["default_font"] = [{'lr': 0.0001,
@@ -276,10 +277,10 @@ EXP_GROUPS["default_font"] = [{'lr': 0.0001,
                         'amp': 1,
                         'min_lr_decay': 1e-3,
                         'model': "classification",
-                        'backbone': warn,
+                        'backbone': conv4,
                         'max_epoch': 100,
                         'episodic': False,
-                        'dataset': compositional_rotation_scale}]
+                        'dataset': stratified_rotation}]
 EXP_GROUPS["debug"] = [{'lr': 0.001,
                         'batch_size':128,
                         'model': "classification",
