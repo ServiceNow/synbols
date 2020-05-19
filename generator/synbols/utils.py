@@ -7,7 +7,8 @@ def _filter_fonts(all_fonts, font_properties, font_cluters):
     if font_properties is None:
         white_list = set(all_fonts)
     else:
-        white_list = {font for font in all_fonts if font_properties[font]['all_good']}
+        white_list = {font for font in all_fonts if (font_properties[font]['empty_count'] == 0 and
+                                                     font_properties[font]['no_bold_count'] == 0)}
 
     if font_cluters is not None:
 
@@ -16,11 +17,11 @@ def _filter_fonts(all_fonts, font_properties, font_cluters):
             white_cluster = white_list.intersection({e for e, _ in cluster})
             if len(white_cluster) > 0:
                 kept_font = white_cluster.pop()
-                logging.info("Cluster of size %d, %d are in the white list, keeping %s", len(cluster),
+                logging.debug("Cluster of size %d, %d are in the white list, keeping %s", len(cluster),
                              len(white_cluster) + 1,
                              kept_font)
             else:
-                logging.info("Cluster of size %d, none are in the whitelist", len(cluster))
+                logging.debug("Cluster of size %d, none are in the whitelist", len(cluster))
 
             # Remove the rest of the cluster from the whitelist
             white_list.difference_update(white_cluster)
@@ -44,11 +45,14 @@ class Alphabet:
         self.font_clusters = font_clusters
 
         self.fonts = _filter_fonts(self.all_fonts, font_properties, font_clusters)
-        logging.info("Filtering fonts for alphabet %s from %d to %d", self.name, len(self.all_fonts), len(self.fonts))
+        logging.debug("Filtering fonts for alphabet %s from %d to %d", self.name, len(self.all_fonts), len(self.fonts))
 
 
-def get_char_set(language):
+def get_char_set(language, add_cases=False):
     char_set = list(LocaleData(language).getExemplarSet())
+
+    if not add_cases:
+        return char_set
 
     n_char = len(char_set)
 
@@ -57,7 +61,7 @@ def get_char_set(language):
 
     n_char_new = len(char_set)
     if n_char != n_char_new:
-        logging.info("inflating %s from %d to %d using uppercase.", language, n_char, n_char_new)
+        logging.debug("inflating %s from %d to %d using uppercase.", language, n_char, n_char_new)
 
     return list(char_set)
 

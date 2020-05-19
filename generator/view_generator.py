@@ -1,9 +1,14 @@
 import numpy as np
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 from synbols.data_io import pack_dataset
 from synbols.drawing import Camouflage, color_sampler, Gradient, MultiGradient, NoPattern, SolidColor
-from synbols.generate import generate_char_grid, dataset_generator, basic_image_sampler, add_occlusion, flatten_mask_except_first
+from synbols.generate import generate_char_grid, dataset_generator, basic_image_sampler, add_occlusion, \
+    flatten_mask_except_first, generate_counting_dataset
 from synbols.fonts import ALPHABET_MAP
+from  synbols import generate
 
 from view_dataset import plot_dataset
 import matplotlib.pyplot as plt
@@ -21,12 +26,22 @@ if __name__ == "__main__":
 
     attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP['latin'])
     # attr_sampler = add_occlusion(attr_sampler)
-    x, mask, y = pack_dataset(dataset_generator(attr_sampler, 1000, flatten_mask_except_first))
-    # x, mask, y = pack_dataset(generate_char_grid('latin', n_font=15, n_char=20, **kwargs))
-    print(mask.shape, x.shape)
-    mask = mask.astype(np.float) / 256
+    # x, mask, y = pack_dataset(dataset_generator(attr_sampler, 1000, flatten_mask_except_first))
+    x, mask, y = pack_dataset(generate_counting_dataset(1000))
+    # x, mask, y = pack_dataset(generate_char_grid('latin', n_font=15, n_char=20))
 
-    plot_dataset(x, y, name='latin', h_axis='char', v_axis=None, rng=np.random.RandomState(42))
-    # plot_dataset(mask, y, name='mask', h_axis='char', v_axis='font', rng=np.random.RandomState(42))
 
+    # mask = [attr['overlap_score'] == 0 for attr in y]
+    # y = np.array(y)[mask]
+    # x = x[mask]
+
+    plt.figure('dataset')
+    plot_dataset(x, y, h_axis=None, v_axis=None, rng=np.random.RandomState(42))
+
+    # print(mask.shape, x.shape)
+    # mask = mask.astype(np.float) / 256
+    # plt.figure('mask')
+    # plot_dataset(mask, y, h_axis='char', v_axis=None, rng=np.random.RandomState(42))
+
+    plt.savefig('tst.png')
     plt.show()

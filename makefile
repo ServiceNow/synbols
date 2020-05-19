@@ -45,16 +45,14 @@ active-learning:
 	generator/generate_dataset.py --dataset=missing-symbol --n_samples=100000 &
 	generator/generate_dataset.py --dataset=large-translation --n_samples=100000 &
 	generator/generate_dataset.py --dataset=some-large-occlusion --n_samples=100000 &
-    wait
+	wait
 
 segmentation:
 	generator/generate_dataset.py --dataset=segmentation --n_samples=100000  &
 	generator/generate_dataset.py --dataset=counting --n_samples=100000  &
 
-
 splits:
 	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/generate_splits.py"
-
 
 font_check:
 	$(SYNBOLS_RUN) sh -c "cd /local; python generator/run_font_checks.py"

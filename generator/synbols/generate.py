@@ -31,27 +31,29 @@ def basic_image_sampler(alphabet=None, char=None, font=None, background=None, fo
             _rotation = _select(rng.randn() * 0.3, rotation, rng)
             _scale = _select(0.6 * np.exp(rng.randn() * 0.2), scale, rng)
             _translation = _select(tuple(rng.rand(2) * 1.8 - 0.9), translation, rng)
-            _foreground = _select(Gradient(), foreground, rng)
+            _foreground = _select(Gradient(rng=rng), foreground, rng)
 
             symbols.append(Symbol(alphabet=_alphabet, char=_char, font=_font, foreground=_foreground,
                                   is_slant=_is_slant, is_bold=_is_bold, rotation=_rotation, scale=_scale,
                                   translation=_translation, rng=rng))
 
-        _background = _select(Gradient(), background, rng)
+        _background = _select(Gradient(rng=rng), background, rng)
         _inverse_color = _select(rng.choice([True, False]), inverse_color, rng)
 
         return Image(symbols, background=_background, inverse_color=_inverse_color, resolution=resolution,
-                     pixel_noise_scale=pixel_noise_scale, is_gray=is_gray)
+                     pixel_noise_scale=pixel_noise_scale, is_gray=is_gray, rng=rng)
 
     return sampler
 
 
 def flatten_mask(masks):
+    overlap = np.mean(masks.sum(axis=-1) >= 256)
+
     flat_mask = np.zeros(masks.shape[:-1])
 
     for i in range(masks.shape[-1]):
         flat_mask[(masks[:, :, i] > 2)] = i + 1
-    return flat_mask
+    return flat_mask, {'overlap_score': overlap}
 
 
 def flatten_mask_except_first(masks):
@@ -60,7 +62,7 @@ def flatten_mask_except_first(masks):
 
 def add_occlusion(attr_sampler, n_occlusion=None, occlusion_char=None, rotation=None, scale=None, translation=None,
                   foreground=None, rng=np.random):
-    occlusion_chars = ['■', '▲', '▼', '●']
+    occlusion_chars = ['■', '▲', '●']
 
     def sampler():
         image = attr_sampler()
@@ -72,7 +74,7 @@ def add_occlusion(attr_sampler, n_occlusion=None, occlusion_char=None, rotation=
 
             _occlusion_char = _select(rng.choice(occlusion_chars), occlusion_char, rng)
             _rotation = _select(rng.rand() * np.pi * 2, rotation, rng)
-            _foreground = _select(Gradient(), foreground, rng)
+            _foreground = _select(Gradient(rng=rng), foreground, rng)
 
             occlusion = Symbol(ALPHABET_MAP['latin'], _occlusion_char, font='Arial', foreground=_foreground,
                                rotation=_rotation, scale=_scale, translation=_translation, is_slant=False,
@@ -90,10 +92,14 @@ def dataset_generator(attr_sampler, n_samples, mask_aggregator=None):
     for i in range(n_samples):
         attributes = attr_sampler()
         mask = attributes.make_mask()
-        if mask_aggregator is not None:
-            mask = mask_aggregator(mask)
         x = attributes.make_image()
         y = attributes.attribute_dict()
+
+        if mask_aggregator is not None:
+            mask = mask_aggregator(mask)
+            if isinstance(mask, tuple):
+                mask, mask_attributes = mask
+                y.update(mask_attributes)
 
         if i % 100 == 0 and i != 0:
             dt = (t.time() - t0) / 100.
@@ -140,6 +146,27 @@ def generate_default_dataset(n_samples, alphabet='latin', **kwarg):
     return dataset_generator(attr_sampler, n_samples)
 
 
+def make_preview(generator, file_name, n_row=20, n_col=40):
+    x_list = []
+    y_list = []
+    for x, mask, y in generator:
+
+        if x_list is not None:
+
+            x_list.append(x)
+            y_list.append(y)
+
+            if len(x_list) == n_row * n_col:
+                logging.info("Generating Preview")
+                from view_dataset import plot_dataset
+                from matplotlib import pyplot as plt
+                plot_dataset(np.stack(x_list), y_list, h_axis=None, v_axis=None, n_row=n_row, n_col=n_col)
+                x_list = None
+                plt.savefig(file_name, dpi=300, bbox_inches='tight', pad_inches=0)
+
+        yield x, mask, y
+
+
 def generate_camouflage_dataset(n_samples, alphabet='latin', **kwarg):
     def attr_sampler():
         angle = np.random.rand() * np.pi * 2
@@ -161,29 +188,33 @@ def generate_segmentation_dataset(n_samples, alphabet='latin', resolution=(128, 
         return 0.1 * np.exp(rng.randn() * 0.4)
 
     def n_symbols(rng):
-        return rng.choice(list(range(3, 20)))
+        return rng.choice(list(range(3, 10)))
 
     attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], resolution=resolution, scale=scale,
                                          is_bold=False, n_symbols=n_symbols)
     return dataset_generator(attr_generator, n_samples, flatten_mask)
 
 
-def generate_counting_dataset(n_samples, alphabet='latin', resolution=(128, 128), **kwarg):
+def generate_counting_dataset(n_samples, alphabet='latin', resolution=(128, 128), scale_variation=0.5, **kwarg):
     def scale(rng):
-        return 0.1 * np.exp(rng.randn() * 0.4)
+        return 0.1 * np.exp(rng.randn() * scale_variation)
 
     def n_symbols(rng):
-        return rng.choice(list(range(3, 20)))
+        return rng.choice(list(range(3, 10)))
 
     def char_sampler(rng):
         if rng.rand() < 0.3:
             return rng.choice(ALPHABET_MAP[alphabet].symbols)
         else:
-            return 'k'
+            return 'a'
 
     attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], char=char_sampler, resolution=resolution,
                                          scale=scale, is_bold=False, n_symbols=n_symbols)
     return dataset_generator(attr_generator, n_samples, flatten_mask)
+
+
+def generate_counting_dataset_scale_fix(**kwargs):
+    return generate_counting_dataset(scale_variation=0, **kwargs)
 
 
 # for few-shot learning

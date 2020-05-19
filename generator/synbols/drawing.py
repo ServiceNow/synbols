@@ -100,7 +100,7 @@ class SolidColor(Pattern):
 
     def draw(self, ctxt):
         self.set_as_source(ctxt)
-        ctxt.fill()
+        ctxt.paint()
 
     def set_as_source(self, ctxt):
         ctxt.set_source_rgb(*self.color)
@@ -116,9 +116,12 @@ def color_sampler(rng=np.random, brightness_range=(0, 1)):
 
 
 class Gradient(Pattern):
-    def __init__(self, alpha=1, types=('radial', 'linear'), random_color=color_sampler(), rng=np.random):
+    def __init__(self, alpha=1, types=('radial', 'linear'), random_color=None, rng=np.random):
+        if random_color is None:
+            random_color = color_sampler(rng)
         self.random_color = random_color
         self.rng = rng
+
         self.types = types
         self.alpha = alpha
 
@@ -128,8 +131,9 @@ class Gradient(Pattern):
 
 
 class MultiGradient(Pattern):
-    def __init__(self, alpha=0.5, n_gradients=2, types=('radial', 'linear'), random_color=color_sampler(),
-                 rng=np.random):
+    def __init__(self, alpha=0.5, n_gradients=2, types=('radial', 'linear'), random_color=None, rng=np.random):
+        if random_color is None:
+            random_color = color_sampler(rng)
         self.random_color = random_color
         self.rng = rng
         self.types = types
@@ -151,8 +155,10 @@ class MultiGradient(Pattern):
         raise NotImplemented()
 
 
-def _random_pattern(alpha=0.8, random_color=color_sampler(), patern_types=('linear', 'radial'), rng=np.random):
+def _random_pattern(alpha=0.8, random_color=None, patern_types=('linear', 'radial'), rng=np.random):
     """"Select a random pattern with either radioal or linear gradient."""
+    if random_color is None:
+        random_color = color_sampler(rng)
     pattern_type = rng.choice(patern_types)
     if pattern_type == 'linear':
         x1, y1 = rng.rand(2)
@@ -161,9 +167,11 @@ def _random_pattern(alpha=0.8, random_color=color_sampler(), patern_types=('line
         x2 = x1 + r * np.cos(theta)
         y2 = y1 + r * np.sin(theta)
         pat = cairo.LinearGradient(x1, y1, x2, y2)
-    if pattern_type == 'radial':
+    elif pattern_type == 'radial':
         x1, y1, x2, y2 = rng.rand(4)
         pat = cairo.RadialGradient(x1, y1, 2, x2, y2, 0.1)
+    else:
+        raise Exception("unknown patter type %s" % pattern_type)
 
     r, g, b = random_color()
     pat.add_color_stop_rgba(1, r, g, b, alpha)

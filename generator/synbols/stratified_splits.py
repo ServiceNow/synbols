@@ -91,9 +91,6 @@ def stratified_split(attr_list, attr_name, ratios, rng=np.random):
     return part_map
 
 
-def compositional_split_ratios_search(attr_list, attr_name_1, attr_name_2, ratios, rng):
-    pass
-
 
 def make_default_splits(attr_list, ratios, random_seed):
     random_masks = partition_map_to_mask(random_map(len(attr_list), ratios, np.random.RandomState(random_seed)))

@@ -19,12 +19,14 @@ def _extract_axis(y, axis_name, max_val):
     return [e for e, _ in counter.most_common(max_val)]
 
 
-def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n_col=40, rng=np.random):
-    fig = plt.figure(name)
-    plt.axis('off')
+def plot_dataset(x, y, h_axis='char', v_axis='font', n_row=20, n_col=40, show_x_label=True,
+                 show_x_tick_labels=True, show_y_label=True, show_y_tick_labels=True, x_tick_labels_rotation=0,
+                 rng=np.random):
+    # plt.axis('off')
     plt.tight_layout()
     h_values = _extract_axis(y, h_axis, n_col)
     v_values = _extract_axis(y, v_axis, n_row)
+
     attr_map = defaultdict(list)
     for i, attr in enumerate(y):
         attr_map[(attr.get(h_axis), attr.get(v_axis))].append(i)
@@ -54,10 +56,17 @@ def plot_dataset(x, y, h_axis='char', v_axis='font', name="dataset", n_row=20, n
         print(img_grid.shape)
 
     plt.imshow(img_grid)
+
     plt.xlabel(h_axis)
     plt.ylabel(v_axis)
 
-    fig.tight_layout()
+    ax = plt.gca()
+
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+
+    plt.gcf().tight_layout()
+    return h_values, v_values
 
 
 def map_to_class_id(values):
