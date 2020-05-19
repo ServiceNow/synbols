@@ -256,11 +256,11 @@ class SynbolsHDF5(SynbolsNpz):
             self.make_splits(mask=mask)
             print("Done reading hdf5.")
 
-    def trim_dataset(self, mask, rng=np.random.RandomState(42)):
+    def trim_dataset(self, mask, train_size=60000, val_test_size=20000, rng=np.random.RandomState(42)):
         labelset = np.sort(np.unique(self.y))
         counts = np.array([np.count_nonzero(self.y == y) for y in labelset])
-        imxclass_train = int(np.ceil(60000 / len(labelset)))
-        imxclass_val_test = int(np.ceil(20000 / len(labelset)))
+        imxclass_train = int(np.ceil(train_size / len(labelset)))
+        imxclass_val_test = int(np.ceil(val_test_size / len(labelset)))
         ind_train = np.arange(mask.shape[0])[mask[:,0]]
         y_train = self.y[ind_train]
         ind_train = np.concatenate([np.random.permutation(ind_train[y_train == y])[:imxclass_train] for y in labelset], 0)
