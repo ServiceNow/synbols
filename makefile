@@ -4,6 +4,8 @@ versiontag = $(shell date +%Y-%m-%d)
 
 SYNBOLS_RUN = docker run --user $(userid) -it -v $(CURDIR)/generator:/generator -v $(CURDIR):/local synbols
 
+RUN_GENERATOR = ./docker_run.sh generator/generate_dataset.py
+
 docker:
 	docker build -t synbols:latest .
 	docker tag synbols:latest synbols:$(versiontag)
@@ -28,28 +30,30 @@ test:
 view_font_clusters:
 	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/view_font_clustering.py"
 
+
 datasets:
-	generator/generate_dataset.py --n_samples=100000 &
-	generator/generate_dataset.py --dataset=camouflage --n_samples=100000 &
-	generator/generate_dataset.py --dataset=tiny --n_samples=10000 &
-	generator/generate_dataset.py --dataset=less-variations --n_samples=100000 &
-	generator/generate_dataset.py --dataset=many-small-occlusion --n_samples=100000 &
+	$(RUN_GENERATOR) --n_samples=100000 &
+	$(RUN_GENERATOR) --dataset=camouflage --n_samples=100000 &
+	$(RUN_GENERATOR) --dataset=tiny --n_samples=10000 &
+	$(RUN_GENERATOR) --dataset=less-variations --n_samples=100000 &
+	$(RUN_GENERATOR) --dataset=many-small-occlusion --n_samples=100000 &
 	wait
-	generator/generate_dataset.py --n_samples=1000000 &
-	generator/generate_dataset.py --dataset=all-fonts --n_samples=1000000 &
-	generator/generate_dataset.py --dataset=all-chars --n_samples=1000000  &
-	generator/generate_dataset.py --dataset=less-variations --n_samples=1000000  &
+	$(RUN_GENERATOR) --n_samples=1000000 &
+	$(RUN_GENERATOR) --dataset=all-fonts --n_samples=1000000 &
+	$(RUN_GENERATOR) --dataset=all-chars --n_samples=1000000  &
+	$(RUN_GENERATOR) --dataset=less-variations --n_samples=1000000  &
 	wait
 
 active-learning:
-	generator/generate_dataset.py --dataset=missing-symbol --n_samples=100000 &
-	generator/generate_dataset.py --dataset=large-translation --n_samples=100000 &
-	generator/generate_dataset.py --dataset=some-large-occlusion --n_samples=100000 &
+	$(RUN_GENERATOR) --dataset=missing-symbol --n_samples=100000 &
+	$(RUN_GENERATOR) --dataset=large-translation --n_samples=100000 &
+	$(RUN_GENERATOR) --dataset=some-large-occlusion --n_samples=100000 &
 	wait
 
 segmentation:
-	generator/generate_dataset.py --dataset=segmentation --n_samples=100000  &
-	generator/generate_dataset.py --dataset=counting --n_samples=100000  &
+	$(RUN_GENERATOR) --dataset=counting --n_samples=100000  &
+	$(RUN_GENERATOR) --dataset=counting-fix-scale --n_samples=100000  &
+    wait
 
 splits:
 	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/generate_splits.py"

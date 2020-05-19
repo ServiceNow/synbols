@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 import argparse
 import logging
+logging.basicConfig(level=logging.INFO)
 
 from datetime import datetime
+from synbols.fonts import ALPHABET_MAP
 
-logging.basicConfig(level=logging.INFO)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', help='name of the predefined dataset', default='default')
@@ -19,6 +20,9 @@ if __name__ == "__main__":
 
     from synbols.generate import DATASET_GENERATOR_MAP, make_preview
     from synbols.data_io import write_h5
+
+    for alphabet_name, alphabet in ALPHABET_MAP.items():
+        logging.info("%s: %d symbols, %d fonts", alphabet_name, len(alphabet.symbols), len(alphabet.fonts))
 
     logging.info("Generating %d samples from %s dataset", args.n_samples, args.dataset)
 

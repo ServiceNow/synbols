@@ -308,7 +308,7 @@ DATASET_GENERATOR_MAP = {
     'camouflage': generate_camouflage_dataset,
     'segmentation': generate_segmentation_dataset,
     'counting': generate_counting_dataset,
-    'counting_fix_scale': generate_counting_dataset_scale_fix,
+    'counting-fix-scale': generate_counting_dataset_scale_fix,
     'missing-symbol': missing_symbol_dataset,
     'some-large-occlusion': generate_some_large_occlusions,
     'many-small-occlusion': generate_many_small_occlusions,
