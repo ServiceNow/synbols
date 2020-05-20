@@ -162,7 +162,7 @@ def make_preview(generator, file_name, n_row=20, n_col=40):
                 from matplotlib import pyplot as plt
                 plot_dataset(np.stack(x_list), y_list, h_axis=None, v_axis=None, n_row=n_row, n_col=n_col)
                 x_list = None
-                plt.savefig(file_name, dpi=300, bbox_inches='tight', pad_inches=0)
+                plt.savefig(file_name, dpi=1000, bbox_inches='tight', pad_inches=0)
 
         yield x, mask, y
 
