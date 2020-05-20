@@ -4,7 +4,7 @@ versiontag = $(shell date +%Y-%m-%d)
 
 SYNBOLS_RUN = docker run --user $(userid) -it -v $(CURDIR)/generator:/generator -v $(CURDIR):/local synbols
 
-RUN_GENERATOR = ./docker_run.sh generator/generate_dataset.py
+RUN_GENERATOR=./docker_run.sh generator/generate_dataset.py
 
 docker:
 	docker build -t synbols:latest .
