@@ -31,13 +31,15 @@ view_font_clusters:
 	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/view_font_clustering.py"
 
 
-datasets:
+datasets-small:
 	$(RUN_GENERATOR) --n_samples=100000 &
 	$(RUN_GENERATOR) --dataset=camouflage --n_samples=100000 &
 	$(RUN_GENERATOR) --dataset=tiny --n_samples=10000 &
 	$(RUN_GENERATOR) --dataset=less-variations --n_samples=100000 &
 	$(RUN_GENERATOR) --dataset=many-small-occlusion --n_samples=100000 &
 	wait
+
+datasets-big:
 	$(RUN_GENERATOR) --n_samples=1000000 &
 	$(RUN_GENERATOR) --dataset=all-fonts --n_samples=1000000 &
 	$(RUN_GENERATOR) --dataset=all-chars --n_samples=1000000  &
