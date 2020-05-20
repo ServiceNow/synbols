@@ -213,8 +213,8 @@ def generate_counting_dataset(n_samples, alphabet='latin', resolution=(128, 128)
     return dataset_generator(attr_generator, n_samples, flatten_mask)
 
 
-def generate_counting_dataset_scale_fix(**kwargs):
-    return generate_counting_dataset(scale_variation=0, **kwargs)
+def generate_counting_dataset_scale_fix(n_samples, **kwargs):
+    return generate_counting_dataset(n_samples, scale_variation=0, **kwargs)
 
 
 # for few-shot learning
