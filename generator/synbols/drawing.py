@@ -196,7 +196,7 @@ class Camouflage(Pattern):
         stroke_vector = self.stroke_length * np.array([np.cos(self.stroke_angle), np.sin(self.stroke_angle)])
 
         for i in range(self.n_stroke):
-            start = (self.rng.rand(2) * 1.2 - 0.1) * (1 - stroke_vector)
+            start = (self.rng.rand(2) * 1.6 - 0.3) * (1 - stroke_vector)
             stop = start + stroke_vector + self.rng.randn(2) * self.stroke_noise
             ctxt.move_to(*start)
             ctxt.line_to(*stop)
