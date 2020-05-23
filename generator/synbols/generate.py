@@ -162,6 +162,7 @@ def make_preview(generator, file_name, n_row=20, n_col=40):
                 from matplotlib import pyplot as plt
                 plot_dataset(np.stack(x_list), y_list, h_axis=None, v_axis=None, n_row=n_row, n_col=n_col)
                 x_list = None
+                # TODO make te dpi dependent on the total number of pixels
                 plt.savefig(file_name, dpi=1000, bbox_inches='tight', pad_inches=0)
 
         yield x, mask, y
@@ -170,11 +171,13 @@ def make_preview(generator, file_name, n_row=20, n_col=40):
 def generate_camouflage_dataset(n_samples, alphabet='latin', **kwarg):
     def attr_sampler():
         angle = np.random.rand() * np.pi * 2
-        fg = Camouflage(stroke_angle=angle)
-        bg = Camouflage(stroke_angle=angle + 2 + np.random.randn() * 0.5)
-        scale = 0.7 * np.exp(np.random.randn() * 0.1)
+        angle = 0
+        fg = Camouflage(stroke_angle=angle, stroke_width=0.1, stroke_length=0.6, stroke_noise=0)
+        bg = Camouflage(stroke_angle=angle + np.pi/2, stroke_width=0.1, stroke_length=0.6, stroke_noise=0)
+        # scale = 0.7 * np.exp(np.random.randn() * 0.1)
+        scale = 0.8
         return basic_image_sampler(
-            alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg, is_bold=True,
+            alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg, is_bold=True, is_slant=False,
             scale=scale)()
 
     return dataset_generator(attr_sampler, n_samples)
