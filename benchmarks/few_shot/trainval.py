@@ -44,6 +44,7 @@ def trainval(exp_dict, savedir_base, reset=False, wandb='None', wandb_key='None'
     # -----------
     train_dataset = get_dataset('train', exp_dict)
     val_dataset = get_dataset('val', exp_dict)
+    test_dataset = get_dataset('test', exp_dict)
 
     # train and val loader
     if exp_dict["episodic"] == False:
@@ -55,6 +56,10 @@ def trainval(exp_dict, savedir_base, reset=False, wandb='None', wandb_key='None'
                                     batch_size=exp_dict['batch_size'],
                                     shuffle=True,
                                     num_workers=args.num_workers) 
+        test_loader = DataLoader(test_dataset,
+                                    batch_size=exp_dict['batch_size'],
+                                    shuffle=True,
+                                    num_workers=args.num_workers) 
     else: # to support episodes TODO: move inside each model
         from datasets.episodic_dataset import EpisodicDataLoader
         train_loader = EpisodicDataLoader(train_dataset,
@@ -63,6 +68,11 @@ def trainval(exp_dict, savedir_base, reset=False, wandb='None', wandb_key='None'
                                     collate_fn=lambda x: x,
                                     num_workers=args.num_workers) 
         val_loader = EpisodicDataLoader(val_dataset,
+                                    batch_size=exp_dict['batch_size'],
+                                    shuffle=True,
+                                    collate_fn=lambda x: x,
+                                    num_workers=args.num_workers) 
+        test_loader = EpisodicDataLoader(val_dataset,
                                     batch_size=exp_dict['batch_size'],
                                     shuffle=True,
                                     collate_fn=lambda x: x,
@@ -87,6 +97,7 @@ def trainval(exp_dict, savedir_base, reset=False, wandb='None', wandb_key='None'
         # restart experiment
         score_list = []
         s_epoch = 0
+        best_val = 0
 
     # Train & Val
     # ------------
@@ -98,12 +109,20 @@ def trainval(exp_dict, savedir_base, reset=False, wandb='None', wandb_key='None'
         # Train the model
         score_dict.update(model.train_on_loader(train_loader))
 
-        # Validate the model
-        score_dict.update(model.val_on_loader(val_loader, savedir=os.path.join(savedir_base, exp_dict['dataset']['name'])))
-        score_dict["epoch"] = e
+        # Validate and Test the model
+        score_dict.update(model.val_on_loader(val_loader, mode='val',
+                savedir=os.path.join(savedir_base, exp_dict['dataset']['name'])))
+        score_dict.update(model.val_on_loader(test_loader, mode='test'))
 
+        score_dict["epoch"] = e
+        
         # Visualize the model
         # model.vis_on_loader(vis_loader, savedir=savedir+"/images/")
+
+        # Test error at best validation:
+        if score_dict["val_accuracy"] > best_val:
+            score_dict["test_accuracy_at_best_val"] = score_dict["test_accuracy"]
+            best_val = score_dict["val_accuracy"]
 
         # Add to score_list and save checkpoint
         score_list += [score_dict]
@@ -117,6 +136,10 @@ def trainval(exp_dict, savedir_base, reset=False, wandb='None', wandb_key='None'
         if wandb is not 'None':
             for key, values in score_dict.items():
                 logger.log({key:values})
+
+        
+        # Patience:
+        # TODO: add patience
 
     print('experiment completed')
 

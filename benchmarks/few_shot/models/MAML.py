@@ -87,7 +87,7 @@ class MAML(torch.nn.Module):
         return {"train_loss": qry_losses.item(), "train_acc":qry_accs}
 
     #@torch.no_grad()
-    def val_on_loader(self, loader, savedir=None):
+    def val_on_loader(self, loader, mode='val', savedir=None):
         
 
         ## for now, one task at a time
@@ -146,8 +146,10 @@ class MAML(torch.nn.Module):
         qry_accs = 100. * sum(qry_accs) / len(qry_accs)
 
         self.scheduler.step(qry_losses)
-        return {"val_loss": qry_losses.item(), 
-                "val_accuracy": qry_accs}
+        return {"{}_loss".format(mode): qry_losses.item(), 
+                "{}_accuracy".format(mode): qry_accs}
+
+#TODO: move this elsewhere
 
     def get_state_dict(self):
         state = {}

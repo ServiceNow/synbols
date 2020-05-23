@@ -25,10 +25,13 @@ class FewShotSampler():
 
 class EpisodicDataset(Dataset):
     def __init__(self, labels, sampler, size, transforms):
-        self.labels = labels
+        ## remap labels
+        curr_unique_labels = np.unique(labels)
+        self.labels = [np.where(curr_unique_labels==x)[0][0] for x in labels]
+        self.labels = np.array(self.labels)
         self.sampler = sampler
-        self.labelset = np.unique(labels)
-        self.indices = np.arange(len(labels))
+        self.labelset = np.unique(self.labels)
+        self.indices = np.arange(len(self.labels))
         self.transforms = transforms
         self.reshuffle()
         self.size = size
