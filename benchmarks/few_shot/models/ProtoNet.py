@@ -10,11 +10,9 @@ import os
 class ProtoNet(torch.nn.Module):
     def __init__(self, exp_dict):
         super().__init__()
-        self.backbone = get_backbone(exp_dict, feature_extractor=True)
+        self.backbone = get_backbone(exp_dict, classify=False)
         self.backbone.cuda()
 
-        # self.temp=0
-        
         self.optimizer = torch.optim.SGD(self.backbone.parameters(),
                                             lr=exp_dict['lr'],
                                             weight_decay=5e-4,
@@ -28,6 +26,7 @@ class ProtoNet(torch.nn.Module):
 
     def train_on_loader(self, loader):
         _loss = 0
+        _accuracy = 0
         _total = 0
 
         # self.temp += 1
@@ -59,15 +58,19 @@ class ProtoNet(torch.nn.Module):
             logits = prototype_distance(support_embeddings, query_embeddings, support_relative_labels)
             loss = F.cross_entropy(logits, query_relative_labels.long())
             _loss += float(loss)
-            loss = F.cross_entropy(logits, query_relative_labels.long())
             _total += 1
             loss.backward()
             self.optimizer.step()
+
+            # Accuracy reporting 
+            preds = logits.max(-1)[1]
+            _accuracy += float((preds == query_relative_labels).float().mean())
         
-        return {"train_loss": float(_loss) / _total}
+        return {"train_loss": float(_loss) / _total,
+                "train_accuracy": 100*float(_accuracy) / _total}
 
     @torch.no_grad()
-    def val_on_loader(self, loader, savedir=None):
+    def val_on_loader(self, loader, mode='val', savedir=None):
         _accuracy = 0
         _total = 0
         _loss = 0
@@ -104,10 +107,14 @@ class ProtoNet(torch.nn.Module):
             _loss += float(loss) * qs * nclasses
             _accuracy += float((preds == query_relative_labels).float().sum())
             _total += qs * nclasses
+        
         self.scheduler.step(_loss / _total)
         
-        return {"val_loss": _loss / _total, 
-                "val_accuracy": 100*(_accuracy / _total)}
+        return {"{}_loss".format(mode): _loss / _total, 
+                "{}_accuracy".format(mode): 100*(_accuracy / _total)}
+
+#TODO: move all this elsewhere:
+
 
     def get_state_dict(self):
         state = {}

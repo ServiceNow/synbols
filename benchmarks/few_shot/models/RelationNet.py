@@ -92,7 +92,7 @@ class RelationNet(torch.nn.Module):
                 "train_accuracy": 100*(float(_accuracy) / _total)}
 
     @torch.no_grad()
-    def val_on_loader(self, loader, savedir=None):
+    def val_on_loader(self, loader, mode='val', savedir=None):
         _accuracy = 0
         _total = 0
         _loss = 0
@@ -142,8 +142,8 @@ class RelationNet(torch.nn.Module):
         
         self.scheduler.step(_loss / _total)
         
-        return {"val_loss": _loss / _total,
-                "val_accuracy": 100*(_accuracy / _total)}
+        return {"{}_loss".format(mode): _loss / _total,
+                "{}_accuracy".format(mode): 100*(_accuracy / _total)}
 
     def get_state_dict(self):
         state = {}
