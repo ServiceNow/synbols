@@ -173,7 +173,7 @@ def generate_camouflage_dataset(n_samples, alphabet='latin', **kwarg):
         angle = np.random.rand() * np.pi * 2
         angle = 0
         fg = Camouflage(stroke_angle=angle, stroke_width=0.1, stroke_length=0.6, stroke_noise=0)
-        bg = Camouflage(stroke_angle=angle + np.pi/2, stroke_width=0.1, stroke_length=0.6, stroke_noise=0)
+        bg = Camouflage(stroke_angle=angle + np.pi / 2, stroke_width=0.1, stroke_length=0.6, stroke_noise=0)
         # scale = 0.7 * np.exp(np.random.randn() * 0.1)
         scale = 0.8
         return basic_image_sampler(
@@ -198,6 +198,8 @@ def generate_segmentation_dataset(n_samples, alphabet='latin', resolution=(128, 
     return dataset_generator(attr_generator, n_samples, flatten_mask)
 
 
+
+
 def generate_counting_dataset(n_samples, alphabet='latin', resolution=(128, 128), scale_variation=0.5, **kwarg):
     def scale(rng):
         return 0.1 * np.exp(rng.randn() * scale_variation)
@@ -219,6 +221,23 @@ def generate_counting_dataset(n_samples, alphabet='latin', resolution=(128, 128)
 def generate_counting_dataset_scale_fix(n_samples, **kwargs):
     return generate_counting_dataset(n_samples, scale_variation=0, **kwargs)
 
+
+def generate_counting_dataset_crowded(n_samples, alphabet='latin', resolution=(128, 128), scale_variation=0.1, **kwarg):
+    def scale(rng):
+        return 0.1 * np.exp(rng.randn() * scale_variation)
+
+    def n_symbols(rng):
+        return rng.choice(list(range(30, 50)))
+
+    def char_sampler(rng):
+        if rng.rand() < 0.3:
+            return rng.choice(ALPHABET_MAP[alphabet].symbols)
+        else:
+            return 'a'
+
+    attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], char=char_sampler, resolution=resolution,
+                                         scale=scale, is_bold=False, n_symbols=n_symbols)
+    return dataset_generator(attr_generator, n_samples, flatten_mask)
 
 # for few-shot learning
 # ---------------------
@@ -312,6 +331,7 @@ DATASET_GENERATOR_MAP = {
     'segmentation': generate_segmentation_dataset,
     'counting': generate_counting_dataset,
     'counting-fix-scale': generate_counting_dataset_scale_fix,
+    'counting-crowded': generate_counting_dataset_crowded,
     'missing-symbol': missing_symbol_dataset,
     'some-large-occlusion': generate_some_large_occlusions,
     'many-small-occlusion': generate_many_small_occlusions,

@@ -55,10 +55,8 @@ active-learning:
 segmentation:
 	$(RUN_GENERATOR) --dataset=counting --n_samples=100000  &
 	$(RUN_GENERATOR) --dataset=counting-fix-scale --n_samples=100000  &
+	$(RUN_GENERATOR) --dataset=counting-crowded --n_samples=100000  &
 	wait
-
-splits:
-	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/generate_splits.py"
 
 font_check:
 	$(SYNBOLS_RUN) sh -c "cd /local; python generator/run_font_checks.py"
