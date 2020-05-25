@@ -27,7 +27,7 @@ def get_dataset(split, exp_dict):
                                 split=split, 
                                 sampler=sampler, 
                                 size=dataset_dict["%s_iters" %split], 
-                                key=dataset_dict["task"], 
+                                key=dataset_dict["task"][split], 
                                 transform=transform,
                                 mask=exp_dict['dataset']['mask'])
     elif dataset_dict["name"] == "miniimagenet":

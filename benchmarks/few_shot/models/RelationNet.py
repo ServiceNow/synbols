@@ -4,22 +4,22 @@ import torch.nn.functional as F
 from tqdm import tqdm
 import numpy as np
 from .modules.RelationNet import make_RelationNet, RelationNet_acc 
-from .backbones import get_backbone
+from .backbones import get_backbone, count_parameters, MLP
 import os
 
 class RelationNet(torch.nn.Module):
     def __init__(self, exp_dict):
         super().__init__()
         
-        _F = get_backbone(exp_dict, 
-                            architecture="conv4",
-                            hidden_size=exp_dict["hidden_size"],
-                            feature_extractor=True)
-        _G = get_backbone(exp_dict,
-                            architecture="mlp3",
-                            hidden_size=2*exp_dict["hidden_size"],
-                            output_size=1,
-                            feature_extractor=False)
+        assert exp_dict['backbone']['name'] == 'conv4'
+        
+        _F = get_backbone(exp_dict, classify=False)
+        _G = MLP(ni=2*exp_dict['dataset']['z_dim_multiplier']*\
+                      exp_dict["backbone"]["hidden_size"],
+                 no=1,
+                 nhidden=exp_dict["backbone"]["hidden_size"],
+                 depth=3,
+                 flatten=False)
         
         self.backbone = make_RelationNet(exp_dict, _F, _G)
         
@@ -37,6 +37,8 @@ class RelationNet(torch.nn.Module):
                                                                     factor=0.1,
                                                                     patience=10,
                                                                     verbose=True)
+
+        count_parameters(self.backbone)
 
     def train_on_loader(self, loader):
         _loss = 0

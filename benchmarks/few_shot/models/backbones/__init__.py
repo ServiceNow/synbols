@@ -28,7 +28,7 @@ class Conv4(nn.Module):
     source: https://github.com/jakesnell/prototypical-networks/blob/f0c48808e496989d01db59f86d4449d7aee9ab0c/protonets/models/few_shot.py#L62-L84
     '''
     def __init__(self, x_dim=1, height_dim=32, width_dim=32, hid_dim=64, z_dim=64,
-                 classify=False, output_size=10):
+                 classify=False, output_size=10, z_dim_multiplier=None):
         super(Conv4, self).__init__()
         self.encoder = nn.Sequential(
             conv_block(x_dim, hid_dim),
@@ -37,14 +37,9 @@ class Conv4(nn.Module):
             conv_block(hid_dim, z_dim),
         )
         self.classify = classify
+        self.z_dim_multiplier = z_dim_multiplier
         if self.classify:
-            if height_dim == 84:
-                multiplier = 5*5
-            elif height_dim == 32:
-                multiplier = 2*2
-            else:
-                Exception('hidden size not implemented yet and too lazy to do the math')
-            self.output_layer = nn.Linear(multiplier*hid_dim, output_size)
+            self.output_layer = nn.Linear(self.z_dim_multiplier*hid_dim, output_size)
 
     def forward(self, x):
         x = self.encoder(x)
@@ -54,9 +49,10 @@ class Conv4(nn.Module):
         return out
 
 class MLP(torch.nn.Module):
-    def __init__(self, ni, no, nhidden, depth):
+    def __init__(self, ni, no, nhidden, depth, flatten=True):
         super().__init__()
         self.depth = depth
+        self.flatten = flatten
         for i in range(depth):
             if i == 0:
                 setattr(self, "linear%d" %i, torch.nn.Linear(ni, nhidden))
@@ -67,7 +63,8 @@ class MLP(torch.nn.Module):
         self.out = torch.nn.Linear(nhidden, no)
 
     def forward(self, x):
-        x = x.view(x.size(0), -1)
+        if self.flatten:
+            x = x.view(x.size(0), -1)
         for i in range(self.depth):
             linear = getattr(self, "linear%d" %i)
             x = F.leaky_relu(linear(x))
@@ -152,6 +149,14 @@ def get_backbone(exp_dict, classify=True):
                    depth=exp_dict["backbone"]["depth"])
     else:
         raise ValueError
+
+
+def count_parameters(model):
+    n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print('\nNumber of parameters in the model: {}\n'.format(n_params))
+    return n_params
+
+
 
 
 ## OLD but could be useful

@@ -4,7 +4,7 @@ from sklearn.metrics import confusion_matrix
 from tqdm import tqdm
 import numpy as np
 from .modules.ProtoNet import prototype_distance
-from .backbones import get_backbone
+from .backbones import get_backbone, count_parameters
 import os
 
 class ProtoNet(torch.nn.Module):
@@ -23,7 +23,9 @@ class ProtoNet(torch.nn.Module):
                                                                     factor=0.1,
                                                                     patience=10,
                                                                     verbose=True)
+        count_parameters(self.backbone)
 
+        
     def train_on_loader(self, loader):
         _loss = 0
         _accuracy = 0

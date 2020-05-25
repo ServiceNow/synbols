@@ -4,7 +4,7 @@ from sklearn.metrics import confusion_matrix
 from tqdm import tqdm
 import numpy as np
 from .modules.ProtoNet import prototype_distance
-from .backbones import get_backbone
+from .backbones import get_backbone, count_parameters
 import higher
 
 
@@ -15,7 +15,7 @@ class MAML(torch.nn.Module):
         self.outer_lr = exp_dict['outer_lr']
         self.inner_lr = exp_dict['inner_lr']
 
-        self.backbone = get_backbone(exp_dict)
+        self.backbone = get_backbone(exp_dict, classify=True)
         self.backbone.cuda()
         
         self.optimizer = torch.optim.SGD(self.backbone.parameters(),
@@ -28,6 +28,8 @@ class MAML(torch.nn.Module):
                                                                     factor=0.1,
                                                                     patience=10,
                                                                     verbose=True)
+
+        count_parameters(self.backbone)
 
     def train_on_loader(self, loader):
         
