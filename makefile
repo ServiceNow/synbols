@@ -37,6 +37,7 @@ datasets-small:
 	$(RUN_GENERATOR) --dataset=tiny --n_samples=10000 &
 	$(RUN_GENERATOR) --dataset=less-variations --n_samples=100000 &
 	$(RUN_GENERATOR) --dataset=many-small-occlusion --n_samples=100000 &
+	$(RUN_GENERATOR) --dataset=korean-1k --n_samples=100000 &
 	wait
 
 datasets-big:
@@ -44,6 +45,7 @@ datasets-big:
 	$(RUN_GENERATOR) --dataset=all-fonts --n_samples=1000000 &
 	$(RUN_GENERATOR) --dataset=all-chars --n_samples=1000000  &
 	$(RUN_GENERATOR) --dataset=less-variations --n_samples=1000000  &
+	$(RUN_GENERATOR) --dataset=korean-1k --n_samples=1000000 &
 	wait
 
 active-learning:

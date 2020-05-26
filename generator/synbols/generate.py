@@ -146,6 +146,13 @@ def generate_default_dataset(n_samples, alphabet='latin', **kwarg):
     return dataset_generator(attr_sampler, n_samples)
 
 
+def generate_korean_1k_dataset(n_samples, **kwarg):
+    chars = ALPHABET_MAP['korean'].symbols[:1000]
+    fonts = ALPHABET_MAP['korean'].fonts
+    attr_sampler = basic_image_sampler(char=lambda rng: rng.choice(chars), font=lambda rng: rng.choice(fonts))
+    return dataset_generator(attr_sampler, n_samples)
+
+
 def make_preview(generator, file_name, n_row=20, n_col=40):
     x_list = []
     y_list = []
@@ -198,8 +205,6 @@ def generate_segmentation_dataset(n_samples, alphabet='latin', resolution=(128, 
     return dataset_generator(attr_generator, n_samples, flatten_mask)
 
 
-
-
 def generate_counting_dataset(n_samples, alphabet='latin', resolution=(128, 128), scale_variation=0.5, **kwarg):
     def scale(rng):
         return 0.1 * np.exp(rng.randn() * scale_variation)
@@ -238,6 +243,7 @@ def generate_counting_dataset_crowded(n_samples, alphabet='latin', resolution=(1
     attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], char=char_sampler, resolution=resolution,
                                          scale=scale, is_bold=False, n_symbols=n_symbols)
     return dataset_generator(attr_generator, n_samples, flatten_mask)
+
 
 # for few-shot learning
 # ---------------------
@@ -327,6 +333,7 @@ def less_variations(n_samples, alphabet='latin', **kwarg):
 DATASET_GENERATOR_MAP = {
     'plain': generate_plain_dataset,
     'default': generate_default_dataset,
+    'korean-1k': generate_korean_1k_dataset,
     'camouflage': generate_camouflage_dataset,
     'segmentation': generate_segmentation_dataset,
     'counting': generate_counting_dataset,
