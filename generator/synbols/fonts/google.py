@@ -13,7 +13,7 @@ from ..utils import Alphabet, SYMBOL_MAP
 GOOGLE_FONTS_PATH = "/usr/share/fonts/truetype/google-fonts/"
 GOOGLE_FONTS_METADATA_PATH = join(GOOGLE_FONTS_PATH, "google_fonts_metadata")
 FONT_BLACKLIST = ["rubik", "podkova", "baloochettan2", "seymourone", "kumarone", "stalinone", "oranienbaum",
-                  "stalinistone", "vampiroone"]
+                  "stalinistone", "vampiroone", "cutefont"]
 
 
 def parse_metadata(file_path):
