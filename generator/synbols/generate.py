@@ -168,9 +168,17 @@ def make_preview(generator, file_name, n_row=20, n_col=40):
                 from view_dataset import plot_dataset
                 from matplotlib import pyplot as plt
                 plot_dataset(np.stack(x_list), y_list, h_axis=None, v_axis=None, n_row=n_row, n_col=n_col)
-                x_list = None
+
+                # h_values, v_values = plot_dataset(np.stack(x_list), y_list, h_axis=None, v_axis='font', n_row=n_row, n_col=n_col)
+                # ax = plt.gca()
+                # ax.set_yticks((np.arange(len(h_values)) + 0.5) * x.shape[1])
+                # ax.set_yticklabels(v_values, rotation=0)
+                # ax.get_yaxis().set_visible(True)
+
                 # TODO make te dpi dependent on the total number of pixels
                 plt.savefig(file_name, dpi=1000, bbox_inches='tight', pad_inches=0)
+
+                x_list = None
 
         yield x, mask, y
 
