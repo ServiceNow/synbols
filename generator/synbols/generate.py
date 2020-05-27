@@ -146,6 +146,14 @@ def generate_default_dataset(n_samples, alphabet='latin', **kwarg):
     return dataset_generator(attr_sampler, n_samples)
 
 
+def generate_solid_bg_dataset(n_samples, alphabet='latin', **kwarg):
+    fg = SolidColor((1, 1, 1))
+    bg = SolidColor((0, 0, 0))
+
+    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg)
+    return dataset_generator(attr_sampler, n_samples)
+
+
 def generate_korean_1k_dataset(n_samples, **kwarg):
     chars = ALPHABET_MAP['korean'].symbols[:1000]
     fonts = ALPHABET_MAP['korean'].fonts
@@ -341,6 +349,7 @@ def less_variations(n_samples, alphabet='latin', **kwarg):
 DATASET_GENERATOR_MAP = {
     'plain': generate_plain_dataset,
     'default': generate_default_dataset,
+    'default-bw': generate_solid_bg_dataset,
     'korean-1k': generate_korean_1k_dataset,
     'camouflage': generate_camouflage_dataset,
     'segmentation': generate_segmentation_dataset,
