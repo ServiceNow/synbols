@@ -4,7 +4,7 @@ versiontag = $(shell date +%Y-%m-%d)
 
 SYNBOLS_RUN = docker run --user $(userid) -it -v $(CURDIR)/generator:/generator -v $(CURDIR):/local synbols
 
-RUN_GENERATOR = ./docker_run.sh generator/generate_dataset.py
+RUN_GENERATOR=./docker_run.sh generator/generate_dataset.py
 
 docker:
 	docker build -t synbols:latest .
@@ -31,17 +31,21 @@ view_font_clusters:
 	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/view_font_clustering.py"
 
 
-datasets:
+datasets-small:
 	$(RUN_GENERATOR) --n_samples=100000 &
 	$(RUN_GENERATOR) --dataset=camouflage --n_samples=100000 &
 	$(RUN_GENERATOR) --dataset=tiny --n_samples=10000 &
 	$(RUN_GENERATOR) --dataset=less-variations --n_samples=100000 &
 	$(RUN_GENERATOR) --dataset=many-small-occlusion --n_samples=100000 &
+	$(RUN_GENERATOR) --dataset=korean-1k --n_samples=100000 &
 	wait
+
+datasets-big:
 	$(RUN_GENERATOR) --n_samples=1000000 &
 	$(RUN_GENERATOR) --dataset=all-fonts --n_samples=1000000 &
 	$(RUN_GENERATOR) --dataset=all-chars --n_samples=1000000  &
 	$(RUN_GENERATOR) --dataset=less-variations --n_samples=1000000  &
+	$(RUN_GENERATOR) --dataset=korean-1k --n_samples=1000000 &
 	wait
 
 active-learning:
@@ -53,10 +57,8 @@ active-learning:
 segmentation:
 	$(RUN_GENERATOR) --dataset=counting --n_samples=100000  &
 	$(RUN_GENERATOR) --dataset=counting-fix-scale --n_samples=100000  &
-    wait
-
-splits:
-	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/generate_splits.py"
+	$(RUN_GENERATOR) --dataset=counting-crowded --n_samples=100000  &
+	wait
 
 font_check:
 	$(SYNBOLS_RUN) sh -c "cd /local; python generator/run_font_checks.py"

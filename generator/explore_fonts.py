@@ -5,13 +5,30 @@ import sys
 from fontTools.ttLib import TTFont
 from fontTools.unicode import Unicode
 import cairo
-from synbols import LANGUAGES
 
 
 def check_char_availability(font_path):
     ttf = TTFont(font_path, 0, allowVID=0, ignoreDecompileErrors=True, fontNumber=0)
 
     len_list = [len(table.cmap.items()) for table in ttf["cmap"].tables]
+
+    for table in ttf["cmap"].tables:
+        for i, (key, val) in enumerate(table.cmap.items()):
+            print(chr(key), key, val, Unicode[key])
+
+    ttf.close()
+    return len_list
+
+
+
+def check_char_list_availability(font_path, char_list):
+    ttf = TTFont(font_path, 0, allowVID=0, ignoreDecompileErrors=True, fontNumber=0)
+    table = ttf["cmap"].tables[0]
+    len_list = [len(table.cmap.items()) for table in ttf["cmap"].tables]
+
+    for table in ttf["cmap"].tables:
+        for i, (key, val) in enumerate(table.cmap.items()):
+            print(chr(key), key, val, Unicode[key])
 
     ttf.close()
     return len_list
@@ -34,8 +51,12 @@ def get_sys_fonts(lang=None):
     return font_dict
 
 
-def inspect_font():
+def inspect_font(font_name=None):
     font_dict = get_sys_fonts()
+
+    if font_name is not None:
+        font_dict = {font_name: font_dict[font_name]}
+
     for font_name, font_path in font_dict.items():
         print("%s (%s)" % (font_name, font_path))
         try:
@@ -78,7 +99,10 @@ def show_fonts():
     call(['open', 'example.png'])
 
 
+
+
+
 if __name__ == "__main__":
-    inspect_font()
+    inspect_font('Times New Roman')
     # show_fonts()
     # check_char_availability()

@@ -91,7 +91,6 @@ def stratified_split(attr_list, attr_name, ratios, rng=np.random):
     return part_map
 
 
-
 def make_default_splits(attr_list, ratios, random_seed):
     random_masks = partition_map_to_mask(random_map(len(attr_list), ratios, np.random.RandomState(random_seed)))
     verify_part_mask(random_masks, len(attr_list), ratios)
@@ -141,14 +140,18 @@ def str_to_id(values):
         return values, convert
 
 
-def plot_split_2d(masks, attr_x, attr_y, name_x='x', name_y='y'):
+def plot_split_2d(masks, attr_x, attr_y, name_x='x', name_y='y', mask_names=None):
     for i, mask in enumerate(masks.T):
         print("    %d, (%.1f%%)" % (np.sum(mask), np.mean(mask) * 100))
-        plt.plot(attr_x[mask], attr_y[mask], '.', markersize=2, alpha=1, label="mask %d" % i)
+        if mask_names is None:
+            mask_name = "mask %d" % i
+        else:
+            mask_name = mask_names[i]
+        plt.plot(attr_x[mask], attr_y[mask], '.', markersize=2, alpha=1, label=mask_name)
 
     plt.xlabel(name_x)
     plt.ylabel(name_y)
-    legend = plt.legend(loc='best', scatterpoints=1,)
+    legend = plt.legend(loc='best', scatterpoints=1, )
 
     for lengend_item in legend.legendHandles:
         lengend_item._legmarker.set_markersize(6)
@@ -156,7 +159,6 @@ def plot_split_2d(masks, attr_x, attr_y, name_x='x', name_y='y'):
 
 def make_stratified_split(attr_list, axis_name, ratios):
     values = np.array([attr[axis_name] for attr in attr_list])
-
     values, is_str = str_to_id(values)
     if is_str:
         part_map = unique_class_based_partition(values=values, ratios=ratios, rng=np.random)
@@ -165,7 +167,9 @@ def make_stratified_split(attr_list, axis_name, ratios):
 
     # print("%s split." % axis_name)
 
+
     masks = partition_map_to_mask(part_map)
+
     verify_part_mask(masks, len(attr_list), ratios)
 
     # for mask in masks.T:
@@ -187,22 +191,30 @@ if __name__ == "__main__":
     from synbols.data_io import load_attributes_h5
     import matplotlib.pyplot as plt
 
-    attr_list, _ = load_attributes_h5('../../partly-occluded_n=10000_2020-May-05.h5py')
+    attr_list, _ = load_attributes_h5('../../default_n=10000_2020-May-21.h5py')
     attr_list = [flatten_attr(attr) for attr in attr_list]
     # ratios = (0.15, 0.05, 0.6, 0.05, 0.15)
     ratios = (0.2, 0.6, 0.2)
+    split_names = ('Validation', 'Train', 'Test')
 
-    axis1_name = 'scale'
-    axis2_name = 'rotation'
+    axis1_name = 'Scale'
+    axis2_name = 'Rotation'
 
-    axis1, part_map_1 = make_stratified_split(attr_list, axis1_name, ratios)
-    axis2, part_map_2 = make_stratified_split(attr_list, axis2_name, ratios)
+    axis1, part_map_1 = make_stratified_split(attr_list, axis1_name.lower(), ratios)
+    axis2, part_map_2 = make_stratified_split(attr_list, axis2_name.lower(), ratios)
 
-    plt.figure("stratified %s" % axis1_name)
-    plot_split_2d(partition_map_to_mask(part_map_1), axis1, axis2, axis1_name, axis2_name)
+    # plt.figure("stratified %s" % axis1_name)
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
 
-    plt.figure("stratified %s" % axis2_name)
-    plot_split_2d(partition_map_to_mask(part_map_2), axis1, axis2, axis1_name, axis2_name)
+    plt.sca(ax1)
+    plt.title("Stratified %s" % axis1_name)
+    plot_split_2d(partition_map_to_mask(part_map_1), axis1, axis2, axis1_name, axis2_name, split_names)
+
+    # plt.figure("stratified %s" % axis2_name)
+    plt.sca(ax2)
+    plt.title("Stratified %s" % axis2_name)
+    plot_split_2d(partition_map_to_mask(part_map_2), axis1, axis2, axis1_name, axis2_name, split_names)
+    plt.ylabel('')
 
     print("Compositional split")
     # ratios_adjust = np.array(ratios)**1.6
@@ -210,8 +222,12 @@ if __name__ == "__main__":
     # _, part_map_1 = make_stratified_split(attr_list, axis1_name, ratios_adjust)
     # _, part_map_2 = make_stratified_split(attr_list, axis2_name, ratios_adjust)
     compositioanl_masks = compositional_split(part_map_1, part_map_2)
+    compositioanl_masks = compositioanl_masks[:, [1, 0, 2]]
 
-    plt.figure("compositional split")
-    plot_split_2d(compositioanl_masks, axis1, axis2, axis1_name, axis2_name)
+    # plt.figure("compositional split")
+    plt.sca(ax3)
+    plt.title("Compositional %s-%s" % (axis1_name, axis2_name))
+    plot_split_2d(compositioanl_masks, axis1, axis2, axis1_name, axis2_name, split_names)
+    plt.ylabel('')
 
     plt.show()

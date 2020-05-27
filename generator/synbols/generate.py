@@ -146,6 +146,13 @@ def generate_default_dataset(n_samples, alphabet='latin', **kwarg):
     return dataset_generator(attr_sampler, n_samples)
 
 
+def generate_korean_1k_dataset(n_samples, **kwarg):
+    chars = ALPHABET_MAP['korean'].symbols[:1000]
+    fonts = ALPHABET_MAP['korean'].fonts
+    attr_sampler = basic_image_sampler(char=lambda rng: rng.choice(chars), font=lambda rng: rng.choice(fonts))
+    return dataset_generator(attr_sampler, n_samples)
+
+
 def make_preview(generator, file_name, n_row=20, n_col=40):
     x_list = []
     y_list = []
@@ -161,8 +168,17 @@ def make_preview(generator, file_name, n_row=20, n_col=40):
                 from view_dataset import plot_dataset
                 from matplotlib import pyplot as plt
                 plot_dataset(np.stack(x_list), y_list, h_axis=None, v_axis=None, n_row=n_row, n_col=n_col)
+
+                # h_values, v_values = plot_dataset(np.stack(x_list), y_list, h_axis=None, v_axis='font', n_row=n_row, n_col=n_col)
+                # ax = plt.gca()
+                # ax.set_yticks((np.arange(len(h_values)) + 0.5) * x.shape[1])
+                # ax.set_yticklabels(v_values, rotation=0)
+                # ax.get_yaxis().set_visible(True)
+
+                # TODO make te dpi dependent on the total number of pixels
+                plt.savefig(file_name, dpi=1000, bbox_inches='tight', pad_inches=0)
+
                 x_list = None
-                plt.savefig(file_name, dpi=300, bbox_inches='tight', pad_inches=0)
 
         yield x, mask, y
 
@@ -170,11 +186,13 @@ def make_preview(generator, file_name, n_row=20, n_col=40):
 def generate_camouflage_dataset(n_samples, alphabet='latin', **kwarg):
     def attr_sampler():
         angle = np.random.rand() * np.pi * 2
-        fg = Camouflage(stroke_angle=angle)
-        bg = Camouflage(stroke_angle=angle + 2 + np.random.randn() * 0.5)
-        scale = 0.7 * np.exp(np.random.randn() * 0.1)
+        angle = 0
+        fg = Camouflage(stroke_angle=angle, stroke_width=0.1, stroke_length=0.6, stroke_noise=0)
+        bg = Camouflage(stroke_angle=angle + np.pi / 2, stroke_width=0.1, stroke_length=0.6, stroke_noise=0)
+        # scale = 0.7 * np.exp(np.random.randn() * 0.1)
+        scale = 0.8
         return basic_image_sampler(
-            alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg, is_bold=True,
+            alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg, is_bold=True, is_slant=False,
             scale=scale)()
 
     return dataset_generator(attr_sampler, n_samples)
@@ -213,8 +231,26 @@ def generate_counting_dataset(n_samples, alphabet='latin', resolution=(128, 128)
     return dataset_generator(attr_generator, n_samples, flatten_mask)
 
 
-def generate_counting_dataset_scale_fix(**kwargs):
-    return generate_counting_dataset(scale_variation=0, **kwargs)
+def generate_counting_dataset_scale_fix(n_samples, **kwargs):
+    return generate_counting_dataset(n_samples, scale_variation=0, **kwargs)
+
+
+def generate_counting_dataset_crowded(n_samples, alphabet='latin', resolution=(128, 128), scale_variation=0.1, **kwarg):
+    def scale(rng):
+        return 0.1 * np.exp(rng.randn() * scale_variation)
+
+    def n_symbols(rng):
+        return rng.choice(list(range(30, 50)))
+
+    def char_sampler(rng):
+        if rng.rand() < 0.3:
+            return rng.choice(ALPHABET_MAP[alphabet].symbols)
+        else:
+            return 'a'
+
+    attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], char=char_sampler, resolution=resolution,
+                                         scale=scale, is_bold=False, n_symbols=n_symbols)
+    return dataset_generator(attr_generator, n_samples, flatten_mask)
 
 
 # for few-shot learning
@@ -305,10 +341,12 @@ def less_variations(n_samples, alphabet='latin', **kwarg):
 DATASET_GENERATOR_MAP = {
     'plain': generate_plain_dataset,
     'default': generate_default_dataset,
+    'korean-1k': generate_korean_1k_dataset,
     'camouflage': generate_camouflage_dataset,
     'segmentation': generate_segmentation_dataset,
     'counting': generate_counting_dataset,
     'counting-fix-scale': generate_counting_dataset_scale_fix,
+    'counting-crowded': generate_counting_dataset_crowded,
     'missing-symbol': missing_symbol_dataset,
     'some-large-occlusion': generate_some_large_occlusions,
     'many-small-occlusion': generate_many_small_occlusions,

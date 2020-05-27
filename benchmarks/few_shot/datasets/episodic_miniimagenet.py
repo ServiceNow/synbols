@@ -1,3 +1,7 @@
+import os
+from .episodic_dataset import EpisodicDataset
+import numpy as np
+
 class EpisodicMiniImagenet(EpisodicDataset):
     tasks_type = "clss"
     name = "miniimagenet"
