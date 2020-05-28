@@ -57,7 +57,7 @@ def flatten_mask(masks):
 
 
 def flatten_mask_except_first(masks):
-    return np.stack((masks[:, :, 0], flatten_mask(masks[:, :, 1:])), axis=2)
+    return np.stack((masks[:, :, 0], flatten_mask(masks[:, :, 1:])[0]), axis=2)
 
 
 def add_occlusion(attr_sampler, n_occlusion=None, occlusion_char=None, rotation=None, scale=None, translation=None,
@@ -161,7 +161,7 @@ def generate_korean_1k_dataset(n_samples, **kwarg):
     return dataset_generator(attr_sampler, n_samples)
 
 
-def make_preview(generator, file_name, n_row=20, n_col=40):
+def make_preview(generator, file_name, n_row=5, n_col=5):
     x_list = []
     y_list = []
     for x, mask, y in generator:
@@ -175,6 +175,7 @@ def make_preview(generator, file_name, n_row=20, n_col=40):
                 logging.info("Generating Preview")
                 from view_dataset import plot_dataset
                 from matplotlib import pyplot as plt
+                plt.figure(figsize=(n_col, n_row))
                 plot_dataset(np.stack(x_list), y_list, h_axis=None, v_axis=None, n_row=n_row, n_col=n_col)
 
                 # h_values, v_values = plot_dataset(np.stack(x_list), y_list, h_axis=None, v_axis='font', n_row=n_row, n_col=n_col)
@@ -183,8 +184,7 @@ def make_preview(generator, file_name, n_row=20, n_col=40):
                 # ax.set_yticklabels(v_values, rotation=0)
                 # ax.get_yaxis().set_visible(True)
 
-                # TODO make te dpi dependent on the total number of pixels
-                plt.savefig(file_name, dpi=1000, bbox_inches='tight', pad_inches=0)
+                plt.savefig(file_name, dpi=x_list[0].shape[0], bbox_inches='tight', pad_inches=0)
 
                 x_list = None
 
@@ -278,17 +278,26 @@ def all_chars(n_samples, **kwarg):
     return dataset_generator(attr_sampler, n_samples)
 
 
-def all_fonts(n_samples, **kwarg):
+def generate_balanced_font_chars_dataset(n_samples, **kwarg):
     font_list = []
-    for alphabet in ALPHABET_MAP.values():
-        fonts = alphabet.fonts[:500]
-        logging.info("Using %d/%d fonts from alphabet %s", len(fonts), len(alphabet.fonts), alphabet.name)
+    symbols_list = []
 
+    for alphabet in ALPHABET_MAP.values():
+        fonts = alphabet.fonts[:200]
+        logging.info("Using %d/%d fonts from alphabet %s", len(fonts), len(alphabet.fonts), alphabet.name)
         font_list.extend(zip(fonts, [alphabet] * len(fonts)))
 
+        symbols = alphabet.symbols[:200]
+        logging.info("Using %d/%d symbols from alphabet %s", len(symbols), len(alphabet.symbols), alphabet.name)
+        symbols_list.extend(zip(symbols, [alphabet] * len(symbols)))
+
     def attr_sampler():
-        font, alphabet = font_list[np.random.choice(len(font_list))]
-        return basic_image_sampler(alphabet=alphabet, font=font, is_bold=False, is_slant=False)()
+        if np.random.rand() > 0.5:
+            font, alphabet = font_list[np.random.choice(len(font_list))]
+            return basic_image_sampler(alphabet=alphabet, font=font, is_bold=False, is_slant=False)()
+        else:
+            symbol, alphabet = symbols_list[np.random.choice(len(symbols_list))]
+            return basic_image_sampler(alphabet=alphabet, char=symbol, is_bold=False, is_slant=False)()
 
     return dataset_generator(attr_sampler, n_samples)
 
@@ -361,7 +370,7 @@ DATASET_GENERATOR_MAP = {
     'many-small-occlusion': generate_many_small_occlusions,
     'large-translation': generate_large_translation,
     'tiny': generate_tiny_dataset,
-    'all-fonts': all_fonts,
+    'balanced-font-chars': generate_balanced_font_chars_dataset,
     'all-chars': all_chars,
     'less-variations': less_variations,
 }
