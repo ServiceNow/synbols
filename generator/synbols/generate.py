@@ -161,7 +161,7 @@ def generate_korean_1k_dataset(n_samples, **kwarg):
     return dataset_generator(attr_sampler, n_samples)
 
 
-def make_preview(generator, file_name, n_row=5, n_col=5):
+def make_preview(generator, file_name, n_row=20, n_col=40):
     x_list = []
     y_list = []
     for x, mask, y in generator:
@@ -284,20 +284,23 @@ def generate_balanced_font_chars_dataset(n_samples, **kwarg):
 
     for alphabet in ALPHABET_MAP.values():
         fonts = alphabet.fonts[:200]
+        symbols = alphabet.symbols[:200]
+
         logging.info("Using %d/%d fonts from alphabet %s", len(fonts), len(alphabet.fonts), alphabet.name)
         font_list.extend(zip(fonts, [alphabet] * len(fonts)))
 
-        symbols = alphabet.symbols[:200]
         logging.info("Using %d/%d symbols from alphabet %s", len(symbols), len(alphabet.symbols), alphabet.name)
         symbols_list.extend(zip(symbols, [alphabet] * len(symbols)))
 
     def attr_sampler():
         if np.random.rand() > 0.5:
             font, alphabet = font_list[np.random.choice(len(font_list))]
-            return basic_image_sampler(alphabet=alphabet, font=font, is_bold=False, is_slant=False)()
+            symbol = np.random.choice(alphabet.symbols[:200])
         else:
             symbol, alphabet = symbols_list[np.random.choice(len(symbols_list))]
-            return basic_image_sampler(alphabet=alphabet, char=symbol, is_bold=False, is_slant=False)()
+            font = np.random.choice(alphabet.fonts[:200])
+
+        return basic_image_sampler(char=symbol, font=font, is_bold=False, is_slant=False)()
 
     return dataset_generator(attr_sampler, n_samples)
 
