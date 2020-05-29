@@ -12,24 +12,29 @@ class MAML(torch.nn.Module):
     def __init__(self, exp_dict):
         super().__init__()
         self.n_inner_iter = exp_dict['n_inner_iter']
-        self.outer_lr = exp_dict['outer_lr']
         self.inner_lr = exp_dict['inner_lr']
 
         self.backbone = get_backbone(exp_dict, classify=True)
         self.backbone.cuda()
         
-        self.optimizer = torch.optim.SGD(self.backbone.parameters(),
-                                            lr=self.outer_lr,
-                                            weight_decay=5e-4,
-                                            momentum=0.9,
-                                            nesterov=True)
+        if exp_dict['optimizer'] == 'sgd':
+            self.optimizer = torch.optim.SGD(self.backbone.parameters(),
+                                                lr=exp_dict['lr'],
+                                                weight_decay=5e-4,
+                                                momentum=0.9,
+                                                nesterov=True)
+        elif exp_dict['optimizer'] == 'adam':
+            self.optimizer = torch.optim.Adam(self.backbone.parameters(),
+                                                lr=exp_dict['lr'])
+        
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer,
                                                                     mode='min',
                                                                     factor=0.1,
-                                                                    patience=10,
+                                                                    patience=exp_dict['patience'],
                                                                     verbose=True)
 
         count_parameters(self.backbone)
+        self.best_val = 0
 
     def train_on_loader(self, loader):
         

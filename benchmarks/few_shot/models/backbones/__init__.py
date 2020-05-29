@@ -37,7 +37,8 @@ class Conv4(nn.Module):
             conv_block(hid_dim, z_dim),
         )
         self.classify = classify
-        self.z_dim_multiplier = z_dim_multiplier
+        if z_dim_multiplier is not None:
+            self.z_dim_multiplier = int(z_dim_multiplier)
         if self.classify:
             self.output_layer = nn.Linear(self.z_dim_multiplier*hid_dim, output_size)
 
@@ -72,15 +73,25 @@ class MLP(torch.nn.Module):
 
 def get_backbone(exp_dict, classify=True):
 
+    # Seed
+    # -----------
+    if 'seed' in exp_dict:
+        torch.manual_seed(exp_dict['seed'])
+    else:
+        torch.manual_seed(42)
+
     backbone_name = exp_dict["backbone"]["name"].lower()
     if backbone_name == "resnet18":
         backbone = models.resnet18(pretrained=exp_dict["backbone"]["imagenet_pretraining"], progress=True)
-        num_ftrs = backbone.fc.in_features
-        backbone.fc = torch.nn.Linear(num_ftrs, nclasses) 
-        if exp_dict["dataset"]["channels"] != 3:
-            assert(not(exp_dict["backbone"]["imagenet_pretraining"]))
-            backbone._modules['conv1'] = torch.nn.Conv2d(exp_dict["dataset"]["channels"], 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-        return backbone
+        if not classify:
+           return torch.nn.Sequential(*list(backbone.children())[:-2]) #removes last fc
+        else:
+            num_ftrs = backbone.fc.in_features
+            backbone.fc = torch.nn.Linear(num_ftrs, nclasses) 
+            if exp_dict["dataset"]["channels"] != 3:
+                assert(not(exp_dict["backbone"]["imagenet_pretraining"]))
+                backbone._modules['conv1'] = torch.nn.Conv2d(exp_dict["dataset"]["channels"], 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+            return backbone
     elif backbone_name == "resnet50":
         backbone = models.resnet50(pretrained=exp_dict["backbone"]["imagenet_pretraining"], progress=True)
         num_ftrs = backbone.fc.in_features
@@ -124,7 +135,8 @@ def get_backbone(exp_dict, classify=True):
                      hid_dim=exp_dict["backbone"]["hidden_size"],
                      z_dim=exp_dict["backbone"]["hidden_size"],
                      classify=classify,
-                     output_size=exp_dict["dataset"]["nclasses_train"]
+                     output_size=exp_dict["dataset"]["nclasses_train"],
+                     z_dim_multiplier=exp_dict["dataset"]["z_dim_multiplier"]
                      )
     elif backbone_name == "efficientnet":
         net = EfficientNet.from_pretrained(exp_dict["backbone"]["type"], num_classes=nclasses)
