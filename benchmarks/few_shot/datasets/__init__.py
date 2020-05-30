@@ -18,15 +18,16 @@ def get_dataset(split, exp_dict):
         exp_dict["num_classes"] = len(ret.labelset) # FIXME: this is hacky
         return ret
     elif dataset_dict["name"] == "fewshot_synbols":
+        _split = 'test' if split == 'ood' else split
         transform = tt.Compose([tt.ToPILImage(), tt.ToTensor()])
-        sampler = FewShotSampler(nclasses=dataset_dict["nclasses_%s" %split],
-                                 support_size=dataset_dict["support_size_%s" %split],
-                                 query_size=dataset_dict["query_size_%s" %split],
+        sampler = FewShotSampler(nclasses=dataset_dict["nclasses_%s" %_split],
+                                 support_size=dataset_dict["support_size_%s" %_split],
+                                 query_size=dataset_dict["query_size_%s" %_split],
                                  unlabeled_size=0)
         return EpisodicSynbols(dataset_dict["path"], 
-                                split=split, 
+                                split=_split, 
                                 sampler=sampler, 
-                                size=dataset_dict["%s_iters" %split], 
+                                size=dataset_dict["%s_iters" %_split], 
                                 key=dataset_dict["task"][split], 
                                 transform=transform,
                                 mask=exp_dict['dataset']['mask'])

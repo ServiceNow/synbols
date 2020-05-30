@@ -226,6 +226,7 @@ class SynbolsHDF5(SynbolsNpz):
         self.path = path
         self.split = split
         self.task = key
+        print(key)
         self.mask = mask
         self.ratios = ratios
         if transform is None:

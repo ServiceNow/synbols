@@ -32,12 +32,23 @@ def trainval(exp_dict, savedir_base, reset=False, wandb='None', wandb_key='None'
     print(exp_dict)
     print("Experiment saved in %s" % savedir)
 
+    model_name = exp_dict['model'] + \
+                "_lr_" + str(exp_dict['lr']) +\
+                "_hs_" + str(exp_dict['backbone']['hidden_size']) +\
+                "_pa_" + str(exp_dict['patience'])
+
+    if exp_dict['model'] == 'MAML':
+        model_name += "_ilr_" + str(exp_dict['inner_lr']) +\
+                      "_nii_" + str(exp_dict['n_inner_iter'])
+        
+    #TODO add seed
+
     if wandb is not 'None':
         # https://docs.wandb.com/quickstart
         import wandb as logger
         if wandb_key is not 'None':
             logger.login(key=wandb_key)
-        logger.init(project=wandb)
+        logger.init(project=wandb, group=model_name)
         logger.config.update(exp_dict)
 
     # Dataset
@@ -45,7 +56,12 @@ def trainval(exp_dict, savedir_base, reset=False, wandb='None', wandb_key='None'
     train_dataset = get_dataset('train', exp_dict)
     val_dataset = get_dataset('val', exp_dict)
     test_dataset = get_dataset('test', exp_dict)
-
+    if 'ood' in exp_dict['dataset']['task']:
+        ood_dataset = get_dataset('ood', exp_dict)
+        ood = True
+    else:
+        ood = False
+        
     # train and val loader
     if exp_dict["episodic"] == False:
         train_loader = DataLoader(train_dataset,
@@ -72,13 +88,20 @@ def trainval(exp_dict, savedir_base, reset=False, wandb='None', wandb_key='None'
                                     shuffle=True,
                                     collate_fn=lambda x: x,
                                     num_workers=args.num_workers) 
-        test_loader = EpisodicDataLoader(val_dataset,
+        test_loader = EpisodicDataLoader(test_dataset,
                                     batch_size=exp_dict['batch_size'],
                                     shuffle=True,
                                     collate_fn=lambda x: x,
                                     num_workers=args.num_workers) 
+        if ood:
+            ood_loader = EpisodicDataLoader(ood_dataset,
+                                        batch_size=exp_dict['batch_size'],
+                                        shuffle=True,
+                                        collate_fn=lambda x: x,
+                                        num_workers=args.num_workers) 
                 
-   
+    
+
     # Model
     # -----------
     model = get_model(exp_dict)
@@ -97,7 +120,8 @@ def trainval(exp_dict, savedir_base, reset=False, wandb='None', wandb_key='None'
         # restart experiment
         score_list = []
         s_epoch = 0
-        best_val = 0
+
+    patience_counter = 0
 
     # Train & Val
     # ------------
@@ -113,6 +137,8 @@ def trainval(exp_dict, savedir_base, reset=False, wandb='None', wandb_key='None'
         score_dict.update(model.val_on_loader(val_loader, mode='val',
                 savedir=os.path.join(savedir_base, exp_dict['dataset']['name'])))
         score_dict.update(model.val_on_loader(test_loader, mode='test'))
+        if ood:
+            score_dict.update(model.val_on_loader(ood_loader, mode='ood'))
 
         score_dict["epoch"] = e
         
@@ -120,9 +146,12 @@ def trainval(exp_dict, savedir_base, reset=False, wandb='None', wandb_key='None'
         # model.vis_on_loader(vis_loader, savedir=savedir+"/images/")
 
         # Test error at best validation:
-        if score_dict["val_accuracy"] > best_val:
+        if score_dict["val_accuracy"] > model.best_val:
+
             score_dict["test_accuracy_at_best_val"] = score_dict["test_accuracy"]
-            best_val = score_dict["val_accuracy"]
+            score_dict["ood_accuracy_at_best_val"] = score_dict["ood_accuracy"]
+            model.best_val = score_dict["val_accuracy"]
+            patience_counter = 0
 
         # Add to score_list and save checkpoint
         score_list += [score_dict]
@@ -137,9 +166,12 @@ def trainval(exp_dict, savedir_base, reset=False, wandb='None', wandb_key='None'
             for key, values in score_dict.items():
                 logger.log({key:values})
 
-        
+        patience_counter += 1
+
         # Patience:
-        # TODO: add patience
+        if patience_counter > exp_dict['patience']*3:
+            print('training done, out of patience')
+            break
 
     print('experiment completed')
 
