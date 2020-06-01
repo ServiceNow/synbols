@@ -160,6 +160,8 @@ def _random_pattern(alpha=0.8, random_color=None, patern_types=('linear', 'radia
     if random_color is None:
         random_color = color_sampler(rng)
     pattern_type = rng.choice(patern_types)
+
+    # TODO have the locations dependant on the symbol position, or in general have a more intelligent design
     if pattern_type == 'linear':
         x1, y1 = rng.rand(2)
         theta = rng.rand() * 2 * np.pi
@@ -171,7 +173,7 @@ def _random_pattern(alpha=0.8, random_color=None, patern_types=('linear', 'radia
         x1, y1, x2, y2 = rng.rand(4)
         pat = cairo.RadialGradient(x1, y1, 2, x2, y2, 0.1)
     else:
-        raise Exception("unknown patter type %s" % pattern_type)
+        raise Exception("unknown pattern type %s" % pattern_type)
 
     r, g, b = random_color()
     pat.add_color_stop_rgba(1, r, g, b, alpha)

@@ -191,19 +191,34 @@ def make_preview(generator, file_name, n_row=20, n_col=40):
         yield x, mask, y
 
 
-def generate_camouflage_dataset(n_samples, alphabet='latin', **kwarg):
+def generate_camouflage_dataset(n_samples, alphabet='latin', texture='camouflage', **kwarg):
     def attr_sampler():
-        angle = np.random.rand() * np.pi * 2
-        angle = 0
-        fg = Camouflage(stroke_angle=angle, stroke_width=0.1, stroke_length=0.6, stroke_noise=0)
-        bg = Camouflage(stroke_angle=angle + np.pi / 2, stroke_width=0.1, stroke_length=0.6, stroke_noise=0)
-        # scale = 0.7 * np.exp(np.random.randn() * 0.1)
-        scale = 0.8
+        if texture == 'camouflage':
+            angle = 0
+            fg = Camouflage(stroke_angle=angle, stroke_width=0.1, stroke_length=0.6, stroke_noise=0)
+            bg = Camouflage(stroke_angle=angle + np.pi / 2, stroke_width=0.1, stroke_length=0.6, stroke_noise=0)
+        elif texture == 'shade':
+            fg, bg = None, None
+        elif texture == 'bw':
+            fg = SolidColor((1, 1, 1))
+            bg = SolidColor((0, 0, 0))
+        else:
+            raise ValueError("Unknown texture %s." % texture)
+
+        scale = 0.7 * np.exp(np.random.randn() * 0.1)
         return basic_image_sampler(
             alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg, is_bold=True, is_slant=False,
             scale=scale)()
 
     return dataset_generator(attr_sampler, n_samples)
+
+
+def generate_non_camou_bw_dataset(n_samples, alphabet='latin', **kwargs):
+    return generate_camouflage_dataset(n_samples, alphabet=alphabet, texture='bw', **kwargs)
+
+
+def generate_non_camou_shade_dataset(n_samples, alphabet='latin', **kwargs):
+    return generate_camouflage_dataset(n_samples, alphabet=alphabet, texture='shade', **kwargs)
 
 
 # for segmentation, detection, counting
@@ -299,7 +314,6 @@ def generate_balanced_font_chars_dataset(n_samples, **kwarg):
         else:
             symbol, alphabet = symbols_list[np.random.choice(len(symbols_list))]
             font = np.random.choice(alphabet.fonts[:200])
-
         return basic_image_sampler(char=symbol, font=font, is_bold=False, is_slant=False)()
 
     return dataset_generator(attr_sampler, n_samples)
@@ -364,6 +378,8 @@ DATASET_GENERATOR_MAP = {
     'default-bw': generate_solid_bg_dataset,
     'korean-1k': generate_korean_1k_dataset,
     'camouflage': generate_camouflage_dataset,
+    'non-camou-bw': generate_non_camou_bw_dataset,
+    'non-camou-shade': generate_non_camou_shade_dataset,
     'segmentation': generate_segmentation_dataset,
     'counting': generate_counting_dataset,
     'counting-fix-scale': generate_counting_dataset_scale_fix,
