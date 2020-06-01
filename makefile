@@ -33,7 +33,6 @@ view_font_clusters:
 
 datasets-small:
 	$(RUN_GENERATOR) --n_samples=100000 &
-	$(RUN_GENERATOR) --dataset=camouflage --n_samples=100000 &
 	$(RUN_GENERATOR) --dataset=tiny --n_samples=10000 &
 	$(RUN_GENERATOR) --dataset=less-variations --n_samples=100000 &
 	$(RUN_GENERATOR) --dataset=many-small-occlusion --n_samples=100000 &
@@ -60,5 +59,29 @@ segmentation:
 	$(RUN_GENERATOR) --dataset=counting-crowded --n_samples=100000  &
 	wait
 
+unsupervised:
+	$(RUN_GENERATOR) --dataset=camouflage --n_samples=100000 &
+	$(RUN_GENERATOR) --dataset=non-camou-bw --n_samples=100000 &
+	$(RUN_GENERATOR) --dataset=non-camou-shade --n_samples=100000 &
+	$(RUN_GENERATOR) --dataset=camouflage --n_samples=1000000 &
+	$(RUN_GENERATOR) --dataset=non-camou-bw --n_samples=1000000 &
+	$(RUN_GENERATOR) --dataset=non-camou-shade --n_samples=1000000 &
+	wait
+
 font_check:
 	$(SYNBOLS_RUN) sh -c "cd /local; python generator/run_font_checks.py"
+
+previews:
+	$(RUN_GENERATOR) --n_samples=100 &
+	$(RUN_GENERATOR) --dataset=camouflage --n_samples=100 &
+	$(RUN_GENERATOR) --dataset=tiny --n_samples=100 &
+	$(RUN_GENERATOR) --dataset=less-variations --n_samples=100 &
+	$(RUN_GENERATOR) --dataset=korean-1k --n_samples=100 &
+	$(RUN_GENERATOR) --dataset=missing-symbol --n_samples=100 &
+	$(RUN_GENERATOR) --dataset=large-translation --n_samples=100 &
+	$(RUN_GENERATOR) --dataset=counting --n_samples=100  &
+	$(RUN_GENERATOR) --dataset=counting-fix-scale --n_samples=100  &
+	$(RUN_GENERATOR) --dataset=counting-crowded --n_samples=100  &
+	$(RUN_GENERATOR) --dataset=many-small-occlusion --n_samples=100 &
+	$(RUN_GENERATOR) --dataset=some-large-occlusion --n_samples=100 &
+	wait
