@@ -1,18 +1,27 @@
-import os
 import argparse
+import os
 
-from haven import haven_utils as hu
-from haven import haven_results as hr
+import numpy as np
+import pandas as pd
+import torch
 from haven import haven_chk as hc
-
-from datasets import get_dataset
+from haven import haven_results as hr
+from haven import haven_utils as hu
 from torch.utils.data import DataLoader
 from torch.utils.data._utils.collate import default_collate
-import torchvision.transforms as tt
-from exp_configs import EXP_GROUPS
-from models import get_model
-import pandas as pd
-import pprint
+
+from active_learning import ActiveLearning, CalibratedActiveLearning
+from datasets import get_dataset
+from scripts import EXP_GROUPS
+
+
+def get_model(exp_dict):
+    if exp_dict["model"] == 'active_learning':
+        return ActiveLearning(exp_dict)
+    elif exp_dict["model"] == 'calibrated_active_learning':
+        return CalibratedActiveLearning(exp_dict)
+    else:
+        raise ValueError("Model %s not found" % exp_dict["model"])
 
 
 def trainval(exp_dict, savedir_base, reset=False):
@@ -26,42 +35,39 @@ def trainval(exp_dict, savedir_base, reset=False):
     if reset:
         # delete and backup experiment
         hc.delete_experiment(savedir, backup_flag=True)
-    
+
     # create folder and save the experiment dictionary
     os.makedirs(savedir, exist_ok=True)
     hu.save_json(os.path.join(savedir, "exp_dict.json"), exp_dict)
-    pprint.pprint(exp_dict)
+    print(exp_dict)
     print("Experiment saved in %s" % savedir)
+
+    # Set Seed
+    # -------
+    seed = exp_dict.get('seed')
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
     # Dataset
     # -----------
-    train_dataset = get_dataset('train', exp_dict)
-    val_dataset = get_dataset('val', exp_dict)
+    train_dataset = get_dataset('train', exp_dict['dataset'])
+    val_dataset = get_dataset('test', exp_dict['dataset'])
 
     # train and val loader
-    if exp_dict["episodic"] == False:
-        train_loader = DataLoader(train_dataset,
-                                    batch_size=exp_dict['batch_size'],
-                                    shuffle=True,
-                                    num_workers=args.num_workers) 
-        val_loader = DataLoader(val_dataset,
-                                    batch_size=exp_dict['batch_size'],
-                                    shuffle=True,
-                                    num_workers=args.num_workers) 
-    else: # to support episodes TODO: move inside each model
-        from datasets.episodic_dataset import EpisodicDataLoader
-        train_loader = EpisodicDataLoader(train_dataset,
-                                    batch_size=exp_dict['batch_size'],
-                                    shuffle=True,
-                                    collate_fn=lambda x: x,
-                                    num_workers=args.num_workers) 
-        val_loader = EpisodicDataLoader(val_dataset,
-                                    batch_size=exp_dict['batch_size'],
-                                    shuffle=True,
-                                    collate_fn=lambda x: x,
-                                    num_workers=args.num_workers) 
-                
-   
+    train_loader = DataLoader(train_dataset,
+                              batch_size=exp_dict['batch_size'],
+                              shuffle=True,
+                              collate_fn=lambda x: x if exp_dict[
+                                                            'batch_size'] == 1 else default_collate,
+                              # to handle episodes
+                              num_workers=args.num_workers)
+    val_loader = DataLoader(val_dataset,
+                            batch_size=exp_dict['batch_size'],
+                            collate_fn=lambda x: x if exp_dict[
+                                                          'batch_size'] == 1 else default_collate,
+                            shuffle=True,
+                            num_workers=args.num_workers)
+
     # Model
     # -----------
     model = get_model(exp_dict)
@@ -92,7 +98,9 @@ def trainval(exp_dict, savedir_base, reset=False):
         score_dict.update(model.train_on_loader(train_loader))
 
         # Validate the model
-        score_dict.update(model.val_on_loader(val_loader, savedir=os.path.join(savedir_base, exp_dict['dataset']['name'])))
+        savepath = os.path.join(savedir_base, exp_dict['dataset']['name'])
+        score_dict.update(model.val_on_loader(val_loader, savedir=savepath))
+        model.on_train_end(savedir=savedir, epoch=e)
         score_dict["epoch"] = e
 
         # Visualize the model
@@ -110,13 +118,15 @@ def trainval(exp_dict, savedir_base, reset=False):
 
     print('experiment completed')
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-e', '--exp_group_list', nargs="+")
+    parser.add_argument('-e', '--exp_group_list', nargs="*")
     parser.add_argument('-sb', '--savedir_base', required=True)
-    parser.add_argument("-r", "--reset",  default=0, type=int)
+    parser.add_argument("-r", "--reset", default=0, type=int)
     parser.add_argument("-ei", "--exp_id", default=None)
+    parser.add_argument("-v", "--view_experiments", default=None)
     parser.add_argument("-j", "--run_jobs", default=None)
     parser.add_argument("-nw", "--num_workers", type=int, default=0)
 
@@ -128,42 +138,46 @@ if __name__ == "__main__":
         # select one experiment
         savedir = os.path.join(args.savedir_base, args.exp_id)
         exp_dict = hu.load_json(os.path.join(savedir, "exp_dict.json"))
-        
+
         exp_list = [exp_dict]
-        
+
     else:
         # select exp group
         exp_list = []
         for exp_group_name in args.exp_group_list:
             exp_list += EXP_GROUPS[exp_group_name]
 
-
     # Run experiments or View them
     # ----------------------------
-    if args.run_jobs:
+    if args.view_experiments:
+        # view experiments
+        hr.view_experiments(exp_list, savedir_base=args.savedir_base)
+
+    elif args.run_jobs:
         # launch jobs
-        # TODO: define experiment-wise
-        from haven import haven_jobs as hjb
-        run_command = ('python trainval.py -ei <exp_id> -sb %s -nw 1' %  (args.savedir_base))
-        job_config = {
-            'volume': '/mnt:/mnt',
-            'image': 'images.borgy.elementai.net/issam/main',
-            'gpu': '1',
-            'mem': '16',
+        from haven import haven_jobs as hj
+
+        command = f'python trainval.py -ei <exp_id> -sb {args.savedir_base} -nw 1'
+        job_config = {'volume': [
+            '/mnt/datasets/public:/mnt/datasets/public',
+            f'{args.savedir_base}:{args.savedir_base}'
+        ],
+            'image': 'images.borgy.elementai.net/synbols/active-learning:latest',
             'bid': '1',
             'restartable': '1',
-            'cpu': '4'}
-        workdir = os.path.dirname(os.path.realpath(__file__))
-        hjb.run_exp_list_jobs(exp_list, 
-                            savedir_base=args.savedir_base, 
-                            workdir=workdir,
-                            run_command=run_command,
-                            job_config=job_config)
+            'gpu': '1',
+            'mem': '128',
+            'cpu': '6'}
+        hj.run_exp_list_jobs(exp_list,
+                             savedir_base=args.savedir_base,
+                             workdir=os.path.dirname(os.path.realpath(__file__)),
+                             run_command=command,
+                             job_config=job_config)
 
     else:
         # run experiments
         for exp_dict in exp_list:
             # do trainval
             trainval(exp_dict=exp_dict,
-                    savedir_base=args.savedir_base,
-                    reset=args.reset)
+                     savedir_base=args.savedir_base,
+                     reset=args.reset)
