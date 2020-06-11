@@ -24,20 +24,24 @@ if __name__ == "__main__":
     fg = Gradient(types=('radial',), random_color=color_sampler(brightness_range=(0.1, 0.9)))
     # fg = NoPattern()
 
-    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP['latin'])
+    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP['latin'], scale=0.1, n_symbols=50, resolution=(128, 128))
     # attr_sampler = add_occlusion(attr_sampler)
-    # x, mask, y = pack_dataset(dataset_generator(attr_sampler, 1000, flatten_mask_except_first))
-    x, mask, y = pack_dataset(generate_counting_dataset(1000))
+    # x, mask, y = pack_dataset(dataset_generator(attr_sampler, 200, generate.flatten_mask))
+    # x, mask, y = pack_dataset(generate.generate_counting_dataset_crowded(200))
+    x, mask, y = pack_dataset(generate.generate_korean_1k_dataset(200))
+
+    # x, mask, y = pack_dataset(generate.generate_camouflage_dataset(200))
+
     # x, mask, y = pack_dataset(generate_char_grid('latin', n_font=15, n_char=20))
 
 
-    # mask = [attr['overlap_score'] == 0 for attr in y]
+    # mask = [attr['overlap_score'] > 0.005 for attr in y]
     # y = np.array(y)[mask]
     # x = x[mask]
 
 
     plt.figure('dataset')
-    plot_dataset(x, y, h_axis=None, v_axis=None, rng=np.random.RandomState(42))
+    plot_dataset(x, y, h_axis=None, v_axis='font', rng=np.random.RandomState(42), n_row=10, n_col=20)
 
     # print(mask.shape, x.shape)
     # mask = mask.astype(np.float) / 256

@@ -175,23 +175,23 @@ if __name__ == "__main__":
 
     # alphabet_sizes()
 
-    for i in range(4):
+    for i in range(10):
         plt.figure('group %d' % i, figsize=(10, 6))
 
         plt.subplot(2, 2, 1)
         show_fonts(0)
         plt.title('a) fonts')
 
-        # plt.subplot(2, 2, 2)
-        # show_languages(5)
-        # plt.title('b) languages')
+        plt.subplot(2, 2, 2)
+        show_languages(1)
+        plt.title('b) languages')
 
         plt.subplot(2, 2, 3)
         show_resolution(0)
         plt.title('c) resolution')
 
         plt.subplot(2, 2, 4)
-        show_background(i)
+        show_background(7)
         plt.title('d) background and foreground')
 
         savefig('group %d.png' % i)
