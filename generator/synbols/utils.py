@@ -1,6 +1,7 @@
 from icu import LocaleData
 import logging
 import numpy as np
+from collections import defaultdict, Counter
 
 
 def _filter_fonts(all_fonts, font_properties, font_cluters):
@@ -18,8 +19,8 @@ def _filter_fonts(all_fonts, font_properties, font_cluters):
             if len(white_cluster) > 0:
                 kept_font = white_cluster.pop()
                 logging.debug("Cluster of size %d, %d are in the white list, keeping %s", len(cluster),
-                             len(white_cluster) + 1,
-                             kept_font)
+                              len(white_cluster) + 1,
+                              kept_font)
             else:
                 logging.debug("Cluster of size %d, none are in the whitelist", len(cluster))
 
@@ -82,6 +83,45 @@ def flatten_attr(attr, ctxt=None):
     else:
         flat_dict = {ctxt: attr}
     return flat_dict
+
+
+def _extract_axis(y, axis_name, max_val):
+    if axis_name is None:
+        return [None] * max_val
+
+    counter = Counter([attr[axis_name] for attr in y])
+    return [e for e, _ in counter.most_common(max_val)]
+
+
+def make_img_grid(x, y, h_axis='char', v_axis='font', n_row=20, n_col=40):
+    h_values = _extract_axis(y, h_axis, n_col)
+    v_values = _extract_axis(y, v_axis, n_row)
+
+    attr_map = defaultdict(list)
+    for i, attr in enumerate(y):
+        attr_map[(attr.get(h_axis), attr.get(v_axis))].append(i)
+
+    img_grid = []
+    blank_image = np.zeros(x.shape[1:], dtype=x.dtype)
+
+    for v_value in v_values:
+        img_row = []
+        for h_value in h_values:
+            if len(attr_map[(h_value, v_value)]) > 0:
+
+                idx = attr_map[(h_value, v_value)].pop()
+                img_row.append(x[idx])
+            else:
+                img_row.append(blank_image)
+
+        img_grid.append(np.hstack(img_row))
+
+    img_grid = np.vstack(img_grid)
+
+    if img_grid.shape[-1] == 1:
+        img_grid = img_grid.squeeze(axis=-1)
+
+    return img_grid, h_values, v_values
 
 
 SYMBOL_MAP = {
