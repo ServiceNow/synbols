@@ -16,7 +16,6 @@ make docker
 
 Run the python code in the docker image to make sure all the dependencies are installed. For example:
 ```
-make view-dataset
+./docker_run.sh generator/generate_dataset.py --dataset=default --n_samples=10000
 ```
 
-You can also `make all`.
