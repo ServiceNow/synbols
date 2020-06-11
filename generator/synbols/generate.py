@@ -1,6 +1,7 @@
 import time as t
 import logging
 import numpy as np
+from synbols.utils import make_img_grid
 
 from .drawing import Camouflage, Gradient, Image, NoPattern, SolidColor, Symbol, MultiGradient
 from .fonts import ALPHABET_MAP
@@ -18,7 +19,7 @@ def _select(default, value, rng):
 # ya basic!
 def basic_image_sampler(alphabet=None, char=None, font=None, background=None, foreground=None, is_slant=None,
                         is_bold=None, rotation=None, scale=None, translation=None, inverse_color=None,
-                        pixel_noise_scale=0.01, resolution=(32, 32), is_gray=False, n_symbols=1, rng=np.random):
+                        pixel_noise_scale=None, resolution=(32, 32), is_gray=False, n_symbols=1, rng=np.random):
     def sampler():
         symbols = []
         _n_symbols = _select(1, n_symbols, rng)
@@ -39,9 +40,10 @@ def basic_image_sampler(alphabet=None, char=None, font=None, background=None, fo
 
         _background = _select(Gradient(rng=rng), background, rng)
         _inverse_color = _select(rng.choice([True, False]), inverse_color, rng)
+        _pixel_noise_scale = _select(0.01, pixel_noise_scale, rng)
 
         return Image(symbols, background=_background, inverse_color=_inverse_color, resolution=resolution,
-                     pixel_noise_scale=pixel_noise_scale, is_gray=is_gray, rng=rng)
+                     pixel_noise_scale=_pixel_noise_scale, is_gray=is_gray, rng=rng)
 
     return sampler
 
@@ -161,7 +163,7 @@ def generate_korean_1k_dataset(n_samples, **kwarg):
     return dataset_generator(attr_sampler, n_samples)
 
 
-def make_preview(generator, file_name, n_row=20, n_col=40):
+def make_preview(generator, file_name, n_row=5, n_col=5):
     x_list = []
     y_list = []
     for x, mask, y in generator:
@@ -173,18 +175,14 @@ def make_preview(generator, file_name, n_row=20, n_col=40):
 
             if len(x_list) == n_row * n_col:
                 logging.info("Generating Preview")
-                from view_dataset import plot_dataset
-                from matplotlib import pyplot as plt
-                plt.figure(figsize=(n_col, n_row))
-                plot_dataset(np.stack(x_list), y_list, h_axis=None, v_axis=None, n_row=n_row, n_col=n_col)
+                from PIL import Image
+                from scipy.ndimage import zoom
+                img_grid, _, _ = make_img_grid(np.stack(x_list), y_list, h_axis=None, v_axis=None, n_row=n_row,
+                                               n_col=n_col)
 
-                # h_values, v_values = plot_dataset(np.stack(x_list), y_list, h_axis=None, v_axis='font', n_row=n_row, n_col=n_col)
-                # ax = plt.gca()
-                # ax.set_yticks((np.arange(len(h_values)) + 0.5) * x.shape[1])
-                # ax.set_yticklabels(v_values, rotation=0)
-                # ax.get_yaxis().set_visible(True)
-
-                plt.savefig(file_name, dpi=x_list[0].shape[0], bbox_inches='tight', pad_inches=0)
+                # zoom by a factor of 2 to be able to see the pixelization through automatic bicubic zooming
+                img_grid = zoom(img_grid, (2, 2, 1), order=0)
+                Image.fromarray(img_grid).save(file_name)
 
                 x_list = None
 
@@ -307,6 +305,8 @@ def generate_balanced_font_chars_dataset(n_samples, **kwarg):
         logging.info("Using %d/%d symbols from alphabet %s", len(symbols), len(alphabet.symbols), alphabet.name)
         symbols_list.extend(zip(symbols, [alphabet] * len(symbols)))
 
+    logging.info("Total n_fonts: %d, n_symbols: %d.", len(font_list), len(symbols_list))
+
     def attr_sampler():
         if np.random.rand() > 0.5:
             font, alphabet = font_list[np.random.choice(len(font_list))]
@@ -361,6 +361,18 @@ def generate_many_small_occlusions(n_samples, alphabet='latin', **kwarg):
     return dataset_generator(attr_sampler, n_samples, flatten_mask_except_first)
 
 
+def generate_pixel_noise(n_samples, alphabet='latin', **kwarg):
+
+    def pixel_noise(rng):
+        if rng.rand() > 0.5:
+            return 0
+        else:
+            return 0.35
+
+    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], pixel_noise_scale=pixel_noise)
+    return dataset_generator(attr_sampler, n_samples)
+
+
 # for font classification
 # -----------------------
 
@@ -392,4 +404,5 @@ DATASET_GENERATOR_MAP = {
     'balanced-font-chars': generate_balanced_font_chars_dataset,
     'all-chars': all_chars,
     'less-variations': less_variations,
+    'pixel-noise': generate_pixel_noise,
 }
