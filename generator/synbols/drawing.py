@@ -297,27 +297,16 @@ class Symbol:
     """Class containing attributes describing the image
 
     Attributes:
-        alphabet: TODO(allac)
+        alphabet: Object of type Alphabet
         char: string of 1 or more characters in the image
         font: string describing the font used to draw characters
-        background: TODO(allac)
-        slant: one of cairo.FONT_SLANT_ITALIC, cairo.FONT_SLANT_NORMAL, cairo.FONT_SLANT_OBLIQUE
-            default: Uniform random
+        foreground: object of type Pattern, used for the foreground of the symbol
+        is_slant: bool describing if char is italic or not
         is_bold: bool describing if char is bold or not
-            default: Uniform random
         rotation: float, rotation angle of the text
-            default: Normal(0, 0.2)
         scale: float, scale of the text
-            default: Normal(0, 0.1)
         translation: relative (x, y) translation of the text
-            default: Normal(0.1, 0.2)
-        inverse_color: bool describing if color is inverted or not
-            default: Uniform random
-        pixel_noise_scale: standard deviation of pixel-wise noise
-            default: 0.01
-        resolution: tuple of int for (width, height) of the image
-            default: (32, 32) (TODO(allac) fix bug when width != height)
-
+        rng: random number generator to be used. Defaults to np.random
     """
 
     def __init__(self, alphabet, char, font, foreground, is_slant, is_bold, rotation, scale, translation,
