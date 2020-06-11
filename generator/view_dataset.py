@@ -2,58 +2,20 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from collections import defaultdict, Counter
 from synbols.data_io import load_h5, load_attributes_h5, load_minibatch_h5
 import logging
-from synbols.utils import flatten_attr
+from synbols.utils import flatten_attr, make_img_grid
 import sys
 
 logging.basicConfig(level=logging.INFO)
 
 
-def _extract_axis(y, axis_name, max_val):
-    if axis_name is None:
-        return [None] * max_val
-
-    counter = Counter([attr[axis_name] for attr in y])
-    return [e for e, _ in counter.most_common(max_val)]
 
 
-def plot_dataset(x, y, h_axis='char', v_axis='font', n_row=20, n_col=40, show_x_label=True,
-                 show_x_tick_labels=True, show_y_label=True, show_y_tick_labels=True, x_tick_labels_rotation=0,
-                 rng=np.random):
-    # plt.axis('off')
+def plot_dataset(x, y, h_axis='char', v_axis='font', n_row=20, n_col=40):
+    img_grid, h_values, v_values = make_img_grid(x, y, h_axis, v_axis, n_row, n_col)
+
     plt.tight_layout()
-    h_values = _extract_axis(y, h_axis, n_col)
-    v_values = _extract_axis(y, v_axis, n_row)
-
-    attr_map = defaultdict(list)
-    for i, attr in enumerate(y):
-        attr_map[(attr.get(h_axis), attr.get(v_axis))].append(i)
-
-    # h_values = rng.choice(h_values, np.minimum(n_col, len(h_values)), replace=False)
-    # v_values = rng.choice(v_values, np.minimum(n_row, len(v_values)), replace=False)
-
-    img_grid = []
-    blank_image = np.zeros(x.shape[1:], dtype=x.dtype)
-
-    for v_value in v_values:
-        img_row = []
-        for h_value in h_values:
-            if len(attr_map[(h_value, v_value)]) > 0:
-
-                idx = attr_map[(h_value, v_value)].pop()
-                img_row.append(x[idx])
-            else:
-                img_row.append(blank_image)
-
-        img_grid.append(np.hstack(img_row))
-
-    img_grid = np.vstack(img_grid)
-
-    if img_grid.shape[-1] == 1:
-        img_grid = img_grid.squeeze(axis=-1)
-        print(img_grid.shape)
 
     plt.imshow(img_grid)
 
@@ -107,7 +69,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         file_path = sys.argv[1]
     else:
-        file_path = '../partly-occluded_n=10000_2020-May-05.h5py'
+        file_path = '../counting-fix-scale_n=1000_2020-May-20.h5py'
 
     print('load dataset')
 
