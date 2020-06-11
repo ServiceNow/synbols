@@ -17,15 +17,6 @@ font-licenses:
 	$(SYNBOLS_RUN) cat font_licenses.csv
 	@echo "All licenses were automatically extracted based on the directory structure of the Google Fonts repository (https://github.com/google/fonts). Refer to this repository for license details."
 
-view-dataset:
-	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/view_dataset.py"
-	open dataset.png
-
-dataset:
-	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/generate_dataset.py"
-
-test:
-	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/view_generator.py"
 
 view_font_clusters:
 	$(SYNBOLS_RUN) sh -c "cd /local; python ../generator/view_font_clustering.py"
@@ -74,6 +65,8 @@ font_check:
 previews:
 	$(RUN_GENERATOR) --n_samples=100 &
 	$(RUN_GENERATOR) --dataset=camouflage --n_samples=100 &
+	$(RUN_GENERATOR) --dataset=non-camou-bw --n_samples=100 &
+	$(RUN_GENERATOR) --dataset=non-camou-shade --n_samples=100 &
 	$(RUN_GENERATOR) --dataset=tiny --n_samples=100 &
 	$(RUN_GENERATOR) --dataset=less-variations --n_samples=100 &
 	$(RUN_GENERATOR) --dataset=korean-1k --n_samples=100 &
@@ -84,4 +77,7 @@ previews:
 	$(RUN_GENERATOR) --dataset=counting-crowded --n_samples=100  &
 	$(RUN_GENERATOR) --dataset=many-small-occlusion --n_samples=100 &
 	$(RUN_GENERATOR) --dataset=some-large-occlusion --n_samples=100 &
+	$(RUN_GENERATOR) --dataset=pixel-noise --n_samples=100 &
 	wait
+
+
