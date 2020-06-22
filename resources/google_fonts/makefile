@@ -23,7 +23,7 @@ package:
 	zip -r ${ARCHIVE_NAME} ${PACKAGE_DIRNAME}
 
 clean:
-	rm -r google_fonts google_fonts.zip ${PACKAGE_DIRNAME} rename.log rename.err
+	rm -r google_fonts google_fonts.zip ${PACKAGE_DIRNAME} rename.err
 
 all: download add-synbols-prefix package clean
 
