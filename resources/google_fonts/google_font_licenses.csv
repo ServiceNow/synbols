@@ -716,12 +716,7 @@ synbols-ibmplexsanscondensedsemibold, IBM Plex Sans Condensed SemiBold Italic, O
 synbols-ibmplexsanscondensed, IBM Plex Sans Condensed Bold, OFL, Mike Abbink  Bold Monday, Copyright 2018 IBM Corp. All rights reserved.
 synbols-ibmplexsanscondensed, IBM Plex Sans Condensed Bold Italic, OFL, Mike Abbink  Bold Monday, Copyright 2018 IBM Corp. All rights reserved.
 synbols-nothingyoucoulddo, Nothing You Could Do, OFL, Kimberly Geswein, Copyright (c) 2010  Kimberly Geswein (kimberlygeswein.com kimberlygeswein@gmail.com). This Font Software is licensed under the SIL Open Font License  Version 1.1. This license available with a FAQ at: http://scripts.sil.org/OFL
-synbols-bhavuka, Bhavuka Regular, OFL, Multiple Designers, Copyright 2014 - Matt Heximer (www.10fourdesign.com)
-based on Latin Bellota by Kemie Guaida (www.pixilate.com)  
-which is in turn based on Snippet by Gesine Todt.
-
-Licensed under the SIL Open Font License 1.1 This license is available with a FAQ at: http://scripts.sil.org/OFL
-(see file OFL.txt)
+synbols-bhavuka, Bhavuka Regular, OFL, Multiple Designers, Copyright 2014 - Matt Heximer (www.10fourdesign.com)based on Latin Bellota by Kemie Guaida (www.pixilate.com)  which is in turn based on Snippet by Gesine Todt.Licensed under the SIL Open Font License 1.1 This license is available with a FAQ at: http://scripts.sil.org/OFL(see file OFL.txt)
 synbols-uncialantiqua, Uncial Antiqua, OFL, Astigmatic, Copyright (c) 2011 by Brian J. Bonislawsky DBA Astigmatic (AOETI) (astigma@astigmatic.com)  with Reserved Font Name Uncial Antiqua
 synbols-rubikmonoone, Rubik Mono One Regular, OFL, Hubert and Fischer, Copyright 2015 The Rubik Project Authors (mail@hubertfischer.com)
 synbols-adamina, Adamina Regular, OFL, Cyreal, Copyright (c) 2011  Cyreal (www.cyreal.org) with Reserved Font Name 'Adamina'
@@ -741,16 +736,7 @@ synbols-arbutusslab, Arbutus Slab Regular, OFL, Karolina Lach, Copyright (c) 201
 synbols-librebarcode128text, Libre Barcode 128 Text Regular, OFL, Lasse Fister, Copyright 2017 The Libre Barcode Project Authors (lasse@graphicore.de)
 synbols-slabo27px, Slabo 27px, OFL, John Hudson, Copyright (c) 2013  Tiro Typeworks Ltd (www.tiro.com).
 synbols-strong, Strong, OFL, Gaslight, Copyright (c) 2011  Cyreal (www.cyreal.org a@cyreal.org) with Reserved Font Name Strong. This Font Software is licensed under the SIL Open Font License  Version 1.1. This license is available with a FAQ at: http://scripts.sil.org/OFL
-synbols-harmattan, Harmattan Regular, OFL, SIL International, Copyright (c) 2007-2008  The C&MA Guinea Fulbe Team;
-
-Copyright renewed 2011-2012  George W. Nuss (http://www.fulbefouta.com) 
-with the Reserved Font Name Fouta.
-
-Copyright (c) 2004-2015  SIL International (http://scripts.sil.org)  
-with Reserved Font Names 'Andika' and 'SIL'.
-
-Copyright (c) 2014-2015  SIL International (http://www.sil.org/).
-with Reserved Font Names Harmattan and SIL.
+synbols-harmattan, Harmattan Regular, OFL, SIL International, Copyright (c) 2007-2008  The C&MA Guinea Fulbe Team;Copyright renewed 2011-2012  George W. Nuss (http://www.fulbefouta.com) with the Reserved Font Name Fouta.Copyright (c) 2004-2015  SIL International (http://scripts.sil.org)  with Reserved Font Names 'Andika' and 'SIL'.Copyright (c) 2014-2015  SIL International (http://www.sil.org/).with Reserved Font Names Harmattan and SIL.
 synbols-lobster, Lobster Regular, OFL, Impallari Type, Copyright 2010 The Lobster Project Authors (https://github.com/impallari/The-Lobster-Font)  with Reserved Font Name Lobster.
 synbols-spicyrice, Spicy Rice, OFL, Astigmatic, Copyright (c) 2011 by Brian J. Bonislawsky DBA Astigmatic (AOETI) (astigma@astigmatic.com)  with Reserved Font Name Spicy Rice
 synbols-volkhov, Volkhov Regular, OFL, Cyreal, Copyright (c) 2011  Cyreal (www.cyreal.org a@cyreal.org) with Reserved Font Name Volkhov and Volkhov Regular. This Font Software is licensed under the SIL Open Font License  Version 1.1. This license is available with a FAQ at: http://scripts.sil.org/OFL
@@ -1686,10 +1672,7 @@ synbols-cormorantinfant, Cormorant Infant Bold, OFL, Christian Thalmann, Copyrig
 synbols-cormorantinfant, Cormorant Infant Bold Italic, OFL, Christian Thalmann, Copyright 2015 The Cormorant Project Authors (github.com/CatharsisFonts/Cormorant)
 synbols-lifesavers, Life Savers Regular, OFL, Impallari Type, Copyright (c) 2012  Pablo Impallari (www.impallari.com|impallari@gmail.com)  Copyright (c) 2012  Rodrigo Fuenzalida (www.rfuenzalida.com|hello@rfuenzalida.com)   Copyright (c) 2012  Igino Marini. (www.ikern.com|mail@iginomarini.com)  with Reserved Font Name Life Savers.
 synbols-lifesavers, Life Savers Bold, OFL, Impallari Type, Copyright (c) 2012  Pablo Impallari (www.impallari.com|impallari@gmail.com)  Copyright (c) 2012  Rodrigo Fuenzalida (www.rfuenzalida.com|hello@rfuenzalida.com)   Copyright (c) 2012  Igino Marini. (www.ikern.com|mail@iginomarini.com)  with Reserved Font Name Life Savers.
-synbols-lifesaversextrabold, Life Savers ExtraBold, OFL, Impallari Type, Copyright (c) 2012  Pablo Impallari (www.impallari.com|impallari@gmail.com) 
-Copyright (c) 2012  Rodrigo Fuenzalida (www.rfuenzalida.com|hello@rfuenzalida.com)  
-Copyright (c) 2012  Igino Marini. (www.ikern.com|mail@iginomarini.com) 
-with Reserved Font Name Life Savers.
+synbols-lifesaversextrabold, Life Savers ExtraBold, OFL, Impallari Type, Copyright (c) 2012  Pablo Impallari (www.impallari.com|impallari@gmail.com) Copyright (c) 2012  Rodrigo Fuenzalida (www.rfuenzalida.com|hello@rfuenzalida.com)  Copyright (c) 2012  Igino Marini. (www.ikern.com|mail@iginomarini.com) with Reserved Font Name Life Savers.
 synbols-butcherman, Butcherman Regular, OFL, Typomondo, Copyright (c) 2011  Typomondo  with Reserved Font Name  Butcherman.
 synbols-sarpanch, Sarpanch Regular, OFL, Indian Type Foundry, Copyright (c) 2014 Indian Type Foundry (info@indiantypefoundry.com)
 synbols-sarpanchmedium, Sarpanch Medium, OFL, Indian Type Foundry, Copyright (c) 2014 Indian Type Foundry (info@indiantypefoundry.com)
