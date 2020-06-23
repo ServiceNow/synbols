@@ -18,9 +18,9 @@ TO_DELETE := ${TO_DELETE} ${PACKAGE_DIRNAME}/to_production.txt
 TO_DELETE := ${TO_DELETE} ${PACKAGE_DIRNAME}/to_sandbox.txt
 package:
 	# Gather all metadata
-	find google_fonts -name "synbols_metadata" | xargs cat | uniq > google_fonts_metadata
-	echo "synbols_name, original_name, license, designer, copyright" > google_fonts_licenses
-	find google_fonts -name "synbols_licenses" | xargs cat | uniq >> google_fonts_licenses
+	find google_fonts -name "synbols_metadata" | xargs cat | uniq > google_fonts/google_fonts_metadata.csv
+	echo "synbols_name, original_name, license, designer, copyright" > google_fonts/google_fonts_licenses.csv
+	find google_fonts -name "synbols_licenses" | xargs cat | uniq >> google_fonts/google_fonts_licenses.csv
 
 	# Remove all non-synbols-renamed fonts
 	cp -r google_fonts ${PACKAGE_DIRNAME}
@@ -31,7 +31,7 @@ package:
 	zip -r ${ARCHIVE_NAME} ${PACKAGE_DIRNAME}
 
 clean:
-	rm -r google_fonts google_fonts.zip ${PACKAGE_DIRNAME} rename.err
+	rm -rf google_fonts google_fonts.zip ${PACKAGE_DIRNAME} rename.err
 
 all: download add-synbols-prefix package clean
 
