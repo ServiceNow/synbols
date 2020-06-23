@@ -30,19 +30,15 @@ def rename_font(ttf_path):
             font_style = str(record)
             break
     if font_style == "":
-        sys.stderr.write("Error: unable to find font style in %s%s" % (ttf_path, os.linesep))
-        print(ttf_path, "[Failed]")
-        exit()
+        raise Exception("Error: unable to find font style in %s%s" % (ttf_path, os.linesep))
 
     # Determine the font's new name
     font_new_name = ""
     for record in name_records:
         if record.nameID == 1:
-            font_new_name = "synbols-" + str(record).lower().replace(" ", "").replace("-", "")
+                font_new_name = "synbols-" + str(record).lower().replace(" ", "").replace("-", "")
     if font_new_name == "":
-        sys.stderr.write("Error: unable to determine font name in %s%s" % (ttf_path, os.linesep))
-        print(ttf_path, "[Failed]")
-        exit()
+        raise Exception("Error: unable to determine font name in %s%s" % (ttf_path, os.linesep))
 
     # Update the font's name records
     for record in name_records:
@@ -60,16 +56,11 @@ def rename_font(ttf_path):
             record.string = font_new_name
 
     # Save the new font file
-    try:
-        if font_style.lower() != "regular":
-            font_new_filename = font_new_name + "-%s.ttf" % font_style
-        else:
-            font_new_filename = font_new_name + ".ttf"
-        tt.save(os.path.join(os.path.dirname(os.path.abspath(ttf_path)), font_new_filename))
-    except Exception as e:
-        sys.stderr.write("Error: %s in %s%s" % (str(e), ttf_path, os.linesep))
-        print(ttf_path, "[Failed]")
-        exit()
+    if font_style.lower() != "regular":
+        font_new_filename = font_new_name + "-%s.ttf" % font_style
+    else:
+        font_new_filename = font_new_name + ".ttf"
+    tt.save(os.path.join(os.path.dirname(os.path.abspath(ttf_path)), font_new_filename))
 
     print(ttf_path, "[OK]")
     return font_new_name
@@ -100,7 +91,13 @@ if __name__ == "__main__":
                 alphabets = font_family.subsets
 
                 # Edit TTF file
-                font_new_name = rename_font(os.path.join(font_dir_path, font.filename))
+                ttf_path = os.path.join(font_dir_path, font.filename)
+                try:
+                    font_new_name = rename_font(ttf_path)
+                except Exception as e:
+                    sys.stderr.write("Error: %s in %s%s" % (str(e), ttf_path, os.linesep))
+                    print(ttf_path, "[Failed]")
+                    exit()
 
                 # Output synbols metadata file
                 f_md.write("%s, %s\n" % (font_new_name, ", ".join(alphabets)))
