@@ -101,5 +101,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# TODO: add path to script in paths
