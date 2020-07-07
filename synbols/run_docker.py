@@ -7,7 +7,7 @@ import subprocess
 
 SYNBOLS_INCLUDE_PATH = os.path.join(pkg_resources.require("synbols")[0].location, "synbols")
 SYNBOLS_VERSION = pkg_resources.require("synbols")[0].version
-DOCKER_IMAGE = "aldro61/synbols_dev"
+DOCKER_IMAGE = "aldro61/synbols"
 DOCKER_TAG = "v%s" % SYNBOLS_VERSION  # XXX: the tag matches the package version
 
 
@@ -54,10 +54,13 @@ def run_in_docker(file, paths, args):
         A list of command line arguments to pass to the Python script
 
     """
+    # Get the path to the file to run
+    file_path = os.path.dirname(os.path.abspath(file))
+
     # Generate docker arguments to mount all expected directories
     paths = [] if paths is None else paths
     curdir = os.path.abspath(os.getcwd())
-    path_mounts = " ".join([f"-v {p}:{p}" for p in paths + [curdir]])
+    path_mounts = " ".join([f"-v {p}:{p}" for p in paths + [curdir, file_path]])
 
     # Merge all command line arguments
     args = " ".join(args)
@@ -98,3 +101,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# TODO: add path to script in paths
