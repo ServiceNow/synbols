@@ -133,3 +133,7 @@ explore.ipynb
 
 # images
 *.png
+
+# IDE files
+.idea/
+.vscode/
