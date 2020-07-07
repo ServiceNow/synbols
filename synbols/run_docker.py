@@ -69,7 +69,7 @@ def run_in_docker(file, paths, args):
     os.system(cmd)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Run a Python script in the Synbols runtime environment.")
     parser.add_argument("file", help="Python script to run in Synbols environment")
     parser.add_argument("--paths", type=str, nargs='+',
@@ -94,3 +94,7 @@ if __name__ == "__main__":
         exit(1)
 
     run_in_docker(args.file, paths=args.paths, args=unknown_args)
+
+
+if __name__ == "__main__":
+    main()
