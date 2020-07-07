@@ -9,6 +9,7 @@
 ## Installation
 
 The easiest way to install Synbols is via [PyPI](https://pypi.org/project/synbols/). Simply run the following command:
+
 `pip install synbols`
 
 
