@@ -20,7 +20,7 @@ preinstalled. Thus, the only dependency is [Docker](https://docs.docker.com/get-
 
 ## Usage
 
-To run you code in the Synbols runtime environment, simply use the `synbols` command as follows:
+To run your code in the Synbols runtime environment, simply use the `synbols` command as follows:
 
 `synbols mydataset.py --foo bar`
 
