@@ -109,7 +109,7 @@ def make_img_grid(x, y, h_axis='char', v_axis='font', n_row=20, n_col=40):
         for h_value in h_values:
             if len(attr_map[(h_value, v_value)]) > 0:
 
-                idx = attr_map[(h_value, v_value)].pop()
+                idx = attr_map[(h_value, v_value)].pop(0)
                 img_row.append(x[idx])
             else:
                 img_row.append(blank_image)
