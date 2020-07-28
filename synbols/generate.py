@@ -127,6 +127,14 @@ def generate_char_grid(alphabet_name, n_char, n_font, rng=np.random, **kwargs):
     return dataset_generator(_attr_generator().__next__, n_char * n_font, flatten_mask)
 
 
+def text_generator(char_list, rng=np.random, **kwargs):
+    def _attr_generator():
+        for char in char_list:
+            yield basic_image_sampler(char=char, rng=rng, **kwargs)()
+
+    return dataset_generator(_attr_generator().__next__, len(char_list))
+
+
 def generate_plain_dataset(n_samples, alphabet='latin', **kwargs):
     alphabet = ALPHABET_MAP[alphabet]
     attr_sampler = basic_image_sampler(
