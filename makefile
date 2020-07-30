@@ -1,5 +1,6 @@
 package: .dev-dependencies
-	rm -r ./dist ./build
+	if [ -d "./build" ]; then rm -r ./build; fi
+	if [ -d "./dist" ]; then rm -r ./dist; fi
 	python setup.py sdist
 	python setup.py bdist_wheel
 
