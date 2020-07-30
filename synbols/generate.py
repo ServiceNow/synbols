@@ -187,7 +187,7 @@ def make_preview(generator, file_name, n_row=5, n_col=5):
             y_list.append(y)
 
             if len(x_list) == n_row * n_col:
-                tqdm.write("Generating Preview")
+                tqdm.write("Generating Preview...")
                 from PIL import Image
                 from scipy.ndimage import zoom
                 img_grid, _, _ = make_img_grid(np.stack(x_list), y_list, h_axis=None, v_axis=None, n_row=n_row,
@@ -198,6 +198,8 @@ def make_preview(generator, file_name, n_row=5, n_col=5):
                 Image.fromarray(img_grid).save(file_name)
 
                 x_list = None
+                tqdm.write("Done.")
+
 
         yield x, mask, y
 
