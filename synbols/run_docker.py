@@ -3,9 +3,10 @@ import argparse
 import os
 import pkg_resources
 import subprocess
-
+import sys
 
 SYNBOLS_INCLUDE_PATH = os.path.join(pkg_resources.require("synbols")[0].location, "synbols")
+print("Mounting this version of synbols: ", SYNBOLS_INCLUDE_PATH)
 SYNBOLS_VERSION = pkg_resources.require("synbols")[0].version
 DOCKER_IMAGE = "aldro61/synbols"
 DOCKER_TAG = "v%s" % SYNBOLS_VERSION  # XXX: the tag matches the package version
@@ -60,22 +61,25 @@ def run_in_docker(file, paths, args):
     # Generate docker arguments to mount all expected directories
     paths = [] if paths is None else paths
     curdir = os.path.abspath(os.getcwd())
-    path_mounts = " ".join([f"-v {p}:{p}" for p in paths + [curdir, file_path]])
 
     # Merge all command line arguments
     args = " ".join(args)
 
-    # Generate and run the docker command
-    cmd = f"docker run --rm --user {os.getuid()} -it -v {SYNBOLS_INCLUDE_PATH}:/synbols_include/synbols " + \
-          f"{path_mounts} -w {curdir} {DOCKER_IMAGE}:{DOCKER_TAG} " + \
-          f"sh -c 'export PYTHONPATH=$PYTHONPATH:/synbols_include; python {file} {args}'"
-    os.system(cmd)
+    arg_list = f"docker run --rm --user {os.getuid()} -it".split()
+    arg_list += ["-v", f"{SYNBOLS_INCLUDE_PATH}:/synbols_include/synbols"]
+    for p in paths + [curdir, file_path]:
+        arg_list += ["-v", f"{p}:{p}"]
+    arg_list += ["-w", f"{curdir}", f"{DOCKER_IMAGE}:{DOCKER_TAG}"]
+    arg_list += ["sh", "-c",  f"export PYTHONPATH=$PYTHONPATH:/synbols_include; python {file} {args}"]
+
+
+    subprocess.run(arg_list) # might need stderr=sys.stderr, stdout=sys.stdout
 
 
 def main():
     parser = argparse.ArgumentParser(description="Run a Python script in the Synbols runtime environment.")
     parser.add_argument("file", help="Python script to run in Synbols environment")
-    parser.add_argument("--paths", type=str, nargs='+',
+    parser.add_argument("--mount-path", type=str, nargs='+',
                         help="Path to directories other than the local directory to be made accessible at run time")
     args, unknown_args = parser.parse_known_args()
 
@@ -96,7 +100,7 @@ def main():
         print("Error: The Python script to run (%s) cannot be found." % args.file)
         exit(1)
 
-    run_in_docker(args.file, paths=args.paths, args=unknown_args)
+    run_in_docker(args.file, paths=args.mount_path, args=unknown_args)
 
 
 if __name__ == "__main__":
