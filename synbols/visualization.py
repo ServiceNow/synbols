@@ -1,5 +1,6 @@
-from utils import make_img_grid
 from matplotlib import pyplot as plt
+
+from .utils import make_img_grid
 
 
 def plot_dataset(x, y, h_axis='char', v_axis='font', n_row=20, n_col=40, hide_axis=False):
