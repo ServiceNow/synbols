@@ -4,11 +4,11 @@ import logging
 from tqdm import tqdm
 
 import numpy as np
-from synbols.utils import make_img_grid
 
 from .drawing import Camouflage, Gradient, Image, NoPattern, SolidColor, Symbol, MultiGradient
-from .fonts import ALPHABET_MAP
 from .data_io import write_h5
+from .fonts import ALPHABET_MAP
+from .utils import make_img_grid
 
 
 def _select(default, value, rng):
