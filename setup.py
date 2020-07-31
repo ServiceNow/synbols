@@ -8,7 +8,7 @@ with open("README.md", "r") as f:
 setup(
     # Package description
     name="synbols",
-    version="0.0.2.dev1",
+    version="0.0.3.dev1",
     author='Alexandre Lacoste, Pau Rodriguez, Frederic Branchaud-Charron, Parmida Atighehchian, Massimo Caccia, ' +
            'Issam Hadj Laradji, Alexandre Drouin, Matt Craddock, Laurent Charlin, David Vazquez',
     author_email='allac@elementai.com',
