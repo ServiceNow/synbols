@@ -32,4 +32,8 @@ RUN wget -O google_fonts.zip https://github.com/google/fonts/archive/${GOOGLE_FO
 # Summarize all font licenses
 RUN sh -c "echo \"license,font\"; find fonts-$GOOGLE_FONTS_COMMIT -name \"METADATA.pb\" | xargs -I{} bash -c \"dirname {} | cut -d'/' -f2,3 | sed -r 's/[/]+/,/g'\"" > font_licenses.csv
 
-ENV PYTHONPATH "${PYTHONPATH}:/generator"
+# Build a dummy dataset to bootstrap Cairo caches
+RUN mkdir bootstrap
+COPY ./synbols ./bootstrap/synbols
+COPY dummy_dataset.py ./bootstrap
+RUN cd bootstrap && python dummy_dataset.py && cd .. && rm -r bootstrap

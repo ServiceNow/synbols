@@ -1,6 +1,8 @@
 docker: .require-version
+	cp -r ../synbols .
 	docker build -t synbols:latest .
 	docker tag synbols:latest synbols:$(version)
+	rm -r ./synbols
 
 .require-version:
 ifndef version
