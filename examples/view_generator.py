@@ -40,4 +40,3 @@ plt.figure('dataset')
 plot_dataset(x, y, h_axis='char', v_axis='font', n_row=10, n_col=20)
 
 plt.savefig('view_generator.png')
-plt.show()
