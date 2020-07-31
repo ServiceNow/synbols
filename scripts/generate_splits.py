@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+"""Script for adding new splits (partitions) to an existing h5py dataset."""
 
 from synbols.stratified_splits import make_default_splits
 from synbols.data_io import add_splits
@@ -21,9 +21,9 @@ parser.add_argument('--random_seed', help='Random seed used to generate all spli
 
 if __name__ == "__main__":
     ratios = (0.6, 0.2, 0.2)
-    random_seed = 42
 
     args = parser.parse_args()
+    random_seed = args.random_seed
 
     for file_path in args.files:
 

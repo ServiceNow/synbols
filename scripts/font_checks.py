@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+"""Script for generating font_property.json when new fonts are added."""
+
 import logging
 logging.basicConfig(level=logging.INFO)
 
