@@ -1,18 +1,5 @@
 import cairo
 import numpy as np
-import warnings
-
-from sys import stdout
-
-
-# from .utils import _check_random_state
-
-#
-# SLANT_MAP = {
-#     cairo.FONT_SLANT_ITALIC: 'italic',
-#     cairo.FONT_SLANT_NORMAL: 'normal',
-#     cairo.FONT_SLANT_OBLIQUE: 'oblique',
-# }
 
 
 def draw_symbol(ctxt, attributes):

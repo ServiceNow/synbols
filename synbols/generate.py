@@ -1,10 +1,14 @@
 import time as t
 import logging
+# logging.basicConfig(level=logging.INFO)
+from tqdm import tqdm
+
 import numpy as np
 from synbols.utils import make_img_grid
 
 from .drawing import Camouflage, Gradient, Image, NoPattern, SolidColor, Symbol, MultiGradient
 from .fonts import ALPHABET_MAP
+from .data_io import write_h5
 
 
 def _select(default, value, rng):
@@ -17,7 +21,7 @@ def _select(default, value, rng):
 
 
 # ya basic!
-def basic_image_sampler(alphabet=None, char=None, font=None, background=None, foreground=None, is_slant=None,
+def basic_image_sampler(alphabet=ALPHABET_MAP['latin'], char=None, font=None, background=None, foreground=None, is_slant=None,
                         is_bold=None, rotation=None, scale=None, translation=None, inverse_color=None,
                         pixel_noise_scale=None, resolution=(32, 32), is_gray=False, n_symbols=1, rng=np.random):
     def sampler():
@@ -90,8 +94,7 @@ def add_occlusion(attr_sampler, n_occlusion=None, occlusion_char=None, rotation=
 
 def dataset_generator(attr_sampler, n_samples, mask_aggregator=None):
     """High level function generating the dataset from an attribute generator."""
-    t0 = t.time()
-    for i in range(n_samples):
+    for i in tqdm(range(n_samples)):
         attributes = attr_sampler()
         mask = attributes.make_mask()
         x = attributes.make_image()
@@ -103,15 +106,17 @@ def dataset_generator(attr_sampler, n_samples, mask_aggregator=None):
                 mask, mask_attributes = mask
                 y.update(mask_attributes)
 
-        if i % 100 == 0 and i != 0:
-            dt = (t.time() - t0) / 100.
-            eta = (n_samples - i) * dt
-            eta_str = t.strftime("%Hh%Mm%Ss", t.gmtime(eta))
-
-            logging.info("generating sample %4d / %d (%.3g s/image) ETA: %s", i, n_samples, dt, eta_str)
-            # print("generating sample %4d / %d (%.3g s/image) ETA: %s"%(i, n_samples, dt, eta_str))
-            t0 = t.time()
         yield x, mask, y
+
+
+def generate_and_write_dataset(file_path, attr_sampler, n_samples, preview_shape=(10, 10)):
+    ds_generator = dataset_generator(attr_sampler, n_samples)
+
+    if preview_shape is not None:
+        n_row, n_col = preview_shape
+        ds_generator = make_preview(ds_generator, file_path + "_preview.png", n_row=n_row, n_col=n_col)
+
+    write_h5(file_path + ".h5py", ds_generator, n_samples)
 
 
 def generate_char_grid(alphabet_name, n_char, n_font, rng=np.random, **kwargs):
@@ -125,6 +130,14 @@ def generate_char_grid(alphabet_name, n_char, n_font, rng=np.random, **kwargs):
                 yield basic_image_sampler(alphabet, char=char, font=font, rng=rng, **kwargs)()
 
     return dataset_generator(_attr_generator().__next__, n_char * n_font, flatten_mask)
+
+
+def text_generator(char_list, rng=np.random, **kwargs):
+    def _attr_generator():
+        for char in char_list:
+            yield basic_image_sampler(char=char, rng=rng, **kwargs)()
+
+    return dataset_generator(_attr_generator().__next__, len(char_list))
 
 
 def generate_plain_dataset(n_samples, alphabet='latin', **kwargs):
@@ -174,7 +187,7 @@ def make_preview(generator, file_name, n_row=5, n_col=5):
             y_list.append(y)
 
             if len(x_list) == n_row * n_col:
-                logging.info("Generating Preview")
+                tqdm.write("Generating Preview...")
                 from PIL import Image
                 from scipy.ndimage import zoom
                 img_grid, _, _ = make_img_grid(np.stack(x_list), y_list, h_axis=None, v_axis=None, n_row=n_row,
@@ -185,6 +198,8 @@ def make_preview(generator, file_name, n_row=5, n_col=5):
                 Image.fromarray(img_grid).save(file_name)
 
                 x_list = None
+                tqdm.write("Done.")
+
 
         yield x, mask, y
 
