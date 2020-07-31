@@ -6,7 +6,6 @@ import subprocess
 import sys
 
 SYNBOLS_INCLUDE_PATH = os.path.join(pkg_resources.require("synbols")[0].location, "synbols")
-print("Mounting this version of synbols: ", SYNBOLS_INCLUDE_PATH)
 SYNBOLS_VERSION = pkg_resources.require("synbols")[0].version
 DOCKER_IMAGE = "aldro61/synbols"
 DOCKER_TAG = "v%s" % SYNBOLS_VERSION  # XXX: the tag matches the package version
@@ -82,6 +81,9 @@ def main():
     parser.add_argument("--mount-path", type=str, nargs='+',
                         help="Path to directories other than the local directory to be made accessible at run time")
     args, unknown_args = parser.parse_known_args()
+
+    # Print configuration info
+    print(f"Synbols ({SYNBOLS_VERSION}) found at {SYNBOLS_INCLUDE_PATH}")
 
     # Check if Docker is installed
     if not is_docker_installed():
