@@ -2,6 +2,7 @@
 """Script for generating font_property.json when new fonts are added."""
 
 import logging
+
 logging.basicConfig(level=logging.INFO)
 
 from synbols.fonts.google import ALPHABET_MAP
@@ -10,7 +11,6 @@ from synbols.fonts import FONT_PROPERTY_FILE
 from os import path
 import os
 import json
-
 
 if __name__ == "__main__":
 

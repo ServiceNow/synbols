@@ -1,12 +1,17 @@
+"""Tools for visualizing current font clusters.
+
+Usage:
+$ cd /where/the/png/will/be/saved
+$ synbols view_font_clustering.py
+"""
+
 import json
 from synbols.generate import basic_image_sampler
 from synbols.drawing import SolidColor
 import numpy as np
-from matplotlib import pyplot as plt
-import logging
 from synbols.fonts import ALPHABET_MAP
+from PIL import Image
 
-logging.basicConfig(level=logging.INFO)
 
 def cluster_to_img_grid(font_cluster):
     bg = SolidColor((0, 0, 0))
@@ -28,11 +33,9 @@ def cluster_to_img_grid(font_cluster):
 if __name__ == "__main__":
     from os import path
 
-    #Note: You have to run in docker:
-
     print("current number of latin fonts %d" % (len(ALPHABET_MAP['latin'].fonts)))
 
-    with open(path.join(path.dirname(__file__), 'synbols/fonts/hierarchical_clustering_font.json')) as fd:
+    with open(path.join(path.dirname(__file__), '../synbols/fonts/hierarchical_clustering_font.json')) as fd:
         clusters = json.load(fd)
 
     for i, cluster in enumerate(clusters):
@@ -41,6 +44,5 @@ if __name__ == "__main__":
         print()
 
         img_grid = cluster_to_img_grid(cluster)
-        plt.figure()
-        plt.imshow(img_grid)
-        plt.savefig("cluster_%d.png" % i, dpi=200)
+
+        Image.fromarray(img_grid).save("cluster_%d.png" % i)

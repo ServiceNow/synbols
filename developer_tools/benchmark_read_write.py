@@ -1,3 +1,5 @@
+"""Script for benchmarking io operations. Further tests are expected."""
+
 import numpy as np
 from synbols.data_io import load_h5, load_attributes_h5, load_minibatch_h5
 import time as t

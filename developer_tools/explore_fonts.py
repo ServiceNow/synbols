@@ -1,7 +1,9 @@
-from subprocess import call, check_output
-from itertools import chain
-import sys
+"""Script for introspecting font properties using fontTools.
 
+Note: this is still under development for further version of synbols.
+"""
+
+from subprocess import call, check_output
 from fontTools.ttLib import TTFont
 from fontTools.unicode import Unicode
 import cairo
@@ -18,7 +20,6 @@ def check_char_availability(font_path):
 
     ttf.close()
     return len_list
-
 
 
 def check_char_list_availability(font_path, char_list):
@@ -97,9 +98,6 @@ def show_fonts():
 
     surface.write_to_png("example.png")  # Output to PNG
     call(['open', 'example.png'])
-
-
-
 
 
 if __name__ == "__main__":

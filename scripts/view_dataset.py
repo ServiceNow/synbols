@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+"""Script for visualizing dataset statistics."""
+# TODO this script is slightly outdated and we need to expose arguments using argparse.
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,27 +10,6 @@ from synbols.utils import flatten_attr, make_img_grid
 import sys
 
 logging.basicConfig(level=logging.INFO)
-
-
-
-
-def plot_dataset(x, y, h_axis='char', v_axis='font', n_row=20, n_col=40):
-    img_grid, h_values, v_values = make_img_grid(x, y, h_axis, v_axis, n_row, n_col)
-
-    plt.tight_layout()
-
-    plt.imshow(img_grid)
-
-    plt.xlabel(h_axis)
-    plt.ylabel(v_axis)
-
-    ax = plt.gca()
-
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
-
-    plt.gcf().tight_layout()
-    return h_values, v_values
 
 
 def map_to_class_id(values):
