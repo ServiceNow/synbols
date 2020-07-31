@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 import argparse
 import logging
+
 logging.basicConfig(level=logging.INFO)
 
 from datetime import datetime
 from synbols.fonts import ALPHABET_MAP
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', help='name of the predefined dataset', default='default')
