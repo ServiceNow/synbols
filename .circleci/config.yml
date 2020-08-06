@@ -24,9 +24,26 @@ jobs:
           name: Run Make Command
           command: |
             make $MAKE_CMD
+  build_docs:
+    description: Build Sphinx docs
+    docker:
+      - image: python:3.8
+    working_directory: ~/synbols/docs
+    steps:
+      - run:
+          name: Install dependencies
+          command: |
+            pip install sphinx
+      - checkout
+      - run:
+          name: Build Docs
+          command: |
+            cd docs
+            make html
             
 workflows:
   synbols:
     jobs:
       - run_make:
           make_cmd: "package"
+      - build_docs
