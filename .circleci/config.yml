@@ -39,7 +39,7 @@ jobs:
           name: Build Docs
           command: |
             cd docs
-            make $MAKE_CMD
+            make html
             
 workflows:
   synbols:
