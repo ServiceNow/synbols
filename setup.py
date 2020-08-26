@@ -38,5 +38,5 @@ setup(
 
     # Dependencies
     install_requires=["h5py"],
-    python_requires='>=3.6'
+    python_requires='>=3.7'
 )
