@@ -1,3 +1,5 @@
+# todo(pau) import the necessary code for running this script.
+
 from backbones import get_backbone
 import models
 import datasets
