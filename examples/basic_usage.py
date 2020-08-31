@@ -9,7 +9,7 @@ The synbols command will launch the docker containing the fonts (and download it
 mount the current directory for saving the dataset and execute this script.
 
 Alternatively, you can mount any extra directory with the arguement `--mount-path`, and have the dataset written at this
-location by changing the `dataset_path` variable to point to that location.
+location by changing the `dataset_path` variable to point to the appropriate location.
 """
 
 from synbols.generate import generate_and_write_dataset, basic_image_sampler
@@ -26,4 +26,3 @@ def translation(rng):
 attr_sampler = basic_image_sampler(scale=0.5, translation=translation)
 
 generate_and_write_dataset(dataset_path, attr_sampler, n_samples)
-
