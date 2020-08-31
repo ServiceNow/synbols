@@ -219,7 +219,7 @@ def _make_surface(width, height):
     return surface, ctxt
 
 
-def _image_transform(img, inverse_color, pixel_noise_scale, is_gray, rng):
+def _image_transform(img, inverse_color, pixel_noise_scale, is_gray, max_contrast, rng):
     img = img.astype(np.float32) / 256.
 
     if is_gray:
@@ -228,8 +228,9 @@ def _image_transform(img, inverse_color, pixel_noise_scale, is_gray, rng):
     if inverse_color:
         img = 1 - img
 
-    mn, mx = np.min(img), np.max(img)
-    img = (img - mn) / (mx - mn)
+    if max_contrast:
+        mn, mx = np.min(img), np.max(img)
+        img = (img - mn) / (mx - mn)
 
     img += rng.randn(*img.shape) * pixel_noise_scale
     img = np.clip(img, 0., 1.)
@@ -239,13 +240,14 @@ def _image_transform(img, inverse_color, pixel_noise_scale, is_gray, rng):
 
 class Image:
     def __init__(self, symbols, resolution=(32, 32), background=NoPattern(), inverse_color=False,
-                 pixel_noise_scale=0.01, is_gray=False, rng=np.random):
+                 pixel_noise_scale=0.01, is_gray=False, max_contrast=True, rng=np.random):
         self.symbols = symbols
         self.resolution = resolution
         self.inverse_color = inverse_color
         self.pixel_noise_scale = pixel_noise_scale
         self.background = background
         self.is_gray = is_gray
+        self.max_contrast = max_contrast
         self.rng = rng
 
     def make_mask(self):
@@ -262,7 +264,8 @@ class Image:
             symbol.draw(ctxt)
             ctxt.restore()
         img = _surface_to_array(surface)
-        return _image_transform(img, self.inverse_color, self.pixel_noise_scale, self.is_gray, self.rng)
+        return _image_transform(img, self.inverse_color, self.pixel_noise_scale, self.is_gray, self.max_contrast,
+                                self.rng)
 
     def attribute_dict(self):
         symbols = [symbol.attribute_dict() for symbol in self.symbols]

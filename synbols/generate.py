@@ -21,9 +21,10 @@ def _select(default, value, rng):
 
 
 # ya basic!
-def basic_attribute_sampler(alphabet=ALPHABET_MAP['latin'], char=None, font=None, background=None, foreground=None, is_slant=None,
-                            is_bold=None, rotation=None, scale=None, translation=None, inverse_color=None,
-                            pixel_noise_scale=None, resolution=(32, 32), is_gray=False, n_symbols=1, rng=np.random):
+def basic_attribute_sampler(alphabet=ALPHABET_MAP['latin'], char=None, font=None, background=None, foreground=None,
+                            is_slant=None, is_bold=None, rotation=None, scale=None, translation=None,
+                            inverse_color=None, max_contrast=None, pixel_noise_scale=None, resolution=(32, 32),
+                            is_gray=False, n_symbols=1, rng=np.random):
     def sampler():
         symbols = []
         _n_symbols = _select(1, n_symbols, rng)
@@ -45,9 +46,10 @@ def basic_attribute_sampler(alphabet=ALPHABET_MAP['latin'], char=None, font=None
         _background = _select(Gradient(rng=rng), background, rng)
         _inverse_color = _select(rng.choice([True, False]), inverse_color, rng)
         _pixel_noise_scale = _select(0.01, pixel_noise_scale, rng)
+        _max_contrast = _select(True, max_contrast, rng)
 
         return Image(symbols, background=_background, inverse_color=_inverse_color, resolution=resolution,
-                     pixel_noise_scale=_pixel_noise_scale, is_gray=is_gray, rng=rng)
+                     pixel_noise_scale=_pixel_noise_scale, is_gray=is_gray, max_contrast=_max_contrast, rng=rng)
 
     return sampler
 
@@ -198,7 +200,6 @@ def make_preview(generator, file_name, n_row=5, n_col=5):
 
                 x_list = None
                 tqdm.write("Preview generated.")
-
 
         yield x, mask, y
 
@@ -376,7 +377,6 @@ def generate_many_small_occlusions(n_samples, alphabet='latin', **kwarg):
 
 
 def generate_pixel_noise(n_samples, alphabet='latin', **kwarg):
-
     def pixel_noise(rng):
         if rng.rand() > 0.5:
             return 0
