@@ -21,9 +21,9 @@ def _select(default, value, rng):
 
 
 # ya basic!
-def basic_image_sampler(alphabet=ALPHABET_MAP['latin'], char=None, font=None, background=None, foreground=None, is_slant=None,
-                        is_bold=None, rotation=None, scale=None, translation=None, inverse_color=None,
-                        pixel_noise_scale=None, resolution=(32, 32), is_gray=False, n_symbols=1, rng=np.random):
+def basic_attribute_sampler(alphabet=ALPHABET_MAP['latin'], char=None, font=None, background=None, foreground=None, is_slant=None,
+                            is_bold=None, rotation=None, scale=None, translation=None, inverse_color=None,
+                            pixel_noise_scale=None, resolution=(32, 32), is_gray=False, n_symbols=1, rng=np.random):
     def sampler():
         symbols = []
         _n_symbols = _select(1, n_symbols, rng)
@@ -127,7 +127,7 @@ def generate_char_grid(alphabet_name, n_char, n_font, rng=np.random, **kwargs):
         fonts = rng.choice(alphabet.fonts, n_font, replace=False)
         for char in chars:
             for font in fonts:
-                yield basic_image_sampler(alphabet, char=char, font=font, rng=rng, **kwargs)()
+                yield basic_attribute_sampler(alphabet, char=char, font=font, rng=rng, **kwargs)()
 
     return dataset_generator(_attr_generator().__next__, n_char * n_font, flatten_mask)
 
@@ -135,14 +135,14 @@ def generate_char_grid(alphabet_name, n_char, n_font, rng=np.random, **kwargs):
 def text_generator(char_list, rng=np.random, **kwargs):
     def _attr_generator():
         for char in char_list:
-            yield basic_image_sampler(char=char, rng=rng, **kwargs)()
+            yield basic_attribute_sampler(char=char, rng=rng, **kwargs)()
 
     return dataset_generator(_attr_generator().__next__, len(char_list))
 
 
 def generate_plain_dataset(n_samples, alphabet='latin', **kwargs):
     alphabet = ALPHABET_MAP[alphabet]
-    attr_sampler = basic_image_sampler(
+    attr_sampler = basic_attribute_sampler(
         alphabet=alphabet, background=NoPattern(), foreground=SolidColor((1, 1, 1,)), is_slant=False,
         is_bold=False, rotation=0, scale=1., translation=(0., 0.), inverse_color=False, pixel_noise_scale=0.)
     return dataset_generator(attr_sampler, n_samples)
@@ -151,13 +151,13 @@ def generate_plain_dataset(n_samples, alphabet='latin', **kwargs):
 def generate_tiny_dataset(n_samples, alphabet='latin', **kwarg):
     fg = SolidColor((1, 1, 1))
     bg = SolidColor((0, 0, 0))
-    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg, is_bold=False,
-                                       is_slant=False, scale=1, resolution=(8, 8), is_gray=True)
+    attr_sampler = basic_attribute_sampler(alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg, is_bold=False,
+                                           is_slant=False, scale=1, resolution=(8, 8), is_gray=True)
     return dataset_generator(attr_sampler, n_samples)
 
 
 def generate_default_dataset(n_samples, alphabet='latin', **kwarg):
-    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet])
+    attr_sampler = basic_attribute_sampler(alphabet=ALPHABET_MAP[alphabet])
     return dataset_generator(attr_sampler, n_samples)
 
 
@@ -165,14 +165,14 @@ def generate_solid_bg_dataset(n_samples, alphabet='latin', **kwarg):
     fg = SolidColor((1, 1, 1))
     bg = SolidColor((0, 0, 0))
 
-    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg)
+    attr_sampler = basic_attribute_sampler(alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg)
     return dataset_generator(attr_sampler, n_samples)
 
 
 def generate_korean_1k_dataset(n_samples, **kwarg):
     chars = ALPHABET_MAP['korean'].symbols[:1000]
     fonts = ALPHABET_MAP['korean'].fonts
-    attr_sampler = basic_image_sampler(char=lambda rng: rng.choice(chars), font=lambda rng: rng.choice(fonts))
+    attr_sampler = basic_attribute_sampler(char=lambda rng: rng.choice(chars), font=lambda rng: rng.choice(fonts))
     return dataset_generator(attr_sampler, n_samples)
 
 
@@ -218,7 +218,7 @@ def generate_camouflage_dataset(n_samples, alphabet='latin', texture='camouflage
             raise ValueError("Unknown texture %s." % texture)
 
         scale = 0.7 * np.exp(np.random.randn() * 0.1)
-        return basic_image_sampler(
+        return basic_attribute_sampler(
             alphabet=ALPHABET_MAP[alphabet], background=bg, foreground=fg, is_bold=True, is_slant=False,
             scale=scale)()
 
@@ -243,8 +243,8 @@ def generate_segmentation_dataset(n_samples, alphabet='latin', resolution=(128, 
     def n_symbols(rng):
         return rng.choice(list(range(3, 10)))
 
-    attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], resolution=resolution, scale=scale,
-                                         is_bold=False, n_symbols=n_symbols)
+    attr_generator = basic_attribute_sampler(alphabet=ALPHABET_MAP[alphabet], resolution=resolution, scale=scale,
+                                             is_bold=False, n_symbols=n_symbols)
     return dataset_generator(attr_generator, n_samples, flatten_mask)
 
 
@@ -261,8 +261,8 @@ def generate_counting_dataset(n_samples, alphabet='latin', resolution=(128, 128)
         else:
             return 'a'
 
-    attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], char=char_sampler, resolution=resolution,
-                                         scale=scale, is_bold=False, n_symbols=n_symbols)
+    attr_generator = basic_attribute_sampler(alphabet=ALPHABET_MAP[alphabet], char=char_sampler, resolution=resolution,
+                                             scale=scale, is_bold=False, n_symbols=n_symbols)
     return dataset_generator(attr_generator, n_samples, flatten_mask)
 
 
@@ -283,8 +283,8 @@ def generate_counting_dataset_crowded(n_samples, alphabet='latin', resolution=(1
         else:
             return 'a'
 
-    attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], char=char_sampler, resolution=resolution,
-                                         scale=scale, is_bold=False, n_symbols=n_symbols)
+    attr_generator = basic_attribute_sampler(alphabet=ALPHABET_MAP[alphabet], char=char_sampler, resolution=resolution,
+                                             scale=scale, is_bold=False, n_symbols=n_symbols)
     return dataset_generator(attr_generator, n_samples, flatten_mask)
 
 
@@ -300,7 +300,7 @@ def all_chars(n_samples, **kwarg):
 
     def attr_sampler():
         char, alphabet = symbols_list[np.random.choice(len(symbols_list))]
-        return basic_image_sampler(alphabet=alphabet, char=char)()
+        return basic_attribute_sampler(alphabet=alphabet, char=char)()
 
     return dataset_generator(attr_sampler, n_samples)
 
@@ -328,7 +328,7 @@ def generate_balanced_font_chars_dataset(n_samples, **kwarg):
         else:
             symbol, alphabet = symbols_list[np.random.choice(len(symbols_list))]
             font = np.random.choice(alphabet.fonts[:200])
-        return basic_image_sampler(char=symbol, font=font, is_bold=False, is_slant=False)()
+        return basic_attribute_sampler(char=symbol, font=font, is_bold=False, is_slant=False)()
 
     return dataset_generator(attr_sampler, n_samples)
 
@@ -337,8 +337,8 @@ def generate_balanced_font_chars_dataset(n_samples, **kwarg):
 # -------------------
 
 def generate_large_translation(n_samples, alphabet='latin', **kwarg):
-    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], scale=0.5,
-                                       translation=lambda rng: tuple(rng.rand(2) * 4 - 2))
+    attr_sampler = basic_attribute_sampler(alphabet=ALPHABET_MAP[alphabet], scale=0.5,
+                                           translation=lambda rng: tuple(rng.rand(2) * 4 - 2))
     return dataset_generator(attr_sampler, n_samples)
 
 
@@ -351,7 +351,7 @@ def missing_symbol_dataset(n_samples, alphabet='latin', **kwarg):
         else:
             return 10
 
-    attr_generator = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], translation=tr, background=bg)
+    attr_generator = basic_attribute_sampler(alphabet=ALPHABET_MAP[alphabet], translation=tr, background=bg)
     return dataset_generator(attr_generator, n_samples)
 
 
@@ -362,7 +362,7 @@ def generate_some_large_occlusions(n_samples, alphabet='latin', **kwarg):
         else:
             return 0
 
-    attr_sampler = add_occlusion(basic_image_sampler(alphabet=ALPHABET_MAP[alphabet]),
+    attr_sampler = add_occlusion(basic_attribute_sampler(alphabet=ALPHABET_MAP[alphabet]),
                                  n_occlusion=n_occlusion,
                                  scale=lambda rng: 0.6 * np.exp(rng.randn() * 0.1),
                                  translation=lambda rng: tuple(rng.rand(2) * 6 - 3))
@@ -370,7 +370,7 @@ def generate_some_large_occlusions(n_samples, alphabet='latin', **kwarg):
 
 
 def generate_many_small_occlusions(n_samples, alphabet='latin', **kwarg):
-    attr_sampler = add_occlusion(basic_image_sampler(alphabet=ALPHABET_MAP[alphabet]),
+    attr_sampler = add_occlusion(basic_attribute_sampler(alphabet=ALPHABET_MAP[alphabet]),
                                  n_occlusion=lambda rng: rng.randint(0, 5))
     return dataset_generator(attr_sampler, n_samples, flatten_mask_except_first)
 
@@ -383,7 +383,7 @@ def generate_pixel_noise(n_samples, alphabet='latin', **kwarg):
         else:
             return 0.35
 
-    attr_sampler = basic_image_sampler(alphabet=ALPHABET_MAP[alphabet], pixel_noise_scale=pixel_noise)
+    attr_sampler = basic_attribute_sampler(alphabet=ALPHABET_MAP[alphabet], pixel_noise_scale=pixel_noise)
     return dataset_generator(attr_sampler, n_samples)
 
 
@@ -391,7 +391,7 @@ def generate_pixel_noise(n_samples, alphabet='latin', **kwarg):
 # -----------------------
 
 def less_variations(n_samples, alphabet='latin', **kwarg):
-    attr_generator = basic_image_sampler(
+    attr_generator = basic_attribute_sampler(
         alphabet=ALPHABET_MAP[alphabet], is_bold=False, is_slant=False,
         scale=lambda rng: 0.5 * np.exp(rng.randn() * 0.1),
         rotation=lambda rng: rng.randn() * 0.1)

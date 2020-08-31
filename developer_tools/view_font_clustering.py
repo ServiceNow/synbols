@@ -6,7 +6,7 @@ $ synbols view_font_clustering.py
 """
 
 import json
-from synbols.generate import basic_image_sampler
+from synbols.generate import basic_attribute_sampler
 from synbols.drawing import SolidColor
 import numpy as np
 from synbols.fonts import ALPHABET_MAP
@@ -21,9 +21,9 @@ def cluster_to_img_grid(font_cluster):
     for font, _d in font_cluster:
         img_list = []
         for char in 'abcdefghijkl':
-            img = basic_image_sampler(font=font, char=char, is_bold=False, is_slant=False, scale=1., translation=(0, 0),
-                                      background=bg, foreground=fg, rotation=0, inverse_color=False,
-                                      resolution=(128, 128))()
+            img = basic_attribute_sampler(font=font, char=char, is_bold=False, is_slant=False, scale=1., translation=(0, 0),
+                                          background=bg, foreground=fg, rotation=0, inverse_color=False,
+                                          resolution=(128, 128))()
             img_list.append(img.make_image())
 
         img_grid.append(np.hstack(img_list))
