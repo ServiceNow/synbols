@@ -2,7 +2,7 @@
 Example Usage:
 ````
 $ cd /my/dataset/directory
-$ synbols /path/to/this/script/fix_scale_dataset.py
+$ synbols /path/to/this/script/basic_usage.py
 ```
 
 The synbols command will launch the docker containing the fonts (and download it if necessary). It will also
