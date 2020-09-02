@@ -15,7 +15,7 @@ RUN apt-get update && \
     apt-get install -y fonts-cantarell fontconfig git icu-devtools ipython3 libcairo2-dev libhdf5-dev pkg-config ttf-ubuntu-font-family unzip wget
 
 # Install all python requirements
-COPY requirements.txt .
+COPY docker/requirements.txt .
 RUN pip install -r requirements.txt
 
 ## Install all Google fonts and extract their metadata
@@ -35,6 +35,6 @@ RUN sh -c "echo \"license,font\"; find fonts-$GOOGLE_FONTS_COMMIT -name \"METADA
 # Build Cairo and Matplotlib font caches
 RUN mkdir bootstrap
 COPY ./synbols ./bootstrap/synbols
-COPY dummy_dataset.py ./bootstrap
+COPY docker/dummy_dataset.py ./bootstrap
 RUN cd bootstrap && python dummy_dataset.py && cd .. && rm -r bootstrap
 RUN python -c "import matplotlib.pyplot as plt"
