@@ -18,6 +18,9 @@ RUN apt-get update && \
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
+# Download CIFAR10
+RUN git clone https://github.com/YoongiKim/CIFAR-10-images.git /images
+
 ## Install all Google fonts and extract their metadata
 RUN wget -O google_fonts.zip https://github.com/google/fonts/archive/${GOOGLE_FONTS_COMMIT}.zip && \
     unzip google_fonts.zip && \
