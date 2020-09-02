@@ -3,12 +3,14 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Synbols's documentation!
-===================================
+Welcome to the Synbols documentation!
+=====================================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   synbols/index
 
 
 
