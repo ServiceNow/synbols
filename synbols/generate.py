@@ -178,7 +178,7 @@ def generate_korean_1k_dataset(n_samples, **kwarg):
     return dataset_generator(attr_sampler, n_samples)
 
 
-def make_preview(generator, file_name, n_row=5, n_col=5):
+def make_preview(generator, file_name, n_row=10, n_col=10):
     x_list = []
     y_list = []
     for x, mask, y in generator:
