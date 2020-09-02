@@ -260,13 +260,14 @@ def _image_transform(img, inverse_color, pixel_noise_scale, is_gray, max_contras
 
 
 def _from_pil(im, alpha=1.0, format=cairo.FORMAT_ARGB32):
+    """ Convert a PIL Image to a Cairo surface.
+
+    Args:
+        im: Pillow Image
+        alpha: 0..1 alpha to add to non-alpha images
+        format: Pixel format for output surface
     """
-    :param im: Pillow Image
-    :param alpha: 0..1 alpha to add to non-alpha images
-    :param format: Pixel format for output surface
-    """
-    assert format in (
-        cairo.FORMAT_RGB24, cairo.FORMAT_ARGB32), "Unsupported pixel format: %s" % format
+    assert format in (cairo.FORMAT_RGB24, cairo.FORMAT_ARGB32), f"Unsupported pixel format: {format}"
     if 'A' not in im.getbands():
         im.putalpha(int(alpha * 256.))
     arr = bytearray(im.tobytes('raw', 'BGRa'))
