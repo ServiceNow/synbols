@@ -2,6 +2,7 @@ import os
 from glob import glob
 
 import cairo
+from PIL import Image as PILImage
 import numpy as np
 
 
@@ -213,7 +214,6 @@ class ImagePattern(Pattern):
     def __init__(self, root='/images', rng=np.random):
         # TODO more extensions
         self._path = glob(os.path.join(root, '**', '*.jpg'), recursive=True)
-        print(len(self._path))
         self._rng = rng
 
     def draw(self, ctxt):
@@ -223,7 +223,7 @@ class ImagePattern(Pattern):
     def set_as_source(self, ctxt):
         surface = ctxt.get_group_target()
         width, height = surface.get_width(), surface.get_height()
-        im = Image.open(self._rng.choice(self._path, 1).item()).resize((width, height))
+        im = PILImage.open(self._rng.choice(self._path, 1).item()).resize((width, height))
         ctxt.set_source_surface(_from_pil(im))
 
 
