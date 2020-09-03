@@ -38,8 +38,7 @@ jobs:
       - run:
           name: Build Docs
           command: |
-            cd docs
-            make html
+            make build_docs
             
 workflows:
   synbols:
