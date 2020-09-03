@@ -1,4 +1,8 @@
+import os
+from glob import glob
+
 import cairo
+from PIL import Image as PILImage
 import numpy as np
 
 
@@ -206,6 +210,23 @@ class Camouflage(Pattern):
         pass
 
 
+class ImagePattern(Pattern):
+    def __init__(self, root='/images', rng=np.random):
+        # TODO more extensions
+        self._path = glob(os.path.join(root, '**', '*.jpg'), recursive=True)
+        self._rng = rng
+
+    def draw(self, ctxt):
+        self.set_as_source(ctxt)
+        ctxt.paint()
+
+    def set_as_source(self, ctxt):
+        surface = ctxt.get_group_target()
+        width, height = surface.get_width(), surface.get_height()
+        im = PILImage.open(self._rng.choice(self._path, 1).item()).resize((width, height))
+        ctxt.set_source_surface(_from_pil(im))
+
+
 def _surface_to_array(surface):
     buf = surface.get_data()
     img = np.ndarray(shape=(surface.get_height(), surface.get_width(), 4), dtype=np.uint8, buffer=buf)
@@ -236,6 +257,24 @@ def _image_transform(img, inverse_color, pixel_noise_scale, is_gray, max_contras
     img = np.clip(img, 0., 1.)
 
     return (img * 255).astype(np.uint8)
+
+
+def _from_pil(im, alpha=1.0, format=cairo.FORMAT_ARGB32):
+    """ Convert a PIL Image to a Cairo surface.
+
+    Args:
+        im: Pillow Image
+        alpha: 0..1 alpha to add to non-alpha images
+        format: Pixel format for output surface
+    """
+    assert format in (cairo.FORMAT_RGB24, cairo.FORMAT_ARGB32), f"Unsupported pixel format: {format}"
+    if 'A' not in im.getbands():
+        im.putalpha(int(alpha * 256.))
+    arr = bytearray(im.tobytes('raw', 'BGRa'))
+    surface = cairo.ImageSurface.create_for_data(arr, format, im.width, im.height)
+    surface.set_device_scale(im.width, im.height)
+    ctxt = cairo.Context(surface)
+    return surface
 
 
 class Image:
