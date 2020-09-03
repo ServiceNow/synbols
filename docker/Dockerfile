@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:18.04 AS base
 #MAINTAINER TODO
 
 ARG GOOGLE_FONTS_COMMIT=ed61614fb47affd2a4ef286e0b313c5c47226c69
@@ -38,3 +38,6 @@ COPY ./synbols ./bootstrap/synbols
 COPY docker/dummy_dataset.py ./bootstrap
 RUN cd bootstrap && python dummy_dataset.py && cd .. && rm -r bootstrap
 RUN python -c "import matplotlib.pyplot as plt"
+
+FROM base AS sphinx
+RUN pip install sphinx

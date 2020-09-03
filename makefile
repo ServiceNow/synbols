@@ -4,8 +4,16 @@ ifndef version
 endif
 
 docker: .require-version
-	docker build -f docker/Dockerfile -t synbols:latest .
+	docker build \
+		-f docker/Dockerfile \
+		--target base \
+		-t synbols:latest \
+		.
 	docker tag synbols:latest synbols:$(version)
+
+build_docs:
+	sphinx-apidoc -o docs/synbols synbols synbols/run_docker.py
+	sphinx-build docs docs/_build/
 
 package: .dev-dependencies
 	if [ -d "./build" ]; then rm -r ./build; fi

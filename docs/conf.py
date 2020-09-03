@@ -26,7 +26,11 @@ author = 'Alexandre Lacoste ( Element AI) < allac@elementai.com>, Pau Rodriguez 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc']
+extensions = ['sphinx.ext.apidoc', 'sphinx.ext.autodoc']
+apidoc_module_dir = '../synbols'
+apidoc_output_dir = 'synbols'
+apidoc_excluded_paths = []
+apidoc_separate_modules = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

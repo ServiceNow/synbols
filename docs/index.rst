@@ -10,9 +10,6 @@ Welcome to the Synbols documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   synbols/index
-
-
 
 Indices and tables
 ==================
