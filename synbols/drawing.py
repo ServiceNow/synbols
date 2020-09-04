@@ -77,6 +77,12 @@ class Pattern(object):
         return {'style': self.__class__.__name__}
 
 
+class RandomPattern(Pattern):
+    def attribute_dict(self):
+        return {'style': self.__class__.__name__,
+                'seed': self.seed}
+
+
 class NoPattern(Pattern):
     def draw(self, ctxt):
         pass
@@ -106,25 +112,23 @@ def color_sampler(rng=np.random, brightness_range=(0, 1)):
     return sampler
 
 
-class Gradient(Pattern):
-    def __init__(self, alpha=1, types=('radial', 'linear'), random_color=None, rng=np.random):
-        if random_color is None:
-            random_color = color_sampler(rng)
+class Gradient(RandomPattern):
+    def __init__(self, alpha=1, types=('radial', 'linear'), random_color=None, seed=None):
         self.random_color = random_color
-        self.rng = rng
+        self.seed = seed
 
         self.types = types
         self.alpha = alpha
 
     def set_as_source(self, ctxt):
-        pat = _random_pattern(self.alpha, self.random_color, rng=self.rng, patern_types=self.types)
+        rng = np.random.RandomState(self.seed)
+        pat = _random_pattern(self.alpha, self.random_color, rng=rng, patern_types=self.types)
         ctxt.set_source(pat)
 
 
 class MultiGradient(Pattern):
     def __init__(self, alpha=0.5, n_gradients=2, types=('radial', 'linear'), random_color=None, rng=np.random):
-        if random_color is None:
-            random_color = color_sampler(rng)
+
         self.random_color = random_color
         self.rng = rng
         self.types = types
@@ -273,13 +277,12 @@ def _from_pil(im, alpha=1.0, format=cairo.FORMAT_ARGB32):
     arr = bytearray(im.tobytes('raw', 'BGRa'))
     surface = cairo.ImageSurface.create_for_data(arr, format, im.width, im.height)
     surface.set_device_scale(im.width, im.height)
-    ctxt = cairo.Context(surface)
     return surface
 
 
 class Image:
     def __init__(self, symbols, resolution=(32, 32), background=NoPattern(), inverse_color=False,
-                 pixel_noise_scale=0.01, is_gray=False, max_contrast=True, rng=np.random):
+                 pixel_noise_scale=0.01, is_gray=False, max_contrast=True, seed=None):
         self.symbols = symbols
         self.resolution = resolution
         self.inverse_color = inverse_color
@@ -287,7 +290,7 @@ class Image:
         self.background = background
         self.is_gray = is_gray
         self.max_contrast = max_contrast
-        self.rng = rng
+        self.seed = seed
 
     def make_mask(self):
         mask_list = []
@@ -303,14 +306,15 @@ class Image:
             symbol.draw(ctxt)
             ctxt.restore()
         img = _surface_to_array(surface)
-        return _image_transform(img, self.inverse_color, self.pixel_noise_scale, self.is_gray, self.max_contrast,
-                                self.rng)
+        rng = np.random.RandomState(self.seed)
+        return _image_transform(img, self.inverse_color, self.pixel_noise_scale, self.is_gray, self.max_contrast, rng)
 
     def attribute_dict(self):
         symbols = [symbol.attribute_dict() for symbol in self.symbols]
         data = dict(
             resolution=self.resolution,
             pixel_noise_scale=self.pixel_noise_scale,
+            seed=self.seed,
             background=self.background.attribute_dict()
         )
         data.update(symbols[0])  # hack to allow flatten access
@@ -335,11 +339,10 @@ class Symbol:
         rotation: float, rotation angle of the text
         scale: float, scale of the text
         translation: relative (x, y) translation of the text
-        rng: random number generator to be used. Defaults to np.random
+        seed: random number generator to be used.
     """
 
-    def __init__(self, alphabet, char, font, foreground, is_slant, is_bold, rotation, scale, translation,
-                 rng=np.random):
+    def __init__(self, alphabet, char, font, foreground, is_slant, is_bold, rotation, scale, translation):
         self.alphabet = alphabet
         self.char = char
         self.font = font
@@ -349,7 +352,6 @@ class Symbol:
         self.rotation = rotation
         self.scale = scale
         self.translation = translation
-        self.rng = rng
 
     def draw(self, ctxt):
         draw_symbol(ctxt, self)
