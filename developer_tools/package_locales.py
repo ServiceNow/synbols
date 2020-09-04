@@ -32,10 +32,10 @@ def get_chars(locale, unicode=False):
         # Segment upper and lower if needed
         if char_type in ["standard", "auxiliary"]:
             if len(chars) > 0:
-                # is upper if .upper() gives same char code
-                is_upper = np.array([len(c) == len(c.upper()) and ord(c) == ord(c.upper()) for c in chars])
-                all_chars[char_type + "_lower"] = chars[~is_upper]
-                all_chars[char_type + "_upper"] = chars[is_upper]
+                # is lower if .lower() gives same char code
+                is_lower = np.array([len(c) == len(c.lower()) and ord(c) == ord(c.lower()) for c in chars])
+                all_chars[char_type + "_lower"] = chars[is_lower]
+                all_chars[char_type + "_upper"] = chars[~is_lower]
             else:
                 all_chars[char_type + "_lower"] = chars
                 all_chars[char_type + "_upper"] = chars
@@ -56,7 +56,7 @@ def make_test_symbol(char, font, is_slant=False, is_bold=False):
                  pixel_noise_scale=0).make_image()
 
 
-def bold_support_matrix(char_codes, fonts, glyph_avail):
+def font_property_matrices(char_codes, fonts, glyph_avail):
     bold_works = np.zeros(len(fonts))
     render_works = np.zeros(len(fonts))
 
@@ -88,13 +88,15 @@ def bold_support_matrix(char_codes, fonts, glyph_avail):
     return bold_works, render_works
 
 if __name__ == "__main__":
-    fonts = pickle.load(open("./developer_tools/fonts.pkl", "rb"))
+    fonts = pickle.load(open("./fonts.pkl", "rb"))
     font_names = np.array(list(fonts.keys()))
-    glyph_avail = load_npz('./developer_tools/font_glyph_availability.npz')
+    glyph_avail = load_npz('./font_glyph_availability.npz')
 
     json.dump(font_names.tolist(), open("locale_font_names.json", "w"))
 
-    for code, locale in [(k, v) for k, v in Locale.getAvailableLocales().items() if "_" not in k and k in ["en", "fr", "el", "te", "km", "ru", "hi", "vi", "ko", "ja"]]:
+    for code, locale in [(k, v) for k, v in Locale.getAvailableLocales().items() \
+        if "_" not in k and \
+        k in ['en', 'te', 'th', 'vi', 'ar', 'iw', 'km', 'ta', 'gu', 'bn', 'ml', 'el', 'ru', 'ko', 'zh', 'jp']]:
         chars = get_chars(code, unicode=True)
         name = locale.getDisplayName().encode('ascii', 'ignore').decode('ascii')
         print(name)
@@ -114,7 +116,7 @@ if __name__ == "__main__":
         # locale_glyph_avail = locale_glyph_avail[:, mask]
         # locale_font_idx = np.where(mask)[0]
 
-        locale_bold_avail, locale_render_works = bold_support_matrix(char_codes, font_names, locale_glyph_avail)
+        locale_bold_avail, locale_render_works = font_property_matrices(char_codes, font_names, locale_glyph_avail)
         
         # Filter fonts that don't render properly
         mask = np.logical_and(locale_render_works, locale_glyph_avail.sum(axis=0) > 1)
