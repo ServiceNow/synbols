@@ -148,8 +148,10 @@ import json
 import os
 from itertools import chain
 
-LOCALE_DATA_PATH = "."
-LOCALE_FONTS = np.array(json.load(open(os.path.join(LOCALE_DATA_PATH, "locale_font_names.json"), "r")))
+LOCALE_DATA_PATH = "/locales"
+LOCALE_FONT_FILE = os.path.join(LOCALE_DATA_PATH, "locale_font_names.json")
+LOCALE_FONTS = np.array(json.load(open(LOCALE_FONT_FILE, "r"))) \
+    if os.path.exists(LOCALE_FONT_FILE) else []
 
 
 class Language:
