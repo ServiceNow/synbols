@@ -216,7 +216,7 @@ class Language:
 
 def load_all_languages():
     """
-    Loads all supporter languages. Returns a dictionnary of Language objects indexed by their name.
+    Loads all supported languages. Returns a dictionnary of Language objects indexed by their name.
 
     """
     locales = [x.replace(".npz", "").replace("locale_", "") for x in os.listdir(LOCALE_DATA_PATH) if x.startswith("locale_") and x.endswith(".npz")]
