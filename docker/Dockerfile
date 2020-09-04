@@ -35,9 +35,27 @@ RUN wget -O google_fonts.zip https://github.com/google/fonts/archive/${GOOGLE_FO
 # Summarize all font licenses
 RUN sh -c "echo \"license,font\"; find fonts-$GOOGLE_FONTS_COMMIT -name \"METADATA.pb\" | xargs -I{} bash -c \"dirname {} | cut -d'/' -f2,3 | sed -r 's/[/]+/,/g'\"" > font_licenses.csv
 
-# Build Cairo and Matplotlib font caches
+# ------------------------------------------------------------------------
+# Synbols-dependent precomputation
+# ------------------------------------------------------------------------
 RUN mkdir bootstrap
 COPY ./synbols ./bootstrap/synbols
+
+# Bootstrap Cairo caches
 COPY dummy_dataset.py ./bootstrap
-RUN cd bootstrap && python dummy_dataset.py && cd .. && rm -r bootstrap
+RUN cd bootstrap && python dummy_dataset.py
+
+# Bootstrap Matplotlib caches
 RUN python -c "import matplotlib.pyplot as plt"
+
+# Package locales
+COPY developer_tools ./bootstrap
+RUN cd bootstrap && \
+    python font_glyph_availability.py && \
+    python package_locales.py && \
+    mkdir /locales && \
+    cp locale_* /locales
+
+# Clean up
+RUN cd .. && rm -r bootstrap
+# ------------------------------------------------------------------------
