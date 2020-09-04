@@ -161,8 +161,7 @@ class Language:
         metadata = json.load(open(os.path.join(LOCALE_DATA_PATH, "locale_%s_metadata.json" % locale), "r"))
         self.name = metadata["name"].lower()
         self.char_types = metadata["char_types"]
-        # self.char_codes = data["char_codes"].astype(np.uint)
-        self.char_codes = np.array(metadata["char_codes"])  # TODO: put this in npz
+        self.char_codes = data["char_codes"].astype(np.uint)
         self.glyph_avail = data["glyph_avail"]
         self.font_idx = data["font_idx"]
         self.bold_avail = data["bold_avail"].astype(np.bool)
@@ -188,7 +187,6 @@ class Language:
 
         # Filter fonts based on boldness
         if support_bold:
-            print(self.font_idx)
             font_idx = self.font_idx[self.bold_avail]
             glyph_avail = glyph_avail[:, self.bold_avail]
         else:
@@ -213,7 +211,6 @@ class Language:
         # -- Heuristic ends
 
         # Return chars and fonts
-        print(len(char_codes), len(font_idx))
         return char_codes, LOCALE_FONTS[font_idx]
 
 
