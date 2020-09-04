@@ -57,5 +57,5 @@ RUN cd bootstrap && \
     cp locale_* /locales
 
 # Clean up
-RUN cd .. && rm -r bootstrap
+RUN rm -r /bootstrap
 # ------------------------------------------------------------------------
