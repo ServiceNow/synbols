@@ -141,3 +141,90 @@ SYMBOL_MAP = {
     'korean': get_char_set("ko_KR"),
     'chinese-simplified': get_char_set("zh-CN")
 }
+
+
+
+import json
+import os
+from itertools import chain
+
+LOCALE_DATA_PATH = "."
+LOCALE_FONTS = np.array(json.load(open(os.path.join(LOCALE_DATA_PATH, "locale_font_names.json"), "r")))
+
+
+class Language:
+    def __init__(self, locale):
+        self.locale = locale
+
+        # Load locale data
+        data = np.load(os.path.join(LOCALE_DATA_PATH, "locale_%s.npz" % locale))
+        metadata = json.load(open(os.path.join(LOCALE_DATA_PATH, "locale_%s_metadata.json" % locale), "r"))
+        self.name = metadata["name"].lower()
+        self.char_types = metadata["char_types"]
+        # self.char_codes = data["char_codes"].astype(np.uint)
+        self.char_codes = np.array(metadata["char_codes"])  # TODO: put this in npz
+        self.glyph_avail = data["glyph_avail"]
+        self.font_idx = data["font_idx"]
+        self.bold_avail = data["bold_avail"].astype(np.bool)
+        del data, metadata
+
+    def get_alphabet(self, standard=True, auxiliary=True, lower=True, upper=False, support_bold=True):
+        # Assemble character indices
+        chars_to_keep = []
+        if standard:
+            if lower:
+                chars_to_keep.append(self.char_types["standard_lower"])
+            if upper:
+                chars_to_keep.append(self.char_types["standard_upper"])
+        if auxiliary:
+            if lower:
+                chars_to_keep.append(self.char_types["auxiliary_lower"])
+            if upper:
+                chars_to_keep.append(self.char_types["auxiliary_upper"])
+        chars_to_keep = np.array(list(chain(*chars_to_keep)))
+        
+        char_codes = self.char_codes[chars_to_keep]
+        glyph_avail = self.glyph_avail[chars_to_keep]
+
+        # Filter fonts based on boldness
+        if support_bold:
+            print(self.font_idx)
+            font_idx = self.font_idx[self.bold_avail]
+            glyph_avail = glyph_avail[:, self.bold_avail]
+        else:
+            font_idx = self.font_idx
+
+        # Extract chunk using heuristic
+        # -- Heuristic beings
+        char_support = glyph_avail.sum(axis=0) / glyph_avail.shape[0]
+        min_support = 0.8 * max(char_support)
+
+        # Keep only fonts that have the minimum support
+        mask = char_support >= min_support
+        assert mask.shape[0] == glyph_avail.shape[1]
+        glyph_avail = glyph_avail[:, mask]
+        font_idx = font_idx[mask]
+
+        # Drop all chars not supported by the remaining fonts
+        mask = glyph_avail.sum(axis=1) == glyph_avail.shape[1]
+        assert mask.shape[0] == glyph_avail.shape[0]
+        char_codes = char_codes[mask]
+        glyph_avail = glyph_avail[mask]
+        # -- Heuristic ends
+
+        # Return chars and fonts
+        print(len(char_codes), len(font_idx))
+        return char_codes, LOCALE_FONTS[font_idx]
+
+
+def load_all_languages():
+    """
+    Loads all supporter languages. Returns a dictionnary of Language objects indexed by their name.
+
+    """
+    locales = [x.replace(".npz", "").replace("locale_", "") for x in os.listdir(LOCALE_DATA_PATH) if x.startswith("locale_") and x.endswith(".npz")]
+    languages = {}
+    for locale in locales:
+        l = Language(locale=locale)
+        languages[l.name] = l
+    return languages
