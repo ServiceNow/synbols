@@ -21,7 +21,7 @@ RUN pip install -r requirements.txt
 # Download CIFAR10
 RUN git clone https://github.com/YoongiKim/CIFAR-10-images.git /images
 
-## Install all Google fonts and extract their metadata
+# Install all Google fonts and extract their metadata
 RUN wget -O google_fonts.zip https://github.com/google/fonts/archive/${GOOGLE_FONTS_COMMIT}.zip && \
     unzip google_fonts.zip && \
     mkdir -p /usr/share/fonts/truetype/google-fonts && \
@@ -32,7 +32,20 @@ RUN wget -O google_fonts.zip https://github.com/google/fonts/archive/${GOOGLE_FO
     fc-cache -f > /dev/null && \
     find fonts-${GOOGLE_FONTS_COMMIT} -name "METADATA.pb" | xargs -I{} bash -c "dirname {} | cut -d'/' -f3 | xargs printf; printf ","; grep -i 'subset' {} | cut -d':' -f2 | paste -sd "," - | sed 's/\"//g'" > /usr/share/fonts/truetype/google-fonts/google_fonts_metadata
 
-# Summarize all font licenses
+# Install fonts from 1001fonts.com
+# Some fonts fail to install because they contain ' (quotes) in their name. Skipping these for now.
+RUN apt-get install -y curl jq
+COPY download_github_assets.sh .
+RUN sh ./download_github_assets.sh e2dbf1015996d7d0c8bada5f41766f19bf937621 0.0.1 ElementAI synbols-resources 1001fonts.zip 1001fonts.zip
+RUN mkdir "1001-fonts" && \
+    mv 1001fonts.zip "1001-fonts/" && \
+    cd "1001-fonts" && \
+    unzip 1001fonts.zip && \
+    mkdir -p /usr/share/fonts/truetype/1001-fonts && \
+    find . -type f -name "*.ttf" | sed "s/'//g" | xargs -I{} sh -c "install -Dm644 '{}' /usr/share/fonts/truetype/1001-fonts || true" && \
+    fc-cache -f > /dev/null
+
+# Summarize all google font licenses
 RUN sh -c "echo \"license,font\"; find fonts-$GOOGLE_FONTS_COMMIT -name \"METADATA.pb\" | xargs -I{} bash -c \"dirname {} | cut -d'/' -f2,3 | sed -r 's/[/]+/,/g'\"" > font_licenses.csv
 
 # ------------------------------------------------------------------------

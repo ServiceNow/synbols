@@ -158,6 +158,8 @@ if __name__ == "__main__":
     unicode_blocks = load_unicode_blocks()
     fonts = get_sys_fonts()
     font_names = np.array(list(fonts.keys()))
+    import sys
+    print("Found %d system fonts" % len(fonts), file=sys.stderr)
 
     # Make a huge sparse binary matrix that gives the availability of glyphs for each char in each font
     glyph_avail = lil_matrix((max(b['stop'] for b in unicode_blocks.values()), len(font_names)), dtype=np.uint8)
