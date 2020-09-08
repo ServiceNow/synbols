@@ -51,7 +51,6 @@ RUN python -c "import matplotlib.pyplot as plt"
 # Package locales
 COPY developer_tools ./bootstrap
 RUN cd bootstrap && \
-    python font_glyph_availability.py && \
     python package_locales.py && \
     mkdir /locales && \
     cp locale_* /locales
