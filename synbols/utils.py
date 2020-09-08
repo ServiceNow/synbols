@@ -149,27 +149,36 @@ import os
 from itertools import chain
 
 LOCALE_DATA_PATH = "/locales"
-LOCALE_FONT_FILE = os.path.join(LOCALE_DATA_PATH, "locale_font_names.json")
-LOCALE_FONTS = np.array(json.load(open(LOCALE_FONT_FILE, "r"))) \
-    if os.path.exists(LOCALE_FONT_FILE) else []
+# LOCALE_FONT_FILE = os.path.join(LOCALE_DATA_PATH, "locale_font_names.json")
+# LOCALE_FONTS = np.array(json.load(open(LOCALE_FONT_FILE, "r"))) \
+#    if os.path.exists(LOCALE_FONT_FILE) else []
 
 
 class Language:
-    def __init__(self, locale):
-        self.locale = locale
+    def __init__(self, locale_file):
+        self.data_file = locale_file
+        try:
+            self.name = os.path.basename(self.data_file).replace(".npz", "").replace("locale_", "").split("_")[1].lower()
+        except:
+            print(locale_file)
+        self.loaded = False
 
+    def _load_data(self):
         # Load locale data
-        data = np.load(os.path.join(LOCALE_DATA_PATH, "locale_%s.npz" % locale))
-        metadata = json.load(open(os.path.join(LOCALE_DATA_PATH, "locale_%s_metadata.json" % locale), "r"))
-        self.name = metadata["name"].lower()
-        self.char_types = metadata["char_types"]
+        data = np.load(self.data_file)
+        self.char_types = {k.replace("char_types__", ""): v for k, v in data.items() if "char_types__" in k}
         self.char_codes = data["char_codes"].astype(np.uint)
         self.glyph_avail = data["glyph_avail"]
-        self.font_idx = data["font_idx"]
+        self.fonts = data["fonts"]
         self.bold_avail = data["bold_avail"].astype(np.bool)
-        del data, metadata
+        del data
+        self.loaded = True
 
     def get_alphabet(self, standard=True, auxiliary=True, lower=True, upper=False, support_bold=True):
+        # Load locale data on demand
+        if not self.loaded:
+            self._load_data()
+
         # Assemble character indices
         chars_to_keep = []
         if standard:
@@ -189,10 +198,10 @@ class Language:
 
         # Filter fonts based on boldness
         if support_bold:
-            font_idx = self.font_idx[self.bold_avail]
+            fonts = self.fonts[self.bold_avail]
             glyph_avail = glyph_avail[:, self.bold_avail]
         else:
-            font_idx = self.font_idx
+            fonts = self.fonts
 
         # Extract chunk using heuristic
         # -- Heuristic beings
@@ -203,7 +212,7 @@ class Language:
         mask = char_support >= min_support
         assert mask.shape[0] == glyph_avail.shape[1]
         glyph_avail = glyph_avail[:, mask]
-        font_idx = font_idx[mask]
+        fonts = fonts[mask]
 
         # Drop all chars not supported by the remaining fonts
         mask = glyph_avail.sum(axis=1) == glyph_avail.shape[1]
@@ -213,17 +222,18 @@ class Language:
         # -- Heuristic ends
 
         # Return chars and fonts
-        return char_codes, LOCALE_FONTS[font_idx]
+        return char_codes, fonts
 
 
-def load_all_languages():
+def load_all_languages(override_locale_path=None):
     """
     Loads all supported languages. Returns a dictionnary of Language objects indexed by their name.
 
     """
-    locales = [x.replace(".npz", "").replace("locale_", "") for x in os.listdir(LOCALE_DATA_PATH) if x.startswith("locale_") and x.endswith(".npz")]
+    locale_path = LOCALE_DATA_PATH if override_locale_path is None else override_locale_path
     languages = {}
-    for locale in locales:
-        l = Language(locale=locale)
+    for locale_file in [os.path.join(locale_path, x) for x in os.listdir(locale_path) 
+                        if x.startswith("locale_") and x.endswith(".npz")]:
+        l = Language(locale_file=locale_file)
         languages[l.name] = l
     return languages
