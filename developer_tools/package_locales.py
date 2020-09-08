@@ -1,22 +1,37 @@
-import json
+"""
+Creates data files for each locale with supported characters and fonts
+
+"""
 import numpy as np
+import os
 import pickle
 
+from fontTools.ttLib import TTFont
 from fontTools.unicode import Unicode
 from icu import Locale, LocaleData, ULocaleDataExemplarSetType, USET_ADD_CASE_MAPPINGS
 from itertools import chain
-from scipy.sparse import load_npz
+from scipy.sparse import csr_matrix, lil_matrix, load_npz, save_npz
+from subprocess import call, check_output
 from synbols.drawing import Image, SolidColor, Symbol
+from tqdm import tqdm
+from urllib.request import urlretrieve
 
 
+UNICODE_STANDARD_URL = 'https://www.unicode.org/Public/UNIDATA/Blocks.txt'
+
+
+# Character type constants for the ICU library
+# XXX: we currently exclude punctuation symbols because it's roughly the same for all languages
+#      and including them dramatically increases the number of supported fonts for each locale
+#      which slows down the testing of font properties.
 ICU_CHAR_TYPES = {
                   "standard": ULocaleDataExemplarSetType.ES_STANDARD,
                   "auxiliary": ULocaleDataExemplarSetType.ES_AUXILIARY,
-                #   "punctuation": 3  # TODO: much more efficient when we remove punctuation since most fonts support it and its common to most languages
+                  # "punctuation": 3
                   }
 
 
-def get_chars(locale, unicode=False):
+def get_locale_chars(locale, unicode=False):
     """
     Based on ICU examplars
 
@@ -49,14 +64,65 @@ def get_chars(locale, unicode=False):
     return {k: v for k, v in all_chars.items()}
 
 
-def make_test_symbol(char, font, is_slant=False, is_bold=False):
-    symbol = Symbol(alphabet="foo", char=char, font=font, foreground=SolidColor((1, 1, 1,)), is_slant=is_slant,
-                    is_bold=is_bold, rotation=0, scale=1, translation=(0, 0), rng=np.random.RandomState(42))
-    return Image([symbol], background=SolidColor((0, 0, 0,)), inverse_color=False, resolution=(16, 16),
-                 pixel_noise_scale=0).make_image()
+def get_sys_fonts():
+    """
+    Returns a list of all installed system fonts
+
+    """
+    cmd = ['fc-list']
+    lines = check_output(cmd).splitlines()
+
+    font_dict = {}
+    for font_string in lines:
+        font_path, font_string = str(font_string).split(':')[0:2]
+        font_path = font_path[2:].strip()
+        font_name = (font_string.split(',')[0].split("\\")[0]).strip()
+        font_dict[font_name] = font_path
+
+    return font_dict
 
 
-def font_property_matrices(char_codes, fonts, glyph_avail):
+def get_unicode_tables_by_font(font):
+    """
+    Returns the unicode codes of all characters supported by a font
+
+    """
+    ttf = TTFont(font, 0, allowVID=0,
+                 ignoreDecompileErrors=True, fontNumber=-1)
+    supported_chars = set(
+        [key for table in ttf["cmap"].tables for key in table.cmap.keys()])
+    ttf.close()
+    return sorted(supported_chars)
+
+
+def load_unicode_blocks():
+    """
+    Loads all unicode blocks into a dict indexed by name with start/stop indices as value.
+
+    """
+    _path = 'unicode_blocks.txt'
+    urlretrieve(UNICODE_STANDARD_URL, _path)
+    lines = [l.strip() for l in open(_path, 'r', encoding="utf-8")
+             if len(l.strip()) > 0 and '#' not in l]
+    lines = {l.split(';')[1].strip().lower(): {'start': int(l.split(';')[0].split('..')[0], base=16),
+                                               'stop': int(l.split(';')[0].split('..')[1], base=16)}
+             for l in lines}
+    os.remove(_path)
+    return lines
+
+
+def test_font_properties(char_codes, fonts, glyph_avail):
+    """
+    Test visual font properties (e.g., bold, empty images)
+
+    """
+    def make_test_symbol(char, font, is_slant=False, is_bold=False):
+        symbol = Symbol(alphabet="foo", char=char, font=font, foreground=SolidColor((1, 1, 1,)), 
+                        is_slant=is_slant, is_bold=is_bold, rotation=0, scale=1, translation=(0, 0), 
+                        rng=np.random.RandomState(42))
+        return Image([symbol], background=SolidColor((0, 0, 0,)), inverse_color=False, resolution=(16, 16),
+                     pixel_noise_scale=0).make_image()
+
     bold_works = np.zeros(len(fonts))
     render_works = np.zeros(len(fonts))
 
@@ -87,19 +153,25 @@ def font_property_matrices(char_codes, fonts, glyph_avail):
 
     return bold_works, render_works
 
+
 if __name__ == "__main__":
-    fonts = pickle.load(open("./fonts.pkl", "rb"))
+    unicode_blocks = load_unicode_blocks()
+    fonts = get_sys_fonts()
     font_names = np.array(list(fonts.keys()))
-    glyph_avail = load_npz('./font_glyph_availability.npz')
 
-    json.dump(font_names.tolist(), open("locale_font_names.json", "w"))
+    # Make a huge sparse binary matrix that gives the availability of glyphs for each char in each font
+    glyph_avail = lil_matrix((max(b['stop'] for b in unicode_blocks.values()), len(font_names)), dtype=np.uint8)
+    for i, (name, font) in tqdm(enumerate(fonts.items()), total=len(fonts), desc="Checking glyph availability"):
+        chars = get_unicode_tables_by_font(font)
+        glyph_avail[chars, i] = 1
 
-    for code, locale in [(k, v) for k, v in Locale.getAvailableLocales().items() \
-        if "_" not in k and \
-        k in ['en', 'te', 'th', 'vi', 'ar', 'iw', 'km', 'ta', 'gu', 'bn', 'ml', 'el', 'ru', 'ko', 'zh', 'jp']]:
-        chars = get_chars(code, unicode=True)
+    # Package all locales
+    locales = [(k, v) for k, v in Locale.getAvailableLocales().items()
+               if "_" not in k and
+               k in ['en', 'te', 'th', 'vi', 'ar', 'iw', 'km', 'ta', 'gu', 'bn', 'ml', 'el', 'ru', 'ko', 'zh', 'jp']]
+    for code, locale in tqdm(locales, desc="Packaging locales"):
+        chars = get_locale_chars(code, unicode=True)
         name = locale.getDisplayName().encode('ascii', 'ignore').decode('ascii')
-        print(name)
 
         char_codes = np.sort(list(chain(*chars.values())))  # Unicode code of each char
         row_by_code = dict(zip(char_codes, range(len(char_codes))))  # Where each code appears in the resulting matrix
@@ -116,7 +188,7 @@ if __name__ == "__main__":
         # locale_glyph_avail = locale_glyph_avail[:, mask]
         # locale_font_idx = np.where(mask)[0]
 
-        locale_bold_avail, locale_render_works = font_property_matrices(char_codes, font_names, locale_glyph_avail)
+        locale_bold_avail, locale_render_works = test_font_properties(char_codes, font_names, locale_glyph_avail)
         
         # Filter fonts that don't render properly
         mask = np.logical_and(locale_render_works, locale_glyph_avail.sum(axis=0) > 1)
@@ -124,14 +196,12 @@ if __name__ == "__main__":
         locale_bold_avail = locale_bold_avail[mask]
         locale_glyph_avail = locale_glyph_avail[:, mask]
 
-        np.savez_compressed("locale_%s.npz" % code, 
-                            glyph_avail=locale_glyph_avail,
-                            font_idx=locale_font_idx,
-                            bold_avail=locale_bold_avail,
-                            char_codes=char_codes)
-
-        metadata = {
-                    "char_types": char_types,
-                    "name": name
-                    }
-        json.dump(metadata, open("locale_%s_metadata.json" % code, "w"))
+        # XXX: We could make this use less disk space by storing the index of fonts instead of the names
+        #      but for now we will store full names for easy introspection of locale files.
+        data_bundle = dict(glyph_avail=locale_glyph_avail,
+                           font_idx=locale_font_idx,
+                           bold_avail=locale_bold_avail,
+                           char_codes=char_codes,
+                           fonts=font_names[locale_font_idx])
+        data_bundle.update({"char_types__" + k: v for k, v in char_types.items()})
+        np.savez_compressed("locale_%s_%s.npz" % (code, name.lower()), **data_bundle)
