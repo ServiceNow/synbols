@@ -199,7 +199,6 @@ if __name__ == "__main__":
         # XXX: We could make this use less disk space by storing the index of fonts instead of the names
         #      but for now we will store full names for easy introspection of locale files.
         data_bundle = dict(glyph_avail=locale_glyph_avail,
-                           font_idx=locale_font_idx,
                            bold_avail=locale_bold_avail,
                            char_codes=char_codes,
                            fonts=font_names[locale_font_idx])
