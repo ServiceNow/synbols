@@ -2,7 +2,8 @@
 import argparse
 import logging
 from datetime import datetime
-from synbols.generate import DATASET_GENERATOR_MAP, make_preview
+from synbols.generate import make_preview
+from synbols.predefined_datasets import DATASET_GENERATOR_MAP
 from synbols.data_io import write_h5
 from synbols.fonts import ALPHABET_MAP
 
@@ -18,6 +19,8 @@ parser.add_argument('--n_samples', help='number of samples to generate', type=in
 parser.add_argument('--alphabet', help='Which alphabet to use. One of %s' % alphabet_names, default='default')
 parser.add_argument('--resolution', help="""Image resolution e.g.: "32x32". Defaults to the dataset's default.""",
                     default='default')
+parser.add_argument('--seed', help="""The seed of the random number generator. Defaults to None.""", type=int,
+                    default=None)
 
 if __name__ == "__main__":
 
@@ -30,6 +33,9 @@ if __name__ == "__main__":
         alphabet = args.alphabet
         file_path = '%s(%s)_n=%d_%s' % (args.dataset, alphabet, args.n_samples, datetime.now().strftime("%Y-%b-%d"))
 
-    ds_generator = DATASET_GENERATOR_MAP[args.dataset](args.n_samples, alphabet=alphabet)
+    dataset_function = DATASET_GENERATOR_MAP[args.dataset]
+
+    print("Generating %s dataset. Info: %s" % (args.dataset, dataset_function.__doc__))
+    ds_generator = dataset_function(args.n_samples, alphabet=alphabet, seed=args.seed)
     ds_generator = make_preview(ds_generator, file_path + "_preview.png")
     write_h5(file_path + ".h5py", ds_generator, args.n_samples)

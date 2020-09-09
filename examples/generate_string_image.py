@@ -8,13 +8,13 @@ from PIL import Image
 text = 'Synbols'
 n_trials = 4
 
-for i in range(n_trials):  # try different variants
+for seed in range(n_trials):  # try different variants
 
-    print("Trial %d/%d." % (i, n_trials))
+    print("Seed %d/%d." % (seed, n_trials))
 
-    generator = generate.text_generator(text, resolution=(512, 512))
+    generator = generate.text_generator(text, seed=seed, resolution=(512, 512))
 
     x, mask, y = pack_dataset(generator)
 
     img_grid, _, _ = make_img_grid(x, y, None, None, 1, len(text))
-    Image.fromarray(img_grid).save('synbols_text_%d.png' % i)
+    Image.fromarray(img_grid).save('synbols_text_seed:%d.png' % seed)
