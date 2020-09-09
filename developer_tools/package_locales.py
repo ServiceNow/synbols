@@ -5,6 +5,7 @@ Creates data files for each locale with supported characters and fonts
 import numpy as np
 import os
 import pickle
+import sys
 
 from fontTools.ttLib import TTFont
 from fontTools.unicode import Unicode
@@ -158,7 +159,6 @@ if __name__ == "__main__":
     unicode_blocks = load_unicode_blocks()
     fonts = get_sys_fonts()
     font_names = np.array(list(fonts.keys()))
-    import sys
     print("Found %d system fonts" % len(fonts), file=sys.stderr)
 
     # Make a huge sparse binary matrix that gives the availability of glyphs for each char in each font

@@ -39,8 +39,8 @@ RUN apt-get install -y curl jq
 COPY download_github_assets.sh .
 RUN sh ./download_github_assets.sh e2dbf1015996d7d0c8bada5f41766f19bf937621 0.0.1 ElementAI synbols-resources 1001fonts.zip 1001fonts.zip
 RUN mkdir "1001-fonts" && \
-    mv 1001fonts.zip "1001-fonts/" && \
     cd "1001-fonts" && \
+    wget https://github.com/ElementAI/synbols-resources/releases/download/0.0.1/1001fonts.zip && \
     unzip 1001fonts.zip && \
     mkdir -p /usr/share/fonts/truetype/1001-fonts && \
     find . -type f -name "*.ttf" | sed "s/'//g" | xargs -I{} sh -c "install -Dm644 '{}' /usr/share/fonts/truetype/1001-fonts || true" && \
