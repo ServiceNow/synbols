@@ -6,7 +6,7 @@ from robobrowser import RoboBrowser
 
 BASE_URL = 'https://www.1001freefonts.com'
 ACCEPTED_LICENSES = defaultdict(bool)
-ACCEPTED_LICENSES['free'] = True
+# ACCEPTED_LICENSES['free'] = True
 ACCEPTED_LICENSES['public_domain__gpl__ofl'] = True
 
 br = RoboBrowser()
