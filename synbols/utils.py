@@ -1,33 +1,9 @@
-from icu import LocaleData
 import logging
 import numpy as np
+
 from collections import defaultdict, Counter
-
-
-def _filter_fonts(all_fonts, font_properties, font_cluters):
-    if font_properties is None:
-        white_list = set(all_fonts)
-    else:
-        white_list = {font for font in all_fonts if (font_properties[font]['empty_count'] == 0 and
-                                                     font_properties[font]['no_bold_count'] == 0)}
-
-    if font_cluters is not None:
-
-        for cluster in font_cluters:
-
-            white_cluster = white_list.intersection({e for e, _ in cluster})
-            if len(white_cluster) > 0:
-                kept_font = white_cluster.pop()
-                logging.debug("Cluster of size %d, %d are in the white list, keeping %s", len(cluster),
-                              len(white_cluster) + 1,
-                              kept_font)
-            else:
-                logging.debug("Cluster of size %d, none are in the whitelist", len(cluster))
-
-            # Remove the rest of the cluster from the whitelist
-            white_list.difference_update(white_cluster)
-
-    return list(white_list)
+from icu import LocaleData
+from warnings import warn
 
 
 class Alphabet:
@@ -36,35 +12,7 @@ class Alphabet:
     def __init__(self, name, fonts, symbols):
         self.name = name
         self.symbols = symbols
-        self.all_fonts = fonts
         self.fonts = fonts
-        self.font_properties = None
-        self.font_clusters = None
-
-    def filter_fonts(self, font_properties=None, font_clusters=None):
-        self.font_properties = font_properties
-        self.font_clusters = font_clusters
-
-        self.fonts = _filter_fonts(self.all_fonts, font_properties, font_clusters)
-        logging.debug("Filtering fonts for alphabet %s from %d to %d", self.name, len(self.all_fonts), len(self.fonts))
-
-
-def get_char_set(language, add_cases=False):
-    char_set = list(LocaleData(language).getExemplarSet())
-
-    if not add_cases:
-        return char_set
-
-    n_char = len(char_set)
-
-    char_set_alt = [char.swapcase() for char in char_set]
-    char_set = set(char_set).union(char_set_alt)
-
-    n_char_new = len(char_set)
-    if n_char != n_char_new:
-        logging.debug("inflating %s from %d to %d using uppercase.", language, n_char, n_char_new)
-
-    return list(char_set)
 
 
 def flatten_attr(attr, ctxt=None):
@@ -124,20 +72,102 @@ def make_img_grid(x, y, h_axis='char', v_axis='font', n_row=20, n_col=40):
     return img_grid, h_values, v_values
 
 
-SYMBOL_MAP = {
-    'latin': get_char_set("en_US"),
-    'telugu': get_char_set("te"),
-    'thai': get_char_set("th"),
-    'vietnamese': get_char_set("vi"),
-    'arabic': get_char_set("ar"),
-    'hebrew': get_char_set("iw_IL"),
-    # 'khmer': get_char_set("km"),  # XXX: see note above
-    'tamil': get_char_set("ta"),
-    'gujarati': get_char_set("gu"),
-    'bengali': get_char_set("bn"),
-    'malayalam': get_char_set("ml"),
-    'greek': get_char_set("el_GR"),
-    'cyrillic': list(u"АаБбВвГгДдЕеЁёЖжЗзИиЙйКкЛлМмНнОоПпРрСсТтУуФфХхЦцЧчШшЩщЪъЫыЬьЭэЮюЯя"),
-    'korean': get_char_set("ko_KR"),
-    'chinese-simplified': get_char_set("zh-CN")
-}
+import json
+import os
+from itertools import chain
+
+LOCALE_DATA_PATH = "/locales"
+
+
+# TODO: features to add 1) blacklisting, 2) clustering (in docker)
+class Language:
+    def __init__(self, locale_file):
+        self.data_file = locale_file
+        try:
+            self.name = os.path.basename(self.data_file).replace(".npz", "").replace("locale_", "").split("_")[1].lower()
+        except:
+            print(locale_file)
+        self.loaded = False
+
+    def _load_data(self):
+        # Load locale data
+        data = np.load(self.data_file)
+        self.char_types = {k.replace("char_types__", ""): v for k, v in data.items() if "char_types__" in k}
+        self.char_codes = data["char_codes"].astype(np.uint)
+        self.glyph_avail = data["glyph_avail"]
+        self.fonts = data["fonts"]
+        self.bold_avail = data["bold_avail"].astype(np.bool)
+        del data
+        self.loaded = True
+
+    def get_alphabet(self, standard=True, auxiliary=True, lower=True, upper=False, support_bold=True):
+        # Load locale data on demand
+        if not self.loaded:
+            self._load_data()
+
+        # Assemble character indices
+        chars_to_keep = []
+        if standard:
+            if lower:
+                chars_to_keep.append(self.char_types["standard_lower"])
+            if upper:
+                chars_to_keep.append(self.char_types["standard_upper"])
+        if auxiliary:
+            if lower:
+                chars_to_keep.append(self.char_types["auxiliary_lower"])
+            if upper:
+                chars_to_keep.append(self.char_types["auxiliary_upper"])
+        
+        # Validate final selection
+        chars_to_keep = list(chain(*chars_to_keep))
+        if len(chars_to_keep) == 0:
+            raise ValueError("Filtered character set is empty. Consider including more characters using the arguments.")
+        chars_to_keep = np.array(chars_to_keep)
+        
+        char_codes = self.char_codes[chars_to_keep]
+        glyph_avail = self.glyph_avail[chars_to_keep]
+
+        # Filter fonts based on boldness
+        if support_bold:
+            fonts = self.fonts[self.bold_avail]
+            glyph_avail = glyph_avail[:, self.bold_avail]
+        else:
+            fonts = self.fonts
+
+        # Extract chunk using heuristic
+        # -- Heuristic beings
+        char_support = glyph_avail.sum(axis=0) / glyph_avail.shape[0]
+        min_support = 0.8 * max(char_support)
+
+        # Keep only fonts that have the minimum support
+        mask = char_support >= min_support
+        assert mask.shape[0] == glyph_avail.shape[1]
+        glyph_avail = glyph_avail[:, mask]
+        fonts = fonts[mask]
+
+        # Drop all chars not supported by the remaining fonts
+        mask = glyph_avail.sum(axis=1) == glyph_avail.shape[1]
+        assert mask.shape[0] == glyph_avail.shape[0]
+        char_codes = char_codes[mask]
+        glyph_avail = glyph_avail[mask]
+        # -- Heuristic ends
+
+        # Return chars and fonts
+        return Alphabet(self.name, fonts=fonts, symbols=[chr(x) for x in char_codes])
+
+
+def load_all_languages(override_locale_path=None):
+    """
+    Loads all supported languages. Returns a dictionnary of Language objects indexed by their name.
+
+    """
+    locale_path = LOCALE_DATA_PATH if override_locale_path is None else override_locale_path
+    languages = {}
+    if os.path.exists(locale_path):
+        for locale_file in [os.path.join(locale_path, x) for x in os.listdir(locale_path) 
+                            if x.startswith("locale_") and x.endswith(".npz")]:
+            l = Language(locale_file=locale_file)
+            languages[l.name] = l
+    else:
+        warn("The locale data path was not found. Did you execute the code with the 'synbols' executable?")
+    return languages

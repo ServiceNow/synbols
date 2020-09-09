@@ -8,7 +8,7 @@ with open("README.md", "r") as f:
 setup(
     # Package description
     name="synbols",
-    version="0.0.4.dev1",  # XXX: developers, if you change the version, please tag and push the docker image (see doc)
+    version="0.1.0.dev1",  # XXX: developers, if you change the version, please tag and push the docker image (see doc)
     author='Alexandre Lacoste, Pau Rodriguez, Frederic Branchaud-Charron, Parmida Atighehchian, Massimo Caccia, ' +
            'Issam Hadj Laradji, Alexandre Drouin, Matt Craddock, Laurent Charlin, David Vazquez',
     author_email='allac@elementai.com',
@@ -27,9 +27,6 @@ setup(
 
     # Data files required at runtime
     packages=find_packages(),
-    package_data={
-        'synbols.fonts': ['font_property.json', 'hierarchical_clustering_font.json'],
-    },
 
     # Install the Synbols runner
     entry_points={

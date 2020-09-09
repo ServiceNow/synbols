@@ -3,7 +3,7 @@ import numpy as np
 import types
 from .drawing import Gradient, Image, Symbol
 from .data_io import write_h5
-from .fonts import ALPHABET_MAP
+from .fonts import LANGUAGE_MAP
 from .utils import make_img_grid
 
 
@@ -21,8 +21,8 @@ def _rand_seed(rng):
 
 
 # ya basic!
-def basic_attribute_sampler(alphabet=ALPHABET_MAP['latin'], char=None, font=None, background=None, foreground=None,
-                            is_slant=None, is_bold=None, rotation=None, scale=None, translation=None,
+def basic_attribute_sampler(language='english', char=None, font=None, background=None, 
+                            foreground=None, is_slant=None, is_bold=None, rotation=None, scale=None, translation=None,
                             inverse_color=None, max_contrast=None, pixel_noise_scale=None, resolution=(32, 32),
                             is_gray=False, n_symbols=1):
     def sampler(seed=None):
@@ -30,7 +30,8 @@ def basic_attribute_sampler(alphabet=ALPHABET_MAP['latin'], char=None, font=None
         symbols = []
         _n_symbols = _select(1, n_symbols, _rng)
         for i in range(_n_symbols):
-            _alphabet = _select(lambda rng: rng.choice(list(ALPHABET_MAP.values())), alphabet, _rng)
+            _alphabet = LANGUAGE_MAP[_select(lambda rng: rng.choice(list(LANGUAGE_MAP.keys())), language, _rng)]\
+                                    .get_alphabet(support_bold=True)
             _char = _select(lambda rng: rng.choice(_alphabet.symbols), char, _rng)
             _font = _select(lambda rng: rng.choice(sorted(_alphabet.fonts)), font, _rng)
             _is_bold = _select(lambda rng: rng.choice([True, False]), is_bold, _rng)
@@ -87,9 +88,9 @@ def add_occlusion(attr_sampler, n_occlusion=None, occlusion_char=None, rotation=
             _rotation = _select(lambda rng: rng.rand() * np.pi * 2, rotation, _rng)
             _foreground = _select(lambda rng: Gradient(seed=_rand_seed(_rng)), foreground, _rng)
 
-            occlusion = Symbol(ALPHABET_MAP['latin'], _occlusion_char, font='Arial', foreground=_foreground,
-                               rotation=_rotation, scale=_scale, translation=_translation, is_slant=False,
-                               is_bold=False)
+            occlusion = Symbol(LANGUAGE_MAP['english'].get_alphabet(), _occlusion_char, font='Arial', 
+                               foreground=_foreground, rotation=_rotation, scale=_scale, translation=_translation, 
+                               is_slant=False, is_bold=False)
             image.add_symbol(occlusion)
 
         return image
@@ -163,11 +164,11 @@ def make_preview(generator, file_name, n_row=10, n_col=10):
         yield x, mask, y
 
 
-def generate_char_grid(alphabet_name, n_char, n_font, seed=None, **kwargs):
+def generate_char_grid(language, n_char, n_font, seed=None, **kwargs):
     """Generate a dense grid of n_char x n_font.  Mainly for visualization purpose."""
 
     def _attr_generator():
-        alphabet = ALPHABET_MAP[alphabet_name]
+        alphabet = LANGUAGE_MAP[language].get_alphabet()
         rng = np.random.RandomState(seed)
         chars = rng.choice(alphabet.symbols, n_char, replace=False)
         fonts = rng.choice(alphabet.fonts, n_font, replace=False)
