@@ -13,7 +13,7 @@ docker: .require-version
 
 build_docs:
 	sphinx-apidoc -o docs/synbols synbols synbols/run_docker.py
-	sphinx-build docs docs/_build/
+	sphinx-build -aE docs docs/_build/
 
 package: .dev-dependencies
 	if [ -d "./build" ]; then rm -r ./build; fi
