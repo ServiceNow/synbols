@@ -1,2 +1,0 @@
-protobuf>=3.7.0
-fonttools>=4.12.1
