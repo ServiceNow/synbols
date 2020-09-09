@@ -5,6 +5,7 @@ $ cd /where/the/png/will/be/saved
 $ synbols view_font_clustering.py
 """
 
+raise NotImplementedError("This code is not adapted to run with the new LANGUAGE_MAP interface. Keeping it here for reference. Adapt when needed.")
 import json
 from synbols.generate import basic_attribute_sampler
 from synbols.drawing import SolidColor
