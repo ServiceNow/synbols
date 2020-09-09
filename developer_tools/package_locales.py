@@ -119,8 +119,7 @@ def test_font_properties(char_codes, fonts, glyph_avail):
     """
     def make_test_symbol(char, font, is_slant=False, is_bold=False):
         symbol = Symbol(alphabet="foo", char=char, font=font, foreground=SolidColor((1, 1, 1,)), 
-                        is_slant=is_slant, is_bold=is_bold, rotation=0, scale=1, translation=(0, 0), 
-                        rng=np.random.RandomState(42))
+                        is_slant=is_slant, is_bold=is_bold, rotation=0, scale=1, translation=(0, 0))
         return Image([symbol], background=SolidColor((0, 0, 0,)), inverse_color=False, resolution=(16, 16),
                      pixel_noise_scale=0).make_image()
 
