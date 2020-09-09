@@ -40,4 +40,4 @@ RUN cd bootstrap && python dummy_dataset.py && cd .. && rm -r bootstrap
 RUN python -c "import matplotlib.pyplot as plt"
 
 FROM base AS sphinx
-RUN pip install sphinx
+RUN pip install sphinx sphinxcontrib-napoleon

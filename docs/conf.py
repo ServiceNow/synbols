@@ -26,7 +26,7 @@ author = 'Alexandre Lacoste ( Element AI) < allac@elementai.com>, Pau Rodriguez 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.apidoc', 'sphinx.ext.autodoc']
+extensions = ['sphinx.ext.autodoc', 'sphinxcontrib.napoleon']
 apidoc_module_dir = '../synbols'
 apidoc_output_dir = 'synbols'
 apidoc_excluded_paths = []
@@ -38,7 +38,7 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'synbols/*.rst']
 
 
 # -- Options for HTML output -------------------------------------------------
