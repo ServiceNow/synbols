@@ -51,19 +51,19 @@ RUN sh -c "echo \"license,font\"; find fonts-$GOOGLE_FONTS_COMMIT -name \"METADA
 RUN mkdir bootstrap
 COPY ./synbols ./bootstrap/synbols
 
-# Bootstrap Cairo caches
-COPY dummy_dataset.py ./bootstrap
-RUN cd bootstrap && python dummy_dataset.py
-
-# Bootstrap Matplotlib caches
-RUN python -c "import matplotlib.pyplot as plt"
-
 # Package locales
 COPY developer_tools ./bootstrap
 RUN cd bootstrap && \
     python package_locales.py && \
     mkdir /locales && \
     cp locale_* /locales
+
+# Bootstrap Cairo caches
+COPY dummy_dataset.py ./bootstrap
+RUN cd bootstrap && python dummy_dataset.py
+
+# Bootstrap Matplotlib caches
+RUN python -c "import matplotlib.pyplot as plt"
 
 # Clean up
 RUN rm -r /bootstrap
