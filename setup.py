@@ -27,9 +27,6 @@ setup(
 
     # Data files required at runtime
     packages=find_packages(),
-    package_data={
-        'synbols.fonts': ['font_property.json', 'hierarchical_clustering_font.json'],
-    },
 
     # Install the Synbols runner
     entry_points={
