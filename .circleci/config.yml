@@ -28,12 +28,11 @@ jobs:
     description: Build Sphinx docs
     docker:
       - image: python:3.8
-    working_directory: ~/synbols/docs
     steps:
       - run:
           name: Install dependencies
           command: |
-            pip install sphinx
+            pip install -r docs/sphinx-requirements.txt
       - checkout
       - run:
           name: Build Docs
