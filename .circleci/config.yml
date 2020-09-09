@@ -29,11 +29,11 @@ jobs:
     docker:
       - image: python:3.8
     steps:
+      - checkout
       - run:
           name: Install dependencies
           command: |
             pip install -r docs/sphinx-requirements.txt
-      - checkout
       - run:
           name: Build Docs
           command: |
