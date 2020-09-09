@@ -12,7 +12,7 @@ RUN apt-get update && \
 
 # Install system dependencies
 RUN apt-get update && \
-    apt-get install -y fonts-cantarell fontconfig git icu-devtools ipython3 libcairo2-dev libhdf5-dev pkg-config ttf-ubuntu-font-family unzip wget
+    apt-get install -y curl fonts-cantarell fontconfig git icu-devtools ipython3 jq libcairo2-dev libhdf5-dev pkg-config ttf-ubuntu-font-family unzip wget
 
 # Install all python requirements
 COPY requirements.txt .
@@ -34,10 +34,6 @@ RUN wget -O google_fonts.zip https://github.com/google/fonts/archive/${GOOGLE_FO
 
 # Install fonts from 1001fonts.com
 # Some fonts fail to install because they contain ' (quotes) in their name. Skipping these for now.
-# TODO: Having the access token here is a security issue. One synbols-resources is made public, we should revoke this token and remove it from here
-RUN apt-get install -y curl jq
-COPY download_github_assets.sh .
-RUN sh ./download_github_assets.sh e2dbf1015996d7d0c8bada5f41766f19bf937621 0.0.1 ElementAI synbols-resources 1001fonts.zip 1001fonts.zip
 RUN mkdir "1001-fonts" && \
     cd "1001-fonts" && \
     wget https://github.com/ElementAI/synbols-resources/releases/download/0.0.1/1001fonts.zip && \
