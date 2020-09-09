@@ -1,9 +1,15 @@
+import json
 import logging
 import numpy as np
+import os
 
 from collections import defaultdict, Counter
 from icu import LocaleData
+from itertools import chain
 from warnings import warn
+
+
+LOCALE_DATA_PATH = "/locales"
 
 
 class Alphabet:
@@ -70,13 +76,6 @@ def make_img_grid(x, y, h_axis='char', v_axis='font', n_row=20, n_col=40):
         img_grid = img_grid.squeeze(axis=-1)
 
     return img_grid, h_values, v_values
-
-
-import json
-import os
-from itertools import chain
-
-LOCALE_DATA_PATH = "/locales"
 
 
 # TODO: features to add 1) blacklisting, 2) clustering (in docker)
