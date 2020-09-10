@@ -69,7 +69,7 @@ def run_apidoc(_):
     print("Running apidoc...")
     print("Output " + output_path)
     print("cur_dir " + cur_dir)
-    main(['-o', output_path, module, "synbols/run_docker.py"])
+    main(['-o', output_path, module, "synbols/run_docker.py", "--force"])
 
 def setup(app):
     app.connect('builder-inited', run_apidoc)
