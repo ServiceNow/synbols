@@ -21,7 +21,7 @@ def _rand_seed(rng):
 
 
 # ya basic!
-def basic_attribute_sampler(language='english', char=None, font=None, background=None, 
+def basic_attribute_sampler(alphabet=None, char=None, font=None, background=None,
                             foreground=None, is_slant=None, is_bold=None, rotation=None, scale=None, translation=None,
                             inverse_color=None, max_contrast=None, pixel_noise_scale=None, resolution=(32, 32),
                             is_gray=False, n_symbols=1):
@@ -30,8 +30,9 @@ def basic_attribute_sampler(language='english', char=None, font=None, background
         symbols = []
         _n_symbols = _select(1, n_symbols, _rng)
         for i in range(_n_symbols):
-            _alphabet = LANGUAGE_MAP[_select(lambda rng: rng.choice(list(LANGUAGE_MAP.keys())), language, _rng)]\
-                                    .get_alphabet(support_bold=True)
+
+            _alphabet = _select(lambda rng: LANGUAGE_MAP['english'].get_alphabet(support_bold=True), alphabet, _rng)
+
             _char = _select(lambda rng: rng.choice(_alphabet.symbols), char, _rng)
             _font = _select(lambda rng: rng.choice(sorted(_alphabet.fonts)), font, _rng)
             _is_bold = _select(lambda rng: rng.choice([True, False]), is_bold, _rng)

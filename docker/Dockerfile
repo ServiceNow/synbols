@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:18.04 AS base
 #MAINTAINER TODO
 
 ARG GOOGLE_FONTS_COMMIT=ed61614fb47affd2a4ef286e0b313c5c47226c69
@@ -15,11 +15,14 @@ RUN apt-get update && \
     apt-get install -y curl fonts-cantarell fontconfig git icu-devtools ipython3 jq libcairo2-dev libhdf5-dev pkg-config ttf-ubuntu-font-family unzip wget
 
 # Install all python requirements
-COPY requirements.txt .
+COPY docker/requirements.txt .
 RUN pip install -r requirements.txt
 
-# Download CIFAR10
-RUN git clone https://github.com/YoongiKim/CIFAR-10-images.git /images
+# Download Natural images (CC License)
+RUN mkdir -p /images && cd /images && \
+    wget https://github.com/ElementAI/synbols-resources/raw/master/datasets/natural_images.tar.gz && \
+    tar -xf natural_images.tar.gz && \
+    rm natural_images.tar.gz
 
 # Install all Google fonts and extract their metadata
 RUN wget -O google_fonts.zip https://github.com/google/fonts/archive/${GOOGLE_FONTS_COMMIT}.zip && \
@@ -79,3 +82,6 @@ RUN python -c "import matplotlib.pyplot as plt"
 # Clean up
 RUN rm -r /bootstrap
 # ------------------------------------------------------------------------
+FROM base AS sphinx
+ADD ./docs/sphinx-requirements.txt .
+RUN pip install -r sphinx-requirements.txt
