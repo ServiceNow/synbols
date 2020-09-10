@@ -25,7 +25,7 @@ preinstalled. Thus, the only dependency is [Docker](https://docs.docker.com/get-
 `$ synbols-predefined --help`
 
 ```bash
-$ synbols-predefined --dataset=some-large-occlusion --n_samples=1000 --seed=42`
+$ synbols-datasets --dataset=some-large-occlusion --n_samples=1000 --seed=42
 
 Generating some-large-occlusion dataset. Info: With probability 20%, add a large occlusion over the existing symbol.
 Preview generated.
