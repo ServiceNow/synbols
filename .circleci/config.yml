@@ -24,7 +24,7 @@ jobs:
           name: Install requirements
           command: |
             pip install -r docker/requirements.txt
-            pip install pytest
+            pip install flake8 pytest
       - run:
           name: Run Make Command
           command: |
@@ -53,4 +53,7 @@ workflows:
       - run_make:
           name: "Run Tests"
           make_cmd: "run_tests"
+      - run_make:
+          name: "Run Flake8"
+          make_cmd: "run_flake8"
       - build_docs

@@ -15,3 +15,6 @@ upload-testpypi: .dev-dependencies
 
 run_tests:
 	pytest tests
+
+run_flake8:
+	flake8
