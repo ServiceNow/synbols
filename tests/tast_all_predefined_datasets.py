@@ -1,12 +1,12 @@
+import unittest
 from datetime import datetime
 from synbols.generate import make_preview
 from synbols.predefined_datasets import DATASET_GENERATOR_MAP
-from synbols.data_io import write_h5, pack_dataset
+from synbols.data_io import pack_dataset
 import time as t
 
-import unittest
 
-n_row, n_col = 2, 2
+n_row, n_col = 10, 10
 n_samples = n_row * n_col
 
 
