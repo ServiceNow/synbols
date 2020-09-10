@@ -6,7 +6,7 @@ from synbols.data_io import pack_dataset
 import time as t
 
 
-n_row, n_col = 10, 10
+n_row, n_col = 2, 2
 n_samples = n_row * n_col
 
 
