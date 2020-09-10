@@ -1,13 +1,10 @@
-from backbones import get_backbone
-import models
-import datasets
+# todo(pau) import the necessary code for running this script.
+
 import argparse
 import json
 import os
 import sys
 from os.path import join
-
-import haven.haven_utils as hu
 import numpy as np
 import pandas
 import pylab
@@ -25,11 +22,13 @@ from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-cp", "--benchmark_code_path", type=str,
-                    default='/home/pau/git/synbols/benchmarks/classification',
+                    default='/mnt/projects/vision_prototypes/synbols/font_plain_borgy/c0160f3a00fbe81b5594720c8b21d352/code',
                     help='Classification code path')
-parser.add_argument("-e", "--experiment_folder", type=str,
-                    default='font_plain/c0160f3a00fbe81b5594720c8b21d352',
+parser.add_argument("-e", "--model_path", type=str,
+                    default='/mnt/datasets/public/research/pau/synbols/plain_feature_extractor.pth',
                     help='Experiment folder, with weights and exp_dict')
+parser.add_argument("-d", "--data_path", type=str,
+                    default='/mnt/datasets/public/research/synbols/old/plain_n=1000000.npz')
 parser.add_argument("-o", "--output", type=str,
                     default='./hierarchical_clustering_font.json',
                     help='Output path for the json path')
@@ -40,39 +39,46 @@ args = parser.parse_args()
 logging.basicConfig(level=logging.NOTSET)
 logger = logging.getLogger()
 
+# This needs to go here, it imports the code to load a dataset
 sys.path.insert(0, args.benchmark_code_path)
+import datasets
 
 logger.info("Loading dataset")
-exp_dict = hu.load_json(join(args.experiment_folder, "exp_dict.json"))
+dataset_info = {'augmentation': False, 
+            'height': 32, 
+            'name': 'synbols_npz', 
+            'path': args.data_path, 
+            'task': 'font', 'width': 32, 'channels': 3}
+exp_dict = {'dataset':dataset_info}
 dataset = datasets.get_dataset("train", exp_dict)
-exp_dict["dataset"]["channels"] = 3
 
 logger.info("Loading pytorch model")
-backbone = get_backbone(exp_dict).cuda()
-backbone.load_state_dict(torch.load(os.path.join(
-    args.experiment_folder, 'model.pth'))['model'])
-logits = []
+backbone = torch.load(args.model_path).cpu()
+class Identity(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+    def forward(self, x):
+        return x
+backbone.classifier = Identity()
+backbone.fc = Identity()
+features = []
 labels = []
 loader = DataLoader(dataset, batch_size=512, num_workers=4)
 logger.info("Extracting feature embeddings")
 with torch.no_grad():
     backbone.eval()
     for image, label in tqdm(loader):
-        logits.append(backbone(image[...].cuda()).data.cpu().numpy())
+        features.append(backbone(image[...].cpu()).data.cpu().numpy())
         labels.append(label)
-logits = np.concatenate(logits, 0)
+features = np.concatenate(features, 0)
 labels = np.concatenate([l.numpy() for l in labels], 0)
-confmat = np.zeros((len(np.unique(labels)), len(np.unique(labels))))
-total = np.zeros((len(np.unique(labels)), len(np.unique(labels))))
-logger.info("Creating confusion matrix")
-for logit, label in zip(logits, labels):
-    confmat[label, ...] = torch.log(F.softmax(torch.from_numpy(logit))).numpy()
-    total[label, ...] += 1
-confmat /= total
-confmat = confmat / np.sqrt(confmat.sum(-1, keepdims=True)**2)
+prototypes = np.zeros((len(np.unique(labels)), features.shape[-1]))
+for l in np.unique(labels):
+    prototypes[l] = features[labels==l].mean(0)
+prototypes = prototypes / np.sqrt((prototypes**2).sum(1, keepdims=True))
 
 logger.info("Doing hierarchical clustering")
-Z = scipy.cluster.hierarchy.linkage(confmat, method='ward', metric='euclidean')
+Z = scipy.cluster.hierarchy.linkage(prototypes, method='ward', metric='euclidean')
 
 logger.info("Flattening cluster hierarchy")
 clusters = []

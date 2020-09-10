@@ -125,8 +125,8 @@ def load_attributes_h5(file_path):
 
     Returns:
         attributes: list of length n_samples, containing a dictionary of attributes for each images
-        splits: dict of different type of splits for this dataset. Each split is a binary array of shape
-            (n_samples, n_subset) representing a specific partition.
+        splits: dict of different type of splits for this dataset. Each split is a binary array of \
+    shape (n_samples, n_subset) representing a specific partition.
     """
     with h5py.File(file_path, 'r') as fd:
         y = [json.loads(attr) for attr in fd['y']]
