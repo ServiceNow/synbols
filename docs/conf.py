@@ -67,6 +67,8 @@ def run_apidoc(_):
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     print("Running apidoc...")
+    print("Output " + output_path)
+    print("cur_dir " + cur_dir)
     main(['-o', output_path, module, "synbols/run_docker.py"])
 
 def setup(app):
