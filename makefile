@@ -4,12 +4,15 @@ ifndef version
 endif
 
 docker: .require-version
+	cp -r ../synbols .
+	cp -r ../developer_tools .
 	docker build \
 		-f docker/Dockerfile \
 		--target base \
 		-t synbols:latest \
 		.
 	docker tag synbols:latest synbols:$(version)
+	rm -r ./synbols ./developer_tools
 
 build_docs:
 	sphinx-apidoc -o docs/synbols synbols synbols/run_docker.py

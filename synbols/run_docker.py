@@ -69,10 +69,36 @@ def run_in_docker(file, paths, args):
     for p in paths + [curdir, file_path]:
         arg_list += ["-v", f"{p}:{p}"]
     arg_list += ["-w", f"{curdir}", f"{DOCKER_IMAGE}:{DOCKER_TAG}"]
-    arg_list += ["sh", "-c",  f"export PYTHONPATH=$PYTHONPATH:/synbols_include; python {file} {args}"]
+    arg_list += ["sh", "-c", f"export PYTHONPATH=$PYTHONPATH:/synbols_include; python {file} {args}"]
+
+    subprocess.run(arg_list)  # might need stderr=sys.stderr, stdout=sys.stdout
 
 
-    subprocess.run(arg_list) # might need stderr=sys.stderr, stdout=sys.stdout
+def _parse_args_and_print_proper_help(parser):
+
+    args = sys.argv[1:]
+    no_help_args = [arg for arg in args if arg not in ['-h', '--help']]
+    help_args = [arg for arg in args if arg in ['-h', '--help']]
+
+    if len(help_args) > 0:
+        # we need to figure out if we print help of synbols or help of the running script
+        if len(no_help_args) == 0:
+            # will print help of synbols and exit
+            parser.parse_known_args()
+        else:
+            # will try to extract args for running the script
+            try:
+                args, script_args = parser.parse_known_args(no_help_args)
+                script_args += help_args  # pass the help args to the script
+            except SystemExit as e:
+                # will print help of synbols and exit
+                print("============")
+                parser.parse_known_args()
+
+    else:
+        args, script_args = parser.parse_known_args()
+
+    return args, script_args
 
 
 def main():
@@ -80,7 +106,8 @@ def main():
     parser.add_argument("file", help="Python script to run in Synbols environment")
     parser.add_argument("--mount-path", type=str, nargs='+',
                         help="Path to directories other than the local directory to be made accessible at run time")
-    args, unknown_args = parser.parse_known_args()
+
+    args, script_args = _parse_args_and_print_proper_help(parser)
 
     # Print configuration info
     print(f"Synbols ({SYNBOLS_VERSION}) found at {SYNBOLS_INCLUDE_PATH}")
@@ -102,7 +129,7 @@ def main():
         print("Error: The Python script to run (%s) cannot be found." % args.file)
         exit(1)
 
-    run_in_docker(args.file, paths=args.mount_path, args=unknown_args)
+    run_in_docker(args.file, paths=args.mount_path, args=script_args)
 
 
 if __name__ == "__main__":
