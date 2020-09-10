@@ -118,7 +118,7 @@ def generate_counting_dataset(n_samples, language='english', resolution=(128, 12
         else:
             return 'a'
 
-    attr_generator = basic_attribute_sampler(language='english', char=char_sampler, resolution=resolution,
+    attr_generator = basic_attribute_sampler(char=char_sampler, resolution=resolution,
                                              scale=scale, is_bold=False, n_symbols=n_symbols)
     return dataset_generator(attr_generator, n_samples, flatten_mask, seed=seed)
 
