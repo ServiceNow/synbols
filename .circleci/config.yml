@@ -19,11 +19,13 @@ jobs:
           command: |
             apk add gcc git libffi-dev make musl-dev openssl-dev py3-pip python3-dev
             ln -s $(which python3) /usr/bin/python
+            pip install -r docker/requirements.txt
             pip install pytest
       - checkout
       - run:
           name: Run Make Command
           command: |
+            PYTHONPATH=~/synbols
             make $MAKE_CMD
   build_docs:
     description: Build Sphinx docs
