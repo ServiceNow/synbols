@@ -44,6 +44,6 @@ jobs:
 workflows:
   synbols:
     jobs:
-      - run_make:
-          make_cmd: "package"
+      - run_tests:
+          make_cmd: "tests"
       - build_docs
