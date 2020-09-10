@@ -20,7 +20,37 @@ preinstalled. Thus, the only dependency is [Docker](https://docs.docker.com/get-
 
 ## Usage
 
-To run your code in the Synbols runtime environment, simply use the `synbols` command as follows:
+### Using predefined generators
+
+`$ synbols-predefined --help`
+
+```bash
+$ synbols-predefined --dataset=some-large-occlusion --n_samples=1000 --seed=42`
+
+Generating some-large-occlusion dataset. With probability 20%, add a large occlusion over the existing symbol.
+Preview generated.
+ 18%|####################################7                      | 182/1000 [00:03<00:12, 65.95it/s
+```
+### Defining your own generator
+
+
+Examples of how to create new datasets can be found in the [examples](examples) directory.
+
+```python
+
+def translation(rng):
+    """Generates translations uniformly from (-2, 2), going outside of the box."""
+    return tuple(rng.uniform(low=-2, high=2, size=2))
+
+
+# Modifies the default attribute sampler to fix the scale to a constant and the (x,y) translation to a new distribution
+attr_sampler = basic_attribute_sampler(scale=0.5, translation=translation)
+
+generate_and_write_dataset(dataset_path, attr_sampler, n_samples)
+
+```
+
+To generate your dataset, you need to run your code in the Synbols runtime environment. This is done using the `synbols` command as follows:
 
 `synbols mydataset.py --foo bar`
 
