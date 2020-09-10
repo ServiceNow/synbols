@@ -62,12 +62,12 @@ def run_apidoc(_):
     import sys
     sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
     cur_dir = os.path.abspath(os.path.dirname(__file__))
-    docs_path = os.path.join(cur_dir, 'synbols')
-    if not os.path.exists(docs_path):
-        os.makedirs(docs_path)
     module = 'synbols'
-    output_path = os.path.join(cur_dir, 'synbols')
-    main(['-o', output_path, module])
+    output_path = os.path.join(cur_dir, module)
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+    print("Running apidoc...")
+    main(['-o', output_path, module, "synbols/run_docker.py"])
 
 def setup(app):
     app.connect('builder-inited', run_apidoc)
