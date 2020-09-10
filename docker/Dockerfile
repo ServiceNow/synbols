@@ -33,20 +33,31 @@ RUN wget -O google_fonts.zip https://github.com/google/fonts/archive/${GOOGLE_FO
     find /usr/share/fonts/truetype/google-fonts -type f -name "Ubuntu-*.ttf" -delete && \
     apt-get --purge remove fonts-roboto && \
     fc-cache -f > /dev/null && \
-    find fonts-${GOOGLE_FONTS_COMMIT} -name "METADATA.pb" | xargs -I{} bash -c "dirname {} | cut -d'/' -f3 | xargs printf; printf ","; grep -i 'subset' {} | cut -d':' -f2 | paste -sd "," - | sed 's/\"//g'" > /usr/share/fonts/truetype/google-fonts/google_fonts_metadata
+    find fonts-${GOOGLE_FONTS_COMMIT} -name "METADATA.pb" | xargs -I{} bash -c "dirname {} | cut -d'/' -f3 | xargs printf; printf ","; grep -i 'subset' {} | cut -d':' -f2 | paste -sd "," - | sed 's/\"//g'" > /usr/share/fonts/truetype/google-fonts/google_fonts_metadata && \
+    sh -c "echo \"license,font\"; find fonts-$GOOGLE_FONTS_COMMIT -name \"METADATA.pb\" | xargs -I{} bash -c \"dirname {} | cut -d'/' -f2,3 | sed -r 's/[/]+/,/g'\"" > font_licenses.csv && \
+    rm -r fonts-${GOOGLE_FONTS_COMMIT} google_fonts.zip
 
-# Install fonts from 1001fonts.com
+# Install fonts from 1001freefonts.com
 # Some fonts fail to install because they contain ' (quotes) in their name. Skipping these for now.
+ENV A=1
 RUN mkdir "1001-fonts" && \
     cd "1001-fonts" && \
     wget https://github.com/ElementAI/synbols-resources/releases/download/0.0.1/1001fonts.zip && \
     unzip 1001fonts.zip && \
     mkdir -p /usr/share/fonts/truetype/1001-fonts && \
     find . -type f -name "*.ttf" | sed "s/'//g" | xargs -I{} sh -c "install -Dm644 '{}' /usr/share/fonts/truetype/1001-fonts || true" && \
-    fc-cache -f > /dev/null
+    fc-cache -f > /dev/null && \
+    cd .. && rm -r 1001-fonts
 
-# Summarize all google font licenses
-RUN sh -c "echo \"license,font\"; find fonts-$GOOGLE_FONTS_COMMIT -name \"METADATA.pb\" | xargs -I{} bash -c \"dirname {} | cut -d'/' -f2,3 | sed -r 's/[/]+/,/g'\"" > font_licenses.csv
+# Install extra asian fonts
+RUN mkdir "asian_fonts" && \
+    cd "asian_fonts" && \
+    wget https://github.com/ElementAI/synbols-resources/releases/download/0.0.1/asian_fonts.zip && \
+    unzip asian_fonts.zip && \
+    mkdir -p /usr/share/fonts/truetype/asian_fonts && \
+    find . -type f -name "*.ttf" | sed "s/'//g" | xargs -I{} sh -c "install -Dm644 '{}' /usr/share/fonts/truetype/asian_fonts || true" && \
+    fc-cache -f > /dev/null && \
+    cd .. && rm -r asian_fonts
 
 # ------------------------------------------------------------------------
 # Synbols-dependent precomputation
