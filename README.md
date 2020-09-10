@@ -25,7 +25,7 @@ preinstalled. Thus, the only dependency is [Docker](https://docs.docker.com/get-
 ### Using predefined generators
 
 ```bash
-$ synbols-predefined --help
+$ synbols-datasets --help
 ```
 
 ```bash
