@@ -30,7 +30,9 @@ setup(
 
     # Install the Synbols runner
     entry_points={
-        'console_scripts': ['synbols=synbols.run_docker:main'],
+        'console_scripts': ['synbols=synbols.entrypoints.run_docker:main',
+                            'synbols-datasets=synbols.entrypoints.generate_datasets:entrypoint',
+                            'synbols-view=synbols.entrypoints.view_dataset:entrypoint'],
     },
 
     # Dependencies
