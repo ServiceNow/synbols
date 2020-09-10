@@ -40,7 +40,7 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'synbols/*.rst']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -57,14 +57,14 @@ html_static_path = ['_static']
 
 # Borrowed from https://github.com/readthedocs/readthedocs.org/issues/1139
 def run_apidoc(_):
-    from sphinx.apidoc import main
+    from sphinx.ext.apidoc import main
     import os
     import sys
-    sys.path.append(os.path.dirname(__file__))
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
     cur_dir = os.path.abspath(os.path.dirname(__file__))
-    module = '.'
+    module = 'synbols'
     output_path = os.path.join(cur_dir, 'synbols')
-    main(['-e', '-o', output_path, module, '--force'])
+    main(['-o', output_path, module])
 
 def setup(app):
     app.connect('builder-inited', run_apidoc)
