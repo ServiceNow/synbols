@@ -11,7 +11,7 @@ def draw_symbol(ctxt, attributes):
 
     Args:
         ctxt: cairo context to draw the image
-        attributes: Object of type Symbol containing information about the image
+        attributes: Object of type Symbol
 
     Returns:
         extent: rectangle containing the text in the coordinate of the context
