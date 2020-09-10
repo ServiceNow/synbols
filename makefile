@@ -32,3 +32,9 @@ upload-testpypi: .dev-dependencies
 
 .dev-dependencies:
 	pip install wheel twine
+
+run_tests:
+	pytest tests
+
+run_flake8:
+	flake8
