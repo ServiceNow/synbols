@@ -18,7 +18,7 @@ pip install synbols
 ## Software dependencies
 
 Synbols relies on fonts and system packages. To ensure reproducibility, we provide a [Docker image](https://hub.docker.com/r/aldro61/synbols/tags) with everything
-preinstalled. Thus, the only dependency is Docker ([see here to install](https://docs.docker.com/get-docker/)).
+preinstalled. Thus, the only dependency is [Docker](https://docs.docker.com/get-docker/) ([see here to install](https://docs.docker.com/get-docker/)).
 
 ## Usage
 
