@@ -44,6 +44,7 @@ jobs:
 workflows:
   synbols:
     jobs:
-      - run_tests:
+      - run_make:
+          name: "Run Tests"
           make_cmd: "tests"
       - build_docs
