@@ -18,8 +18,11 @@ RUN apt-get update && \
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-# Download CIFAR10
-RUN git clone https://github.com/YoongiKim/CIFAR-10-images.git /images
+# Download Natural images (CC License)
+RUN mkdir -p /images && cd /images && \
+    wget https://github.com/ElementAI/synbols-resources/raw/master/datasets/natural_images.tar.gz && \
+    tar -xf natural_images.tar.gz && \
+    rm natural_images.tar.gz
 
 # Install all Google fonts and extract their metadata
 RUN wget -O google_fonts.zip https://github.com/google/fonts/archive/${GOOGLE_FONTS_COMMIT}.zip && \
