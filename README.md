@@ -15,7 +15,7 @@ The easiest way to install Synbols is via [PyPI](https://pypi.org/project/synbol
 
 ## Software dependencies
 
-Synbols relies on fonts and system packages. To ensure reproducibility, we provide a [Docker image](https://hub.docker.com/repository/docker/aldro61/synbols) with everything
+Synbols relies on fonts and system packages. To ensure reproducibility, we provide a [Docker image](https://hub.docker.com/r/aldro61/synbols/tags) with everything
 preinstalled. Thus, the only dependency is [Docker](https://docs.docker.com/get-docker/).
 
 ## Usage
