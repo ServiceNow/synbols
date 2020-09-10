@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:18.04 AS base
 #MAINTAINER TODO
 
 ARG GOOGLE_FONTS_COMMIT=ed61614fb47affd2a4ef286e0b313c5c47226c69
@@ -68,3 +68,5 @@ RUN python -c "import matplotlib.pyplot as plt"
 # Clean up
 RUN rm -r /bootstrap
 # ------------------------------------------------------------------------
+FROM base AS test
+RUN pip install pytest flake8
