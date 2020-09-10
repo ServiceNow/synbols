@@ -17,7 +17,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk add gcc git icu-dev lapack-dev libffi-dev make musl-dev openblas-dev openssl-dev py3-pip python3-dev
+            apk add gcc git icu-dev lapack-dev libffi-dev make musl-dev openblas-dev openssl-dev py3-pip py3-wheel python3-dev
             ln -s $(which python3) /usr/bin/python
       - checkout
       - run:
