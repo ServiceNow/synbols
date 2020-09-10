@@ -13,5 +13,5 @@ upload-testpypi: .dev-dependencies
 .dev-dependencies:
 	pip install wheel twine
 
-tests:
+run_tests:
 	pytest tests

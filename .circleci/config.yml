@@ -46,5 +46,5 @@ workflows:
     jobs:
       - run_make:
           name: "Run Tests"
-          make_cmd: "tests"
+          make_cmd: "run_tests"
       - build_docs
