@@ -30,4 +30,3 @@ workflows:
     jobs:
       - run_make:
           make_cmd: "package"
-      - build_docs
