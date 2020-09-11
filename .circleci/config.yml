@@ -24,20 +24,6 @@ jobs:
           name: Run Make Command
           command: |
             make $MAKE_CMD
-  build_docs:
-    description: Build Sphinx docs
-    docker:
-      - image: python:3.8
-    steps:
-      - checkout
-      - run:
-          name: Install dependencies
-          command: |
-            pip install -r docs/requirements.txt
-      - run:
-          name: Build Docs
-          command: |
-            make build_docs
             
 workflows:
   synbols:
