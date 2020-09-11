@@ -73,7 +73,7 @@ RUN cd bootstrap && \
     cp locale_* /locales
 
 # Bootstrap Cairo caches
-COPY dummy_dataset.py ./bootstrap
+COPY docker/dummy_dataset.py ./bootstrap
 RUN cd bootstrap && python dummy_dataset.py
 
 # Bootstrap Matplotlib caches
@@ -83,5 +83,5 @@ RUN python -c "import matplotlib.pyplot as plt"
 RUN rm -r /bootstrap
 # ------------------------------------------------------------------------
 FROM base AS sphinx
-ADD ./docs/sphinx-requirements.txt .
-RUN pip install -r sphinx-requirements.txt
+ADD ./docs/requirements.txt docs/requirements.txt
+RUN pip install -r docs/requirements.txt
