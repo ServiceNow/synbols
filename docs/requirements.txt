@@ -1,1 +1,11 @@
 sphinx
+sphinxcontrib-napoleon
+fontTools
+h5py
+matplotlib
+numpy
+pycairo
+pyicu-binary
+Pillow
+scipy
+tqdm
