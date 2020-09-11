@@ -11,25 +11,19 @@ jobs:
     environment:
       MAKE_CMD: << parameters.make_cmd >>
     docker:
-      - image: ubuntu
+      - image: aldro61/synbols:v0.1.1
     working_directory: ~/synbols
     steps:
+      - checkout
       - run:
           name: Install dependencies
           command: |
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get update && apt-get install -y curl fonts-cantarell fontconfig git icu-devtools ipython3 jq libcairo2-dev libhdf5-dev pkg-config python3 python3-pip ttf-ubuntu-font-family unzip wget
-      - checkout
-      - run:
-          name: Install requirements
-          command: |
-            pip3 install -r docker/requirements.txt
-            pip3 install flake8 pytest
+            pip install flake8 pytest
       - run:
           name: Run Make Command
           command: |
             export PYTHONPATH=~/synbols
-            make $MAKE_CMD
+            PYTHONPATH=`pwd` make $MAKE_CMD
   build_docs:
     description: Build Sphinx docs
     docker:
@@ -43,21 +37,7 @@ jobs:
       - run:
           name: Build Docs
           command: |
-            make build_docs
-  run_tests:
-    description: Run unit tests
-    docker:
-      - image: aldro61/synbols:v0.1.1
-    steps:
-      - checkout
-      - run:
-          name: Install dependencies
-          command: |
-            pip install pytest
-      - run:
-          name: Build Docs
-          command: |
-            PYTHONPATH=`pwd` make run_tests
+            make build_docs            
             
 workflows:
   synbols:
@@ -69,4 +49,3 @@ workflows:
           name: "Run Flake8"
           make_cmd: "run_flake8"
       - build_docs
-      - run_tests
