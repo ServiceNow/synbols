@@ -1,6 +1,7 @@
 # Synbols: Probing Learning Algorithms with Synthetic Datasets
 
 [![CircleCI](https://circleci.com/gh/ElementAI/synbols.svg?style=shield)](https://circleci.com/gh/ElementAI/synbols)
+[![Documentation Status](https://readthedocs.org/projects/synbols/badge/?version=latest)](https://synbols.readthedocs.io/en/latest/?badge=latest)
 
 
 ![Synbols](https://github.com/ElementAI/synbols/raw/master/cover.png)
