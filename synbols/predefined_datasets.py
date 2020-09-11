@@ -208,9 +208,15 @@ def generate_counting_dataset(n_samples,
         else:
             return 'a'
 
-    attr_generator = basic_attribute_sampler(char=char_sampler, resolution=resolution,
-                                             scale=scale, is_bold=False, n_symbols=n_symbols)
-    return dataset_generator(attr_generator, n_samples, flatten_mask, seed=seed)
+    attr_generator = basic_attribute_sampler(char=char_sampler,
+                                             resolution=resolution,
+                                             scale=scale,
+                                             is_bold=False,
+                                             n_symbols=n_symbols)
+    return dataset_generator(attr_generator,
+                             n_samples,
+                             flatten_mask,
+                             seed=seed)
 
 
 def generate_counting_dataset_scale_fix(n_samples, seed=None, **kwargs):

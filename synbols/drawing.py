@@ -261,7 +261,8 @@ class ImagePattern(RandomPattern):
     def __init__(self, root='/images', seed=None):
         # TODO more extensions
         self._path = glob(os.path.join(root, '**', '*.*'), recursive=True)
-        self._path = list(filter(lambda p: os.path.splitext(p)[1] in ('.jpg', '.png', '.gif'),
+        self._path = list(filter(lambda p: os.path.splitext(p)[1]
+                                 in ('.jpg', '.png', '.gif'),
                                  self._path))
         self.seed = seed
 

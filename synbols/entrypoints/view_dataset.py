@@ -6,9 +6,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import subprocess
 import sys
-import time
-
-
 logging.basicConfig(level=logging.INFO)
 
 
@@ -28,20 +25,26 @@ def map_to_class_id(values):
 
 
 def view_split(split_mask, attr_list, attr_keys, name):
-    """Plot an histogram of the marginal for each attribute in attr_keys and each subset specified
-    in split_mask.
+    """Plot an histogram of the marginal for each attribute in attr_keys \
+    and each subset specified in split_mask.
     Args:
-        split_mask (ndarray): An array of the masks for a subset (a split) of dataset.
+        split_mask (ndarray): An array of the masks for a subset \
+    (a split) of dataset.
         attr_list (List): List of the split attributes.
-        attr_keys (List): List of the attributes that you want to visualize the dataset stats for.
-        name (str): The name of split that you want to visualize its attributes.
+        attr_keys (List): List of the attributes that you want to \
+    visualize the dataset stats for.
+        name (str): Name of split that you want to visualize its attributes.
     """
 
     n_mask = split_mask.shape[1]
 
     ratios = ', '.join(['%.1f%%' % (r * 100) for r in split_mask.mean(axis=0)])
 
-    fig, ax_grid = plt.subplots(n_mask, len(attr_keys), sharex='col', num="split %s, split ratios=%s" % (name, ratios))
+    fig, ax_grid = plt.subplots(n_mask,
+                                len(attr_keys),
+                                sharex='col',
+                                num="split %s, split ratios=%s" %
+                                (name, ratios))
 
     for j, attr_key in enumerate(attr_keys):
         print('computing histogram for attr %s' % attr_key)
@@ -63,7 +66,8 @@ def view_split(split_mask, attr_list, attr_keys, name):
 
 
 def main():
-    # XXX: Imports are here so that they are done inside the docker image (synbols [...])
+    # XXX: Imports are here so that they are done
+    # inside the docker image (synbols [...])
     from synbols.data_io import load_h5
     from synbols.utils import flatten_attr
     from synbols.visualization import plot_dataset
@@ -85,7 +89,8 @@ def main():
     check = all(key in all_attr_keys for key in args.attr_keys)
 
     if not check:
-        raise Exception("One or more of the provided attribute keys are not valid."
+        raise Exception("One or more of the provided attribute keys are" +
+                        "not valid." +
                         f"The complete list of keys is {all_attr_keys}")
 
     split_masks = splits[args.split_name]
