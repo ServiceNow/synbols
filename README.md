@@ -1,4 +1,4 @@
-![#Synbols](https://github.com/ElementAI/synbols/raw/master/title.png)
+![#Synbols](https://github.com/ElementAI/synbols/raw/funkytitle/title.png)
 # Probing Learning Algorithms with Synthetic Datasets
 
 ![Synbols](https://github.com/ElementAI/synbols/raw/master/cover.png)
