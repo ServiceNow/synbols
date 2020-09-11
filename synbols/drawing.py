@@ -11,8 +11,7 @@ def draw_symbol(ctxt, attributes):
 
     Args:
         ctxt: cairo context to draw the image
-        attributes: Object of type Symbol containing \
-    information about the image
+        attributes: Object of type Symbol
 
     Returns:
         extent: rectangle containing the text in the coordinate of the context
@@ -261,7 +260,9 @@ class ImagePattern(RandomPattern):
 
     def __init__(self, root='/images', seed=None):
         # TODO more extensions
-        self._path = glob(os.path.join(root, '**', '*.jpg'), recursive=True)
+        self._path = glob(os.path.join(root, '**', '*.*'), recursive=True)
+        self._path = list(filter(lambda p: os.path.splitext(p)[1] in ('.jpg', '.png', '.gif'),
+                                 self._path))
         self.seed = seed
 
     def draw(self, ctxt):

@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 """Script for visualizing dataset statistics."""
-import time
 import argparse
 import logging
-import numpy as np
 import matplotlib.pyplot as plt
-from synbols.data_io import load_h5
-from synbols.utils import flatten_attr
-from synbols.visualization import plot_dataset
+import numpy as np
+import subprocess
+import sys
+import time
 
 
 logging.basicConfig(level=logging.INFO)
@@ -63,7 +62,12 @@ def view_split(split_mask, attr_list, attr_keys, name):
             ax.hist(sub_values, bins=n_bins)
 
 
-if __name__ == "__main__":
+def main():
+    # XXX: Imports are here so that they are done inside the docker image (synbols [...])
+    from synbols.data_io import load_h5
+    from synbols.utils import flatten_attr
+    from synbols.visualization import plot_dataset
+
     args = parse_args()
     if args.data is None:
         raise Exception(" path to the data is not defined."
@@ -96,3 +100,9 @@ if __name__ == "__main__":
     plt.show()
 
 
+def entrypoint():
+    subprocess.call(["synbols", __file__] + sys.argv[1:])
+
+
+if __name__ == "__main__":
+    main()
