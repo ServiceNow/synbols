@@ -83,10 +83,9 @@ RUN python -c "import matplotlib.pyplot as plt"
 RUN rm -r /bootstrap
 # ------------------------------------------------------------------------
 
-FROM base AS sphinx
-ADD ./docs/sphinx-requirements.txt .
-RUN pip install -r sphinx-requirements.txt
-
 FROM base AS test
 RUN pip install pytest flake8
 
+FROM base AS sphinx
+ADD ./docs/requirements.txt docs/requirements.txt
+RUN pip install -r docs/requirements.txt
