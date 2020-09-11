@@ -57,8 +57,7 @@ jobs:
       - run:
           name: Build Docs
           command: |
-            export PYTHONPATH=`pwd`/project
-            make run_tests
+            make run_tests -e PYTHONPATH=`pwd`/project
             
 workflows:
   synbols:
