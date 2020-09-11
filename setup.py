@@ -8,7 +8,7 @@ with open("README.md", "r") as f:
 setup(
     # Package description
     name="synbols",
-    version="0.1.0.dev3",  # XXX: developers, if you change the version, please tag and push the docker image (see doc)
+    version="0.1.0",  # XXX: developers, if you change the version, please tag and push the docker image (see doc)
     author='Alexandre Lacoste, Pau Rodriguez, Frederic Branchaud-Charron, Parmida Atighehchian, Massimo Caccia, ' +
            'Issam Hadj Laradji, Alexandre Drouin, Matt Craddock, Laurent Charlin, David Vazquez',
     author_email='allac@elementai.com',
@@ -17,7 +17,7 @@ setup(
     long_description_content_type="text/markdown",
     url='https://github.com/ElementAI/synbols',
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
