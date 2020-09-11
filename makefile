@@ -15,6 +15,7 @@ docker: .require-version
 	rm -r ./synbols ./developer_tools
 
 build_docs:
+	sphinx-apidoc -o docs/synbols synbols synbols/run_docker.py
 	sphinx-build -aE docs docs/_build/
 
 package: .dev-dependencies
