@@ -54,6 +54,7 @@ jobs:
           name: Install dependencies
           command: |
             pip install pytest
+            export PYTHONPATH=~/synbols
       - run:
           name: Build Docs
           command: |
