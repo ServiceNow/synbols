@@ -44,6 +44,16 @@ jobs:
           name: Build Docs
           command: |
             make build_docs
+  run_tests:
+    description: Run unit tests
+    docker:
+      - image: aldro61/synbols
+    steps:
+      - checkout
+      - run:
+          name: Build Docs
+          command: |
+            make run_tests
             
 workflows:
   synbols:
@@ -55,3 +65,4 @@ workflows:
           name: "Run Flake8"
           make_cmd: "run_flake8"
       - build_docs
+      - run_tests
