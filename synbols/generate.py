@@ -105,13 +105,26 @@ def basic_attribute_sampler(alphabet=None, char=None, font=None, background=None
                                   is_slant=_is_slant, is_bold=_is_bold, rotation=_rotation, scale=_scale,
                                   translation=_translation))
 
-        _background = _select(lambda rng: Gradient(seed=_rand_seed(_rng)), background, _rng)
-        _inverse_color = _select(lambda rng: rng.choice([True, False]), inverse_color, _rng)
-        _pixel_noise_scale = _select(lambda rng: 0.01, pixel_noise_scale, _rng)
-        _max_contrast = _select(lambda rng: True, max_contrast, _rng)
+        _background = _select(
+            lambda rng: Gradient(seed=_rand_seed(_rng)), background, _rng
+        )
+        _inverse_color = _select(
+            lambda rng: rng.choice([True, False]), inverse_color, _rng
+        )
+        _pixel_noise_scale = _select(
+            lambda rng: 0.01, pixel_noise_scale, _rng
+        )
+        _max_contrast = _select(
+            lambda rng: True, max_contrast, _rng
+        )
 
-        return Image(symbols, background=_background, inverse_color=_inverse_color, resolution=resolution,
-                     pixel_noise_scale=_pixel_noise_scale, is_gray=is_gray, max_contrast=_max_contrast,
+        return Image(symbols,
+                     background=_background,
+                     inverse_color=_inverse_color,
+                     resolution=resolution,
+                     pixel_noise_scale=_pixel_noise_scale,
+                     is_gray=is_gray,
+                     max_contrast=_max_contrast,
                      seed=_rand_seed(_rng))
 
     return sampler
@@ -131,7 +144,12 @@ def flatten_mask_except_first(masks):
     return np.stack((masks[:, :, 0], flatten_mask(masks[:, :, 1:])[0]), axis=2)
 
 
-def add_occlusion(attr_sampler, n_occlusion=None, occlusion_char=None, rotation=None, scale=None, translation=None,
+def add_occlusion(attr_sampler,
+                  n_occlusion=None,
+                  occlusion_char=None,
+                  rotation=None,
+                  scale=None,
+                  translation=None,
                   foreground=None):
 
     """Augment an attribute sampler to add occlusions over the other symbols.
@@ -161,7 +179,9 @@ def add_occlusion(attr_sampler, n_occlusion=None, occlusion_char=None, rotation=
     def sampler(seed=None):
         image = attr_sampler(seed)
         _rng = np.random.RandomState(seed)
-        _n_occlusion = _select(lambda rng: rng.randint(1, 5), n_occlusion, _rng)
+        _n_occlusion = _select(
+            lambda rng: rng.randint(1, 5), n_occlusion, _rng
+        )
 
         for i in range(_n_occlusion):
             _scale = _select(lambda rng: 0.3 * np.exp(rng.randn() * 0.1), scale, _rng)
@@ -181,7 +201,10 @@ def add_occlusion(attr_sampler, n_occlusion=None, occlusion_char=None, rotation=
     return sampler
 
 
-def dataset_generator(attr_sampler, n_samples, mask_aggregator=None, seed=None):
+def dataset_generator(attr_sampler,
+                      n_samples,
+                      mask_aggregator=None,
+                      seed=None):
     """High level function generating the dataset from an attribute sampler."""
 
     if isinstance(attr_sampler, types.GeneratorType):
@@ -224,7 +247,10 @@ def generate_and_write_dataset(file_path, attr_sampler, n_samples, preview_shape
 
     if preview_shape is not None:
         n_row, n_col = preview_shape
-        ds_generator = make_preview(ds_generator, file_path + "_preview.png", n_row=n_row, n_col=n_col)
+        ds_generator = make_preview(ds_generator,
+                                    file_path + "_preview.png",
+                                    n_row=n_row,
+                                    n_col=n_col)
 
     write_h5(file_path + ".h5py", ds_generator, n_samples)
 
@@ -243,10 +269,16 @@ def make_preview(generator, file_name, n_row=10, n_col=10):
             if len(x_list) == n_row * n_col:
                 from PIL import Image
                 from scipy.ndimage import zoom
-                img_grid, _, _ = make_img_grid(np.stack(x_list), y_list, h_axis=None, v_axis=None, n_row=n_row,
-                                               n_col=n_col)
+                img_grid, _, _ = make_img_grid(
+                    np.stack(x_list),
+                    y_list,
+                    h_axis=None,
+                    v_axis=None,
+                    n_row=n_row,
+                    n_col=n_col)
 
-                # zoom by a factor of 2 to be able to see the pixelization through viewers that use bicubic zooming
+                # zoom by a factor of 2 to be able to see
+                # the pixelization through viewers that use bicubic zooming
                 zoom_factor = (2, 2, 1) if img_grid.ndim == 3 else (2, 2)
                 img_grid = zoom(img_grid, zoom_factor, order=0)
 
@@ -259,7 +291,9 @@ def make_preview(generator, file_name, n_row=10, n_col=10):
 
 
 def generate_char_grid(language, n_char, n_font, seed=None, **kwargs):
-    """Generate a dense grid of n_char x n_font.  Mainly for visualization purpose."""
+    """Generate a dense grid of n_char x n_font.
+    Mainly for visualization purpose.
+    """
 
     def _attr_generator():
         alphabet = LANGUAGE_MAP[language].get_alphabet()
@@ -268,7 +302,10 @@ def generate_char_grid(language, n_char, n_font, seed=None, **kwargs):
         fonts = rng.choice(alphabet.fonts, n_font, replace=False)
         for char in chars:
             for font in fonts:
-                yield basic_attribute_sampler(alphabet, char=char, font=font, **kwargs)(_rand_seed(rng))
+                yield basic_attribute_sampler(alphabet,
+                                              char=char,
+                                              font=font,
+                                              **kwargs)(_rand_seed(rng))
 
     return dataset_generator(_attr_generator(), n_char * n_font, flatten_mask)
 
