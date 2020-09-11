@@ -15,21 +15,25 @@ def draw_symbol(ctxt, attributes):
 
     Returns:
         extent: rectangle containing the text in the coordinate of the context
-        extent_main_char: rectangle containing the central character in the coordinate of the context
+        extent_main_char: rectangle containing the central character \
+    in the coordinate of the context
     """
     # attributes.background.draw(ctxt)
 
     attributes.foreground.set_as_source(ctxt)
 
-    weight = cairo.FontWeight.BOLD if attributes.is_bold else cairo.FontWeight.NORMAL
-    slant = cairo.FontSlant.OBLIQUE if attributes.is_slant else cairo.FontSlant.NORMAL
+    weight = cairo.FontWeight.BOLD \
+        if attributes.is_bold else cairo.FontWeight.NORMAL
+    slant = cairo.FontSlant.OBLIQUE \
+        if attributes.is_slant else cairo.FontSlant.NORMAL
     char = attributes.char
 
     ctxt.set_font_size(1)
     ctxt.select_font_face(attributes.font, cairo.FONT_SLANT_NORMAL, weight)
 
     extent = ctxt.text_extents(char)
-    font_size = attributes.scale / max(extent.width, extent.height)  # normalize font size
+    # normalize font size
+    font_size = attributes.scale / max(extent.width, extent.height)
     ctxt.set_font_size(font_size)
 
     # extent = ctxt.text_extents(char)
@@ -37,7 +41,8 @@ def draw_symbol(ctxt, attributes):
     # print()
     font_matrix = ctxt.get_font_matrix()
 
-    # set slant to normal and perform it manually. There seems to be some issues with system italic
+    # set slant to normal and perform it manually.
+    # There seems to be some issues with system italic
     if slant != cairo.FONT_SLANT_NORMAL:
         font_matrix = font_matrix.multiply(cairo.Matrix(1, 0.2, 0., 1))
 
@@ -56,7 +61,9 @@ def draw_symbol(ctxt, attributes):
     ctxt.clip()
     ctxt.paint()
 
-    return extent, None  # TODO verify that the extent is the final extent and not the one before translate
+    # TODO verify that the extent is the final extent
+    # and not the one before translate
+    return extent, None
 
 
 class Pattern(object):
@@ -119,7 +126,11 @@ def color_sampler(rng=np.random, brightness_range=(0, 1)):
 class Gradient(RandomPattern):
     """Uses linear or radial graidents to render patterns."""
 
-    def __init__(self, alpha=1, types=('radial', 'linear'), random_color=None, seed=None):
+    def __init__(self,
+                 alpha=1,
+                 types=('radial', 'linear'),
+                 random_color=None,
+                 seed=None):
         self.random_color = random_color
         self.seed = seed
 
@@ -128,14 +139,22 @@ class Gradient(RandomPattern):
 
     def set_as_source(self, ctxt):
         rng = np.random.RandomState(self.seed)
-        pat = _random_pattern(self.alpha, self.random_color, rng=rng, patern_types=self.types)
+        pat = _random_pattern(self.alpha,
+                              self.random_color,
+                              rng=rng,
+                              patern_types=self.types)
         ctxt.set_source(pat)
 
 
 class MultiGradient(RandomPattern):
     """Renders multiple gradient patterns at with transparency."""
 
-    def __init__(self, alpha=0.5, n_gradients=2, types=('radial', 'linear'), random_color=None, seed=None):
+    def __init__(self,
+                 alpha=0.5,
+                 n_gradients=2,
+                 types=('radial', 'linear'),
+                 random_color=None,
+                 seed=None):
 
         self.random_color = random_color
         self.seed = seed
@@ -150,22 +169,29 @@ class MultiGradient(RandomPattern):
                 alpha = self.alpha
             else:
                 alpha = self.alpha
-            pat = _random_pattern(alpha, self.random_color, rng=rng, patern_types=self.types)
+            pat = _random_pattern(alpha,
+                                  self.random_color,
+                                  rng=rng,
+                                  patern_types=self.types)
             ctxt.rectangle(0, 0, 1, 1)  # Rectangle(x0, y0, x1, y1)
             ctxt.set_source(pat)
             ctxt.fill()
 
     def set_as_source(self, ctxt):
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
-def _random_pattern(alpha=0.8, random_color=None, patern_types=('linear', 'radial'), rng=np.random):
+def _random_pattern(alpha=0.8,
+                    random_color=None,
+                    patern_types=('linear', 'radial'),
+                    rng=np.random):
     """"Select a random pattern with either radial or linear gradient."""
     if random_color is None:
         random_color = color_sampler(rng)
     pattern_type = rng.choice(patern_types)
 
-    # TODO have the locations dependant on the symbol position, or in general have a more intelligent design
+    # TODO have the locations dependant on the symbol position
+    # or in general have a more intelligent design
     if pattern_type == 'linear':
         x1, y1 = rng.rand(2)
         theta = rng.rand() * 2 * np.pi
@@ -189,7 +215,12 @@ def _random_pattern(alpha=0.8, random_color=None, patern_types=('linear', 'radia
 
 
 class Camouflage(RandomPattern):
-    def __init__(self, stroke_length=0.4, stroke_width=0.05, stroke_angle=np.pi / 4, stroke_noise=0.02, n_stroke=500,
+    def __init__(self,
+                 stroke_length=0.4,
+                 stroke_width=0.05,
+                 stroke_angle=np.pi / 4,
+                 stroke_noise=0.02,
+                 n_stroke=500,
                  seed=None):
         self.seed = seed
         self.stroke_length = stroke_length
@@ -199,7 +230,8 @@ class Camouflage(RandomPattern):
         self.stroke_noise = stroke_noise
 
     def draw(self, ctxt):
-        stroke_vector = self.stroke_length * np.array([np.cos(self.stroke_angle), np.sin(self.stroke_angle)])
+        stroke_vector = self.stroke_length * \
+            np.array([np.cos(self.stroke_angle), np.sin(self.stroke_angle)])
         rng = np.random.RandomState(self.seed)
         for i in range(self.n_stroke):
             start = (rng.rand(2) * 1.6 - 0.3) * (1 - stroke_vector)
@@ -229,7 +261,8 @@ class ImagePattern(RandomPattern):
     def __init__(self, root='/images', seed=None):
         # TODO more extensions
         self._path = glob(os.path.join(root, '**', '*.*'), recursive=True)
-        self._path = list(filter(lambda p: os.path.splitext(p)[1] in ('.jpg', '.png', '.gif'),
+        self._path = list(filter(lambda p: os.path.splitext(p)[1]
+                                 in ('.jpg', '.png', '.gif'),
                                  self._path))
         self.seed = seed
 
@@ -242,14 +275,19 @@ class ImagePattern(RandomPattern):
 
         surface = ctxt.get_group_target()
         width, height = surface.get_width(), surface.get_height()
-        im = PILImage.open(rng.choice(self._path, 1).item()).resize((width, height))
+        im = PILImage.open(rng.choice(self._path, 1).item()) \
+                     .resize((width, height))
         ctxt.set_source_surface(_from_pil(im))
 
 
 def _surface_to_array(surface):
     """Converts a cairo.ImageSurface object to a numpy array."""
     buf = surface.get_data()
-    img = np.ndarray(shape=(surface.get_height(), surface.get_width(), 4), dtype=np.uint8, buffer=buf)
+    img = np.ndarray(shape=(surface.get_height(),
+                            surface.get_width(),
+                            4),
+                     dtype=np.uint8,
+                     buffer=buf)
     return img[:, :, :3]
 
 
@@ -261,7 +299,12 @@ def _make_surface(width, height):
     return surface, ctxt
 
 
-def _image_transform(img, inverse_color, pixel_noise_scale, is_gray, max_contrast, rng):
+def _image_transform(img,
+                     inverse_color,
+                     pixel_noise_scale,
+                     is_gray,
+                     max_contrast,
+                     rng):
     """Basic array transformation of the image."""
     img = img.astype(np.float32) / 256.
 
@@ -291,11 +334,16 @@ def _from_pil(im, alpha=1.0, format=cairo.FORMAT_ARGB32):
 
     Returns: a cairo.ImageSurface object
     """
-    assert format in (cairo.FORMAT_RGB24, cairo.FORMAT_ARGB32), f"Unsupported pixel format: {format}"
+    assert format in \
+        (cairo.FORMAT_RGB24, cairo.FORMAT_ARGB32), \
+        f"Unsupported pixel format: {format}"
     if 'A' not in im.getbands():
         im.putalpha(int(alpha * 256.))
     arr = bytearray(im.tobytes('raw', 'BGRa'))
-    surface = cairo.ImageSurface.create_for_data(arr, format, im.width, im.height)
+    surface = cairo.ImageSurface.create_for_data(arr,
+                                                 format,
+                                                 im.width,
+                                                 im.height)
     surface.set_device_scale(im.width, im.height)
     return surface
 
@@ -305,17 +353,31 @@ class Image:
 
     Attributes:
         symbols: a list of objects of type Symbol
-        resolution: a pair of integer describing the resolution of the image. Defaults to (32, 32).
-        background: an object of type Pattern for rendering the background of the image. Defaults to NoPattern.
-        inverse_color: Boolean, specifying if the colors should be inverted. Defaults to False.
-        pixel_noise_scale: The standard deviation of the pixel noise. Defaults to 0.01.
-        max_contrast: Boolean, specifying if the image contrast should be maximized after rendering. If True, the
-            pixel values will be linearly map to range [0, 1] within an image. Defaults to True.
-        seed: The random seed of an image. For the same seed, the same image will be rendered. Defaults to None.
+        resolution: a pair of integer describing the resolution of the image.\
+    Defaults to (32, 32).
+        background: an object of type Pattern for rendering the background \
+    of the image. Defaults to NoPattern.
+        inverse_color: Boolean, specifying if the colors should be inverted. \
+    Defaults to False.
+        pixel_noise_scale: The standard deviation of the pixel noise. \
+    Defaults to 0.01.
+        max_contrast: Boolean, specifying if the image contrast should \
+    be maximized after rendering. If True, the \
+    pixel values will be linearly map to range [0, 1] within an image. \
+    Defaults to True.
+        seed: The random seed of an image. For the same seed, \
+    the same image will be rendered. Defaults to None.
     """
 
-    def __init__(self, symbols, resolution=(32, 32), background=NoPattern(), inverse_color=False,
-                 pixel_noise_scale=0.01, is_gray=False, max_contrast=True, seed=None):
+    def __init__(self,
+                 symbols,
+                 resolution=(32, 32),
+                 background=NoPattern(),
+                 inverse_color=False,
+                 pixel_noise_scale=0.01,
+                 is_gray=False,
+                 max_contrast=True,
+                 seed=None):
         self.symbols = symbols
         self.resolution = resolution
         self.inverse_color = inverse_color
@@ -340,7 +402,12 @@ class Image:
             ctxt.restore()
         img = _surface_to_array(surface)
         rng = np.random.RandomState(self.seed)
-        return _image_transform(img, self.inverse_color, self.pixel_noise_scale, self.is_gray, self.max_contrast, rng)
+        return _image_transform(img,
+                                self.inverse_color,
+                                self.pixel_noise_scale,
+                                self.is_gray,
+                                self.max_contrast,
+                                rng)
 
     def attribute_dict(self):
         symbols = [symbol.attribute_dict() for symbol in self.symbols]
@@ -366,16 +433,28 @@ class Symbol:
         alphabet: Object of type Alphabet
         char: string of 1 or more characters in the image
         font: string describing the font used to draw characters
-        foreground: object of type Pattern, used for the foreground of the symbol
+        foreground: object of type Pattern, \
+    used for the foreground of the symbol
         is_slant: bool describing if char is italic or not
         is_bold: bool describing if char is bold or not
         rotation: float, rotation angle of the text
-        scale: float, scale of the text. A scale of 1 will have the longest extent of the symbol cover the whole image.
-        translation: relative (x, y) translation of the text. A translation in the range [-1, 1] will ensure that the
+        scale: float, scale of the text. A scale of 1 will have the \
+    longest extent of the symbol cover the whole image.
+        translation: relative (x, y) translation of the text. \
+    A translation in the range [-1, 1] will ensure that the
             symbol fits entirely in the image. Note if the scale i
     """
 
-    def __init__(self, alphabet, char, font, foreground, is_slant, is_bold, rotation, scale, translation):
+    def __init__(self,
+                 alphabet,
+                 char,
+                 font,
+                 foreground,
+                 is_slant,
+                 is_bold,
+                 rotation,
+                 scale,
+                 translation):
         self.alphabet = alphabet
         self.char = char
         self.font = font
@@ -390,7 +469,9 @@ class Symbol:
         draw_symbol(ctxt, self)
 
     def make_mask(self, resolution):
-        """Creates a grey scale image corresponding to the mask of the symbol."""
+        """Creates a grey scale image
+        corresponding to the mask of the symbol.
+        """
         fg = self.foreground
         self.foreground = SolidColor((1, 1, 1))
         surface, ctxt = _make_surface(*resolution)

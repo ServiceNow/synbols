@@ -11,19 +11,19 @@ jobs:
     environment:
       MAKE_CMD: << parameters.make_cmd >>
     docker:
-      - image: docker
+      - image: aldro61/synbols:v0.1.1
     working_directory: ~/synbols
     steps:
+      - checkout
       - run:
           name: Install dependencies
           command: |
-            apk add gcc git libffi-dev make musl-dev openssl-dev py3-pip python3-dev
-            ln -s $(which python3) /usr/bin/python
-      - checkout
+            pip install flake8 pytest
       - run:
           name: Run Make Command
           command: |
-            make $MAKE_CMD
+            export PYTHONPATH=~/synbols
+            PYTHONPATH=`pwd` make $MAKE_CMD
   build_docs:
     description: Build Sphinx docs
     docker:
@@ -37,11 +37,15 @@ jobs:
       - run:
           name: Build Docs
           command: |
-            make build_docs
+            make build_docs            
             
 workflows:
   synbols:
     jobs:
       - run_make:
-          make_cmd: "package"
+          name: "Run Tests"
+          make_cmd: "run_tests"
+      - run_make:
+          name: "Run Flake8"
+          make_cmd: "run_flake8"
       - build_docs

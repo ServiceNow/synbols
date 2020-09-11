@@ -1,10 +1,7 @@
-import json
-import logging
 import numpy as np
 import os
 
 from collections import defaultdict, Counter
-from icu import LocaleData
 from itertools import chain
 from warnings import warn
 
@@ -83,15 +80,21 @@ class Language:
     def __init__(self, locale_file):
         self.data_file = locale_file
         try:
-            self.name = os.path.basename(self.data_file).replace(".npz", "").replace("locale_", "").split("_")[1].lower()
-        except:
+            self.name = os.path.basename(self.data_file) \
+                               .replace(".npz", "") \
+                               .replace("locale_", "") \
+                               .split("_")[1] \
+                               .lower()
+        except Exception:
             print(locale_file)
         self.loaded = False
 
     def _load_data(self):
         # Load locale data
         data = np.load(self.data_file)
-        self.char_types = {k.replace("char_types__", ""): v for k, v in data.items() if "char_types__" in k}
+        self.char_types = {k.replace("char_types__", ""):
+                           v for k, v in data.items()
+                           if "char_types__" in k}
         self.char_codes = data["char_codes"].astype(np.uint)
         self.glyph_avail = data["glyph_avail"]
         self.fonts = data["fonts"]
@@ -99,7 +102,12 @@ class Language:
         del data
         self.loaded = True
 
-    def get_alphabet(self, standard=True, auxiliary=True, lower=True, upper=False, support_bold=True):
+    def get_alphabet(self,
+                     standard=True,
+                     auxiliary=True,
+                     lower=True,
+                     upper=False,
+                     support_bold=True):
         # Load locale data on demand
         if not self.loaded:
             self._load_data()
@@ -116,13 +124,14 @@ class Language:
                 chars_to_keep.append(self.char_types["auxiliary_lower"])
             if upper:
                 chars_to_keep.append(self.char_types["auxiliary_upper"])
-        
+
         # Validate final selection
         chars_to_keep = list(chain(*chars_to_keep))
         if len(chars_to_keep) == 0:
-            raise ValueError("Filtered character set is empty. Consider including more characters using the arguments.")
+            raise ValueError("Filtered character set is empty. \
+            Consider including more characters using the arguments.")
         chars_to_keep = np.array(chars_to_keep)
-        
+
         char_codes = self.char_codes[chars_to_keep]
         glyph_avail = self.glyph_avail[chars_to_keep]
 
@@ -152,21 +161,28 @@ class Language:
         # -- Heuristic ends
 
         # Return chars and fonts
-        return Alphabet(self.name, fonts=fonts, symbols=[chr(x) for x in char_codes])
+        return Alphabet(self.name,
+                        fonts=fonts,
+                        symbols=[chr(x) for x in char_codes])
 
 
 def load_all_languages(override_locale_path=None):
     """
-    Loads all supported languages. Returns a dictionnary of Language objects indexed by their name.
+    Loads all supported languages.
+    Returns a dictionnary of Language objects indexed by their name.
 
     """
-    locale_path = LOCALE_DATA_PATH if override_locale_path is None else override_locale_path
+    locale_path = LOCALE_DATA_PATH \
+        if override_locale_path is None \
+        else override_locale_path
     languages = {}
     if os.path.exists(locale_path):
-        for locale_file in [os.path.join(locale_path, x) for x in os.listdir(locale_path) 
+        for locale_file in [os.path.join(locale_path, x)
+                            for x in os.listdir(locale_path)
                             if x.startswith("locale_") and x.endswith(".npz")]:
-            l = Language(locale_file=locale_file)
-            languages[l.name] = l
+            lang = Language(locale_file=locale_file)
+            languages[lang.name] = lang
     else:
-        warn("The locale data path was not found. Did you execute the code with the 'synbols' executable?")
+        warn("The locale data path was not found. \
+        Did you execute the code with the 'synbols' executable?")
     return languages
