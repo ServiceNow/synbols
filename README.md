@@ -10,22 +10,26 @@
 
 The easiest way to install Synbols is via [PyPI](https://pypi.org/project/synbols/). Simply run the following command:
 
-`pip install synbols`
+```bash
+pip install synbols
+```
 
 
 ## Software dependencies
 
 Synbols relies on fonts and system packages. To ensure reproducibility, we provide a [Docker image](https://hub.docker.com/r/aldro61/synbols/tags) with everything
-preinstalled. Thus, the only dependency is [Docker](https://docs.docker.com/get-docker/).
+preinstalled. Thus, the only dependency is [Docker](https://docs.docker.com/get-docker/) ([see here to install](https://docs.docker.com/get-docker/)).
 
 ## Usage
 
 ### Using predefined generators
 
-`$ synbols-predefined --help`
+```bash
+$ synbols-datasets --help
+```
 
 ```bash
-$ synbols-predefined --dataset=some-large-occlusion --n_samples=1000 --seed=42`
+$ synbols-datasets --dataset=some-large-occlusion --n_samples=1000 --seed=42
 
 Generating some-large-occlusion dataset. Info: With probability 20%, add a large occlusion over the existing symbol.
 Preview generated.
@@ -52,7 +56,9 @@ generate_and_write_dataset(dataset_path, attr_sampler, n_samples)
 
 To generate your dataset, you need to run your code in the Synbols runtime environment. This is done using the `synbols` command as follows:
 
-`synbols mydataset.py --foo bar`
+```bash
+synbols mydataset.py --foo bar
+```
 
 
 ## Contact
