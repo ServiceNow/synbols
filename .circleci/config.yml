@@ -54,10 +54,10 @@ jobs:
           name: Install dependencies
           command: |
             pip install pytest
-            export PYTHONPATH=~/synbols
       - run:
           name: Build Docs
           command: |
+            export PYTHONPATH=`pwd`/synbols
             make run_tests
             
 workflows:
