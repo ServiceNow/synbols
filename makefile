@@ -15,7 +15,7 @@ docker: .require-version
 	rm -r ./synbols ./developer_tools
 
 build_docs:
-	sphinx-build -aE docs docs/_build/
+	cd docs && sphinx-build -aE . _build/
 
 package: .dev-dependencies
 	if [ -d "./build" ]; then rm -r ./build; fi
