@@ -5,10 +5,13 @@ import pkg_resources
 import subprocess
 import sys
 
-SYNBOLS_INCLUDE_PATH = os.path.join(pkg_resources.require("synbols")[0].location, "synbols")
+SYNBOLS_INCLUDE_PATH = os.path.join(
+    pkg_resources.require("synbols")[0].location,
+    "synbols"
+)
 SYNBOLS_VERSION = pkg_resources.require("synbols")[0].version
 DOCKER_IMAGE = "aldro61/synbols"
-DOCKER_TAG = "v%s" % SYNBOLS_VERSION  # XXX: the tag matches the package version
+DOCKER_TAG = "v%s" % SYNBOLS_VERSION  # The tag matches the package version
 
 
 def is_docker_installed():
@@ -20,7 +23,9 @@ def is_docker_installed():
         True if the docker is installed, False otherwise.
     """
     try:
-        subprocess.Popen(["docker"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT).communicate()
+        subprocess.Popen(["docker"],
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT).communicate()
         return True
     except FileNotFoundError:
         return False
@@ -34,7 +39,10 @@ def is_docker_image_available():
     bool
         True if the image is available, False otherwise.
     """
-    stdout, stderr = subprocess.Popen(["docker", "images", "-q", "%s:%s" % (DOCKER_IMAGE, DOCKER_TAG)],
+    stdout, stderr = subprocess.Popen(["docker",
+                                       "images",
+                                       "-q",
+                                       "%s:%s" % (DOCKER_IMAGE, DOCKER_TAG)],
                                       stdout=subprocess.PIPE,
                                       stderr=subprocess.STDOUT).communicate()
     return stdout != ""
@@ -69,7 +77,10 @@ def run_in_docker(file, paths, args):
     for p in paths + [curdir, file_path]:
         arg_list += ["-v", f"{p}:{p}"]
     arg_list += ["-w", f"{curdir}", f"{DOCKER_IMAGE}:{DOCKER_TAG}"]
-    arg_list += ["sh", "-c", f"export PYTHONPATH=$PYTHONPATH:/synbols_include; python {file} {args}"]
+    arg_list += ["sh",
+                 "-c",
+                 "export PYTHONPATH=$PYTHONPATH:/synbols_include;" +
+                 f"python {file} {args}"]
 
     subprocess.run(arg_list)  # might need stderr=sys.stderr, stdout=sys.stdout
 
@@ -81,7 +92,8 @@ def _parse_args_and_print_proper_help(parser):
     help_args = [arg for arg in args if arg in ['-h', '--help']]
 
     if len(help_args) > 0:
-        # we need to figure out if we print help of synbols or help of the running script
+        # we need to figure out if we print help of synbols
+        # or help of the running script
         if len(no_help_args) == 0:
             # will print help of synbols and exit
             parser.parse_known_args()
@@ -90,7 +102,7 @@ def _parse_args_and_print_proper_help(parser):
             try:
                 args, script_args = parser.parse_known_args(no_help_args)
                 script_args += help_args  # pass the help args to the script
-            except SystemExit as e:
+            except SystemExit:
                 # will print help of synbols and exit
                 print("============")
                 parser.parse_known_args()
@@ -102,10 +114,14 @@ def _parse_args_and_print_proper_help(parser):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run a Python script in the Synbols runtime environment.")
-    parser.add_argument("file", help="Python script to run in Synbols environment")
+    parser = argparse.ArgumentParser(
+        description="Run a Python script in the Synbols runtime environment."
+    )
+    parser.add_argument("file",
+                        help="Python script to run in Synbols environment")
     parser.add_argument("--mount-path", type=str, nargs='+',
-                        help="Path to directories other than the local directory to be made accessible at run time")
+                        help="Path to directories other than the local " +
+                        "directory to be made accessible at run time")
 
     args, script_args = _parse_args_and_print_proper_help(parser)
 
@@ -114,19 +130,23 @@ def main():
 
     # Check if Docker is installed
     if not is_docker_installed():
-        print("Error: Docker installation not found. Please install Docker before using Synbols. " +
+        print("Error: Docker installation not found. " +
+              "Please install Docker before using Synbols. " +
               "See https://docs.docker.com/get-docker/")
         exit(1)
 
     # Check if the Synbols Docker image is available and pull it if needed
     if not is_docker_image_available():
-        print(f"The Synbols Docker image for package version {SYNBOLS_VERSION} is not available on this system. It",
+        print("The Synbols Docker image for package version" +
+              f"{SYNBOLS_VERSION} is not available on this system. It",
               "will now be downloaded. (This will take a while)")
         os.system("docker pull %s:%s" % (DOCKER_IMAGE, DOCKER_TAG))
 
     # Check if python script to run exists
     if not os.path.exists(args.file):
-        print("Error: The Python script to run (%s) cannot be found." % args.file)
+        print(
+            "Error: The Python script to run (%s) cannot be found." % args.file
+        )
         exit(1)
 
     run_in_docker(args.file, paths=args.mount_path, args=script_args)

@@ -17,4 +17,4 @@ run_tests:
 	pytest tests
 
 run_flake8:
-	flake8
+	flake8 synbols tests

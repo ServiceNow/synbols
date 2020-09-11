@@ -15,7 +15,7 @@ RUN apt-get update && \
     apt-get install -y curl fonts-cantarell fontconfig git icu-devtools ipython3 jq libcairo2-dev libhdf5-dev pkg-config ttf-ubuntu-font-family unzip wget
 
 # Install all python requirements
-COPY requirements.txt .
+COPY docker/requirements.txt .
 RUN pip install -r requirements.txt
 
 # Download CIFAR10
@@ -59,7 +59,7 @@ RUN cd bootstrap && \
     cp locale_* /locales
 
 # Bootstrap Cairo caches
-COPY dummy_dataset.py ./bootstrap
+COPY docker/dummy_dataset.py ./bootstrap
 RUN cd bootstrap && python dummy_dataset.py
 
 # Bootstrap Matplotlib caches
