@@ -66,6 +66,15 @@ To generate your dataset, you need to run your code in the Synbols runtime envir
 synbols mydataset.py --foo bar
 ```
 
+### Launch the example notebook
+
+We provide a Jupyter notebook in the `examples` folder.
+You can launch it with:
+
+```bash
+make notebook
+```
+
 
 ## Contact
 
