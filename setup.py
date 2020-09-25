@@ -32,7 +32,8 @@ setup(
     entry_points={
         'console_scripts': ['synbols=synbols.entrypoints.run_docker:main',
                             'synbols-datasets=synbols.entrypoints.generate_datasets:entrypoint',
-                            'synbols-view=synbols.entrypoints.view_dataset:entrypoint'],
+                            'synbols-view=synbols.entrypoints.view_dataset:entrypoint',
+                            'synbols-jupyter=synbols.entrypoints.jupyter:entrypoint'],
     },
 
     # Dependencies

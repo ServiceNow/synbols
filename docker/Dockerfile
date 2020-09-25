@@ -92,11 +92,9 @@ RUN pip install -r docs/requirements.txt
 
 # -----------------------------------------------------------------------
 
-FROM base as notebook
+# Install dependencies for examples (e.g., jupyter)
 RUN pip install jupyter matplotlib pytorch_lightning torch torchvision
-RUN pip install Pygments>=2.6.1 ipython prompt_toolkit synbols==0.1.1 --upgrade
+RUN pip install Pygments>=2.6.1 ipython prompt_toolkit
 
+# Copy examples to image
 COPY ./examples/ /examples
-WORKDIR /examples
-
-CMD ["jupyter", "notebook", "--allow-root", "--ip=0.0.0.0", "--port=8080", "--no-browser", "--NotebookApp.token=", "--NotebookApp.disable_check_xsrf=True", "--NotebookApp.allow_origin=*", "--NotebookApp.custom_display_url=http://0.0.0.0:8080"]
