@@ -89,3 +89,14 @@ RUN pip install pytest flake8
 FROM base AS sphinx
 ADD ./docs/requirements.txt docs/requirements.txt
 RUN pip install -r docs/requirements.txt
+
+# -----------------------------------------------------------------------
+
+FROM base as notebook
+RUN pip install jupyter matplotlib pytorch_lightning torch torchvision
+RUN pip install Pygments>=2.6.1 ipython prompt_toolkit synbols==0.1.1 --upgrade
+
+COPY ./examples/ /examples
+WORKDIR /examples
+
+CMD ["jupyter", "notebook", "--allow-root", "--ip=0.0.0.0", "--port=8080", "--no-browser", "--NotebookApp.token=", "--NotebookApp.disable_check_xsrf=True", "--NotebookApp.allow_origin=*", "--NotebookApp.custom_display_url=http://0.0.0.0:8080"]
