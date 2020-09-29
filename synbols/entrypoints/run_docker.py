@@ -70,6 +70,7 @@ def run_in_docker(file, paths, ports, args):
 
     # Generate docker arguments to mount all expected directories
     paths = [] if paths is None else paths
+    ports = [] if ports is None else ports
     curdir = os.path.abspath(os.getcwd())
 
     # Merge all command line arguments
