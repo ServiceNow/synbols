@@ -14,14 +14,6 @@ docker: .require-version
 	docker tag synbols:latest synbols:$(version)
 	rm -r ./docker/synbols ./docker/developer_tools
 
-notebook: docker
-	docker build \
-		-f docker/Dockerfile \
-		--target notebook \
-		-t synbols:notebook \
-		.
-	docker run -p 8080:8080 --rm -it synbols:notebook
-
 build_docs:
 	cd docs && sphinx-build -aE . _build/
 

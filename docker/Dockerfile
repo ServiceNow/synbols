@@ -79,6 +79,13 @@ RUN cd bootstrap && python dummy_dataset.py
 # Bootstrap Matplotlib caches
 RUN python -c "import matplotlib.pyplot as plt"
 
+# Notebook example deps
+RUN pip install jupyter matplotlib pytorch_lightning torch torchvision
+RUN pip install Pygments>=2.6.1 ipython prompt_toolkit
+
+# Copy examples to image
+COPY ./examples/ /examples
+
 # Clean up
 RUN rm -r /bootstrap
 # ------------------------------------------------------------------------
@@ -90,11 +97,3 @@ FROM base AS sphinx
 ADD ./docs/requirements.txt docs/requirements.txt
 RUN pip install -r docs/requirements.txt
 
-# -----------------------------------------------------------------------
-
-# Install dependencies for examples (e.g., jupyter)
-RUN pip install jupyter matplotlib pytorch_lightning torch torchvision
-RUN pip install Pygments>=2.6.1 ipython prompt_toolkit
-
-# Copy examples to image
-COPY ./examples/ /examples

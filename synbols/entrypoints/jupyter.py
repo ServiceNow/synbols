@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 """Launch a Jupyter notebook in the Synbols runtime environment"""
 import argparse
-import numpy as np
 import subprocess
-import sys
 
 
 def parse_args():
@@ -14,15 +12,22 @@ def parse_args():
 
 def main():
     args = parse_args()
-    subprocess.call(["jupyter", "notebook", "--allow-root", "--ip=0.0.0.0", "--port=%d" % args.port, "--no-browser",
-                     "--NotebookApp.token=", "--NotebookApp.disable_check_xsrf=True", "--NotebookApp.allow_origin=*",
-                     "--NotebookApp.custom_display_url=http://0.0.0.0:%d" % args.port])
+    port = args.port
+    display = '--NotebookApp.custom_display_url=http://0.0.0.0:{}'.format(port)
+    subprocess.call(["jupyter", "notebook", "--allow-root",
+                     "--ip=0.0.0.0", "--port=%d" % args.port,
+                     "--no-browser",
+                     "--NotebookApp.token=",
+                     "--NotebookApp.disable_check_xsrf=True",
+                     "--NotebookApp.allow_origin=*",
+                     display])
+
 
 def entrypoint():
-    # TODO: add a port parameter to the synbols command to map the image port to the local machine
-    #       subprocess.call(["synbols", "--port %d" % args.port, __file__])
     args = parse_args()
-    subprocess.call(["synbols", __file__] + sys.argv[1:])
+    port = str(args.port)
+    subprocess.call(["synbols", __file__, "--docker-port", port,
+                     "--port", port])
 
 
 if __name__ == "__main__":

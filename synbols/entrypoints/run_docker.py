@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import argparse
 import os
-import pkg_resources
 import subprocess
 import sys
+
+import pkg_resources
 
 SYNBOLS_INCLUDE_PATH = os.path.join(
     pkg_resources.require("synbols")[0].location,
@@ -48,7 +49,7 @@ def is_docker_image_available():
     return stdout != ""
 
 
-def run_in_docker(file, paths, args):
+def run_in_docker(file, paths, ports, args):
     """
     Run a Python script with the Synbols Docker image
 
@@ -58,6 +59,8 @@ def run_in_docker(file, paths, args):
         The Python script to run
     paths: list of str
         Paths to be made acessible at run time
+    ports: list of int
+        Ports to be opened at run time
     args : list
         A list of command line arguments to pass to the Python script
 
@@ -76,6 +79,8 @@ def run_in_docker(file, paths, args):
     arg_list += ["-v", f"{SYNBOLS_INCLUDE_PATH}:/synbols_include/synbols"]
     for p in paths + [curdir, file_path]:
         arg_list += ["-v", f"{p}:{p}"]
+    for p in ports:
+        arg_list += ["-p", f"{p}:{p}"]
     arg_list += ["-w", f"{curdir}", f"{DOCKER_IMAGE}:{DOCKER_TAG}"]
     arg_list += ["sh",
                  "-c",
@@ -86,7 +91,6 @@ def run_in_docker(file, paths, args):
 
 
 def _parse_args_and_print_proper_help(parser):
-
     args = sys.argv[1:]
     no_help_args = [arg for arg in args if arg not in ['-h', '--help']]
     help_args = [arg for arg in args if arg in ['-h', '--help']]
@@ -121,7 +125,9 @@ def main():
                         help="Python script to run in Synbols environment")
     parser.add_argument("--mount-path", type=str, nargs='+',
                         help="Path to directories other than the local " +
-                        "directory to be made accessible at run time")
+                             "directory to be made accessible at run time")
+    parser.add_argument("--docker-port", type=int, nargs='+',
+                        help="Port to be opened at run time")
 
     args, script_args = _parse_args_and_print_proper_help(parser)
 
@@ -149,7 +155,8 @@ def main():
         )
         exit(1)
 
-    run_in_docker(args.file, paths=args.mount_path, args=script_args)
+    run_in_docker(args.file, paths=args.mount_path,
+                  ports=args.docker_port, args=script_args)
 
 
 if __name__ == "__main__":
