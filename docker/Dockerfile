@@ -79,16 +79,23 @@ RUN cd bootstrap && python dummy_dataset.py
 # Bootstrap Matplotlib caches
 RUN python -c "import matplotlib.pyplot as plt"
 
-# Notebook example deps
-RUN pip install jupyter matplotlib pytorch_lightning torch torchvision
-RUN pip install Pygments>=2.6.1 ipython prompt_toolkit
-
-# Copy examples to image
-COPY ./examples/ /examples
-
 # Clean up
 RUN rm -r /bootstrap
 # ------------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------
+# Notebook examples
+# ------------------------------------------------------------------------
+RUN pip install jupyter matplotlib pytorch_lightning torch torchvision
+RUN pip install jupyterlab-pygments ipython prompt-toolkit==1.0.15
+RUN mkdir /.local && chmod -R 777 /.local
+
+# Copy examples to image
+COPY ./examples/ /examples
+# ------------------------------------------------------------------------
+
 
 FROM base AS test
 RUN pip install pytest flake8
