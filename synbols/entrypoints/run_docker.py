@@ -72,6 +72,8 @@ def run_in_docker(file, paths, ports, args):
     paths = [] if paths is None else paths
     ports = [] if ports is None else ports
     curdir = os.path.abspath(os.getcwd())
+    docker_image = f"{DOCKER_IMAGE}:{DOCKER_TAG}" if "SYNBOLS_DEV_IMAGE" not in os.environ \
+                   else os.environ["SYNBOLS_DEV_IMAGE"]
 
     # Merge all command line arguments
     args = " ".join(args)
@@ -82,7 +84,7 @@ def run_in_docker(file, paths, ports, args):
         arg_list += ["-v", f"{p}:{p}"]
     for p in ports:
         arg_list += ["-p", f"{p}:{p}"]
-    arg_list += ["-w", f"{curdir}", f"{DOCKER_IMAGE}:{DOCKER_TAG}"]
+    arg_list += ["-w", f"{curdir}", docker_image]
     arg_list += ["sh",
                  "-c",
                  "export PYTHONPATH=$PYTHONPATH:/synbols_include;" +
