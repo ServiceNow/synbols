@@ -8,7 +8,7 @@ with open("README.md", "r") as f:
 setup(
     # Package description
     name="synbols",
-    version="0.1.1",  # XXX: developers, if you change the version, please tag and push the docker image (see doc)
+    version="0.1.2",  # XXX: developers, if you change the version, please tag and push the docker image (see doc)
     author='Alexandre Lacoste, Pau Rodriguez, Frederic Branchaud-Charron, Parmida Atighehchian, Massimo Caccia, ' +
            'Issam Hadj Laradji, Alexandre Drouin, Matt Craddock, Laurent Charlin, David Vazquez',
     author_email='allac@elementai.com',
@@ -32,7 +32,8 @@ setup(
     entry_points={
         'console_scripts': ['synbols=synbols.entrypoints.run_docker:main',
                             'synbols-datasets=synbols.entrypoints.generate_datasets:entrypoint',
-                            'synbols-view=synbols.entrypoints.view_dataset:entrypoint'],
+                            'synbols-view=synbols.entrypoints.view_dataset:entrypoint',
+                            'synbols-jupyter=synbols.entrypoints.jupyter:entrypoint'],
     },
 
     # Dependencies

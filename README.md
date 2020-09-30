@@ -66,6 +66,15 @@ To generate your dataset, you need to run your code in the Synbols runtime envir
 synbols mydataset.py --foo bar
 ```
 
+### Launch the example notebook
+
+We provide an example [Jupyter notebook](./examples/synbols_playground.ipynb) in the [examples](./examples) directory.
+To run this notebook, first download it locally and run the following command at the notebook's location:
+```bash
+synbols-jupyter
+```
+This will launch `jupyter notebook` in the Synbols runtime environment and allow you to access it via your browser.
+
 
 ## Contact
 
