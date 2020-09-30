@@ -89,7 +89,7 @@ RUN rm -r /bootstrap
 # Notebook examples
 # ------------------------------------------------------------------------
 RUN pip install jupyter matplotlib pytorch_lightning torch torchvision
-RUN pip install jupyterlab-pygments ipython prompt-toolkit==1.0.15
+RUN pip install --upgrade ipython Pygments>=2.6.1
 RUN mkdir /.local && chmod -R 777 /.local
 
 # Copy examples to image
