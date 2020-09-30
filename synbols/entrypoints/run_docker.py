@@ -72,7 +72,8 @@ def run_in_docker(file, paths, ports, args):
     paths = [] if paths is None else paths
     ports = [] if ports is None else ports
     curdir = os.path.abspath(os.getcwd())
-    docker_image = f"{DOCKER_IMAGE}:{DOCKER_TAG}" if "SYNBOLS_DEV_IMAGE" not in os.environ \
+    docker_image = f"{DOCKER_IMAGE}:{DOCKER_TAG}" \
+                   if "SYNBOLS_DEV_IMAGE" not in os.environ \
                    else os.environ["SYNBOLS_DEV_IMAGE"]
 
     # Merge all command line arguments
