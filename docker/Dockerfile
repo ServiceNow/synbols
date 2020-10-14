@@ -42,7 +42,7 @@ RUN wget -O google_fonts.zip https://github.com/google/fonts/archive/${GOOGLE_FO
 ENV A=1
 RUN mkdir "1001-fonts" && \
     cd "1001-fonts" && \
-    wget https://github.com/ElementAI/synbols-resources/releases/download/0.0.1/1001fonts.zip && \
+    wget https://github.com/ElementAI/synbols-resources/raw/master/fonts/1001fonts.zip && \
     unzip 1001fonts.zip && \
     mkdir -p /usr/share/fonts/truetype/1001-fonts && \
     find . -type f -name "*.ttf" | sed "s/'//g" | xargs -I{} sh -c "install -Dm644 '{}' /usr/share/fonts/truetype/1001-fonts || true" && \
@@ -52,7 +52,7 @@ RUN mkdir "1001-fonts" && \
 # Install extra asian fonts
 RUN mkdir "asian_fonts" && \
     cd "asian_fonts" && \
-    wget https://github.com/ElementAI/synbols-resources/releases/download/0.0.1/asian_fonts.zip && \
+    wget https://github.com/ElementAI/synbols-resources/raw/master/fonts/asian_fonts.zip && \
     unzip asian_fonts.zip && \
     mkdir -p /usr/share/fonts/truetype/asian_fonts && \
     find . -type f -name "*.ttf" | sed "s/'//g" | xargs -I{} sh -c "install -Dm644 '{}' /usr/share/fonts/truetype/asian_fonts || true" && \
