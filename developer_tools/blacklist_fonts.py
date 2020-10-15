@@ -17,6 +17,7 @@ logging.basicConfig(level=logging.NOTSET)
 logger = logging.getLogger()
 
 font_classifier_remote_path = "https://github.com/ElementAI/synbols-resources/raw/master/models/font_clustering_feature_extractor.pth"
+font_classifier_remote_path = "https://github.com/ElementAI/synbols-resources/raw/master/models/font_clustering_feature_extractor_resnet12.pth"
 
 
 def prepare_environment(font_model_remote_path, n_samples=100000, target_dir='/tmp'):
@@ -67,14 +68,14 @@ class Resnet12(torch.nn.Module):
     def __init__(self, width, in_ch, nclasses, dropout=0.1):
         super().__init__()
         self.output_size = 512
-        assert(width == 1) # Comment for different variants of this model
+        assert (width == 1)  # Comment for different variants of this model
         self.widths = [x * int(width) for x in [64, 128, 256]]
         self.widths.append(self.output_size * width)
         self.bn_out = torch.nn.BatchNorm1d(self.output_size)
         self.classifier = torch.nn.Linear(self.output_size, nclasses)
         start_width = in_ch
         for i in range(len(self.widths)):
-            setattr(self, "group_%d" %i, Block(start_width, self.widths[i], 1, dropout))
+            setattr(self, "group_%d" % i, Block(start_width, self.widths[i], 1, dropout))
             start_width = self.widths[i]
 
     def add_classifier(self, nclasses, name="classifier", modalities=None):
@@ -107,6 +108,7 @@ class Resnet12(torch.nn.Module):
         x = self.up_to_embedding(x, True)
         return self.classifier(F.relu(self.bn_out(x.mean(3).mean(2)), True))
 
+
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, data, attribute='font'):
         y = data['y'][...]
@@ -132,6 +134,7 @@ class Dataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.x)
 
+
 def cluster_fonts(model_path, data_path, use_gpu=False):
     data = h5py.File(data_path, 'r')
     dataset = Dataset(data)
@@ -139,7 +142,7 @@ def cluster_fonts(model_path, data_path, use_gpu=False):
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=512, shuffle=False, num_workers=4, pin_memory=True)
 
     logger.info("Loading pytorch model")
-    weights = torch.load(model_path, map_location=torch.device('cpu')).cpu()
+    weights = torch.load(model_path, map_location=torch.device('cpu'))['model']
     nclasses = weights['classifier.weight'].shape[0]
     backbone = Resnet12(1, 3, nclasses)
     backbone.load_state_dict(weights)
@@ -194,6 +197,24 @@ def cluster_fonts(model_path, data_path, use_gpu=False):
     return clusters
 
 
+def clusters_to_blacklist(clusters):
+    blacklist = []
+    comments = []
+    for cluster in clusters:
+        for font, value in cluster[1:]:
+            blacklist.append(font)
+            comments.append("similar to %s (%.3g)" % (cluster[0][0], value))
+
+    return blacklist, comments
+
+
+def blacklist_to_tsv(blacklist, comments):
+    lines = []
+    for font, comment in zip(blacklist, comments):
+        lines.append("%s\t%s" % (font, comment))
+    return '\n'.join(lines)
+
+
 if __name__ == "__main__":
     font_model_path, synbols_default_bw_path = prepare_environment(font_classifier_remote_path)
     clusters = cluster_fonts(font_model_path, synbols_default_bw_path)
@@ -202,3 +223,6 @@ if __name__ == "__main__":
     with open('font_clusters.json', 'w') as outfile:
         json.dump(clusters, outfile)
 
+    blacklist_tsv = blacklist_to_tsv(*clusters_to_blacklist(clusters))
+    with open("blacklist.tsv", 'w') as fd:
+        fd.write(blacklist_tsv)
