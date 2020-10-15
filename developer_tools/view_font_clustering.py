@@ -5,13 +5,12 @@ $ cd /where/the/png/will/be/saved
 $ synbols view_font_clustering.py
 """
 
-raise NotImplementedError("This code is not adapted to run with the new LANGUAGE_MAP interface. Keeping it here for reference. Adapt when needed.")
 import json
 from synbols.generate import basic_attribute_sampler
 from synbols.drawing import SolidColor
 import numpy as np
-from synbols.fonts import ALPHABET_MAP
 from PIL import Image
+import sys
 
 
 def cluster_to_img_grid(font_cluster):
@@ -22,7 +21,8 @@ def cluster_to_img_grid(font_cluster):
     for font, _d in font_cluster:
         img_list = []
         for char in 'abcdefghijkl':
-            img = basic_attribute_sampler(font=font, char=char, is_bold=False, is_slant=False, scale=1., translation=(0, 0),
+            img = basic_attribute_sampler(font=font, char=char, is_bold=False, is_slant=False, scale=1.,
+                                          translation=(0, 0),
                                           background=bg, foreground=fg, rotation=0, inverse_color=False,
                                           resolution=(128, 128))()
             img_list.append(img.make_image())
@@ -32,11 +32,10 @@ def cluster_to_img_grid(font_cluster):
 
 
 if __name__ == "__main__":
-    from os import path
 
-    print("current number of latin fonts %d" % (len(ALPHABET_MAP['latin'].fonts)))
+    # print("current number of latin fonts %d" % (len(ALPHABET_MAP['latin'].fonts)))
 
-    with open(path.join(path.dirname(__file__), '../synbols/fonts/hierarchical_clustering_font.json')) as fd:
+    with open('./font_clusters.json') as fd:
         clusters = json.load(fd)
 
     for i, cluster in enumerate(clusters):
@@ -44,6 +43,8 @@ if __name__ == "__main__":
             print(name, "%.3g" % val)
         print()
 
+        names = [name for name, val in cluster]
+
         img_grid = cluster_to_img_grid(cluster)
 
-        Image.fromarray(img_grid).save("cluster_%d.png" % i)
+        Image.fromarray(img_grid).save("%s.png" % ('_'.join(names)))
