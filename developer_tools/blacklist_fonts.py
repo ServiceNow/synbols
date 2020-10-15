@@ -8,6 +8,7 @@ import numpy as np
 import h5py
 from scipy.cluster.hierarchy import linkage
 import torch
+import torch.nn.functional as F
 import torchvision.transforms as tt
 from tqdm import tqdm
 import multiprocessing as mp
@@ -37,6 +38,75 @@ def load_json(json_str):
     return json.loads(json_str)['font']
 
 
+class Block(torch.nn.Module):
+    def __init__(self, ni, no, stride, dropout=0, groups=1):
+        super().__init__()
+        self.dropout = torch.nn.Dropout2d(dropout) if dropout > 0 else lambda x: x
+        self.conv0 = torch.nn.Conv2d(ni, no, 3, stride, padding=1, bias=False)
+        self.bn0 = torch.nn.BatchNorm2d(no)
+        self.conv1 = torch.nn.Conv2d(no, no, 3, 1, padding=1, bias=False)
+        self.bn1 = torch.nn.BatchNorm2d(no)
+        self.conv2 = torch.nn.Conv2d(no, no, 3, 1, padding=1, bias=False)
+        self.bn2 = torch.nn.BatchNorm2d(no)
+        if stride == 2 or ni != no:
+            self.shortcut = torch.nn.Conv2d(ni, no, 1, stride=1, padding=0)
+
+    def get_parameters(self):
+        return self.parameters()
+
+    def forward(self, x, is_support=True):
+        y = F.relu(self.bn0(self.conv0(x)), True)
+        y = self.dropout(y)
+        y = F.relu(self.bn1(self.conv1(y)), True)
+        y = self.dropout(y)
+        y = self.bn2(self.conv2(y))
+        return F.relu(y + self.shortcut(x), True)
+
+
+class Resnet12(torch.nn.Module):
+    def __init__(self, width, in_ch, nclasses, dropout=0.1):
+        super().__init__()
+        self.output_size = 512
+        assert(width == 1) # Comment for different variants of this model
+        self.widths = [x * int(width) for x in [64, 128, 256]]
+        self.widths.append(self.output_size * width)
+        self.bn_out = torch.nn.BatchNorm1d(self.output_size)
+        self.classifier = torch.nn.Linear(self.output_size, nclasses)
+        start_width = in_ch
+        for i in range(len(self.widths)):
+            setattr(self, "group_%d" %i, Block(start_width, self.widths[i], 1, dropout))
+            start_width = self.widths[i]
+
+    def add_classifier(self, nclasses, name="classifier", modalities=None):
+        setattr(self, name, torch.nn.Linear(self.output_size, nclasses))
+
+    def up_to_embedding(self, x, is_support=True):
+        """ Applies the four residual groups
+        Args:
+            x: input images
+            n: number of few-shot classes
+            k: number of images per few-shot class
+            is_support: whether the input is the support set (for non-transductive)
+        """
+        for i in range(len(self.widths)):
+            x = getattr(self, "group_%d" % i)(x, is_support)
+            x = F.max_pool2d(x, 3, 2, 1)
+        return x
+
+    def forward(self, x):
+        """Main Pytorch forward function
+
+        Returns: class logits
+
+        Args:
+            x: input mages
+            is_support: whether the input is the sample set
+        """
+        *args, c, h, w = x.size()
+        x = x.view(-1, c, h, w)
+        x = self.up_to_embedding(x, True)
+        return self.classifier(F.relu(self.bn_out(x.mean(3).mean(2)), True))
+
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, data, attribute='font'):
         y = data['y'][...]
@@ -62,26 +132,18 @@ class Dataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.x)
 
-
-class Identity(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, x):
-        return x
-
-
-def culster_fonts(model_path, data_path, use_gpu=False):
+def cluster_fonts(model_path, data_path, use_gpu=False):
     data = h5py.File(data_path, 'r')
     dataset = Dataset(data)
     data.close()
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=512, shuffle=False, num_workers=4, pin_memory=True)
 
     logger.info("Loading pytorch model")
-    backbone = torch.load(model_path, map_location=torch.device('cpu')).cpu()
+    weights = torch.load(model_path, map_location=torch.device('cpu')).cpu()
+    nclasses = weights['classifier.weight'].shape[0]
+    backbone = Resnet12(1, 3, nclasses)
+    backbone.load_state_dict(weights)
 
-    backbone.classifier = Identity()
-    backbone.fc = Identity()
     features = []
     labels = []
     logger.info("Extracting feature embeddings")
@@ -92,7 +154,7 @@ def culster_fonts(model_path, data_path, use_gpu=False):
         for image, label in tqdm(dataloader):
             if use_gpu:
                 image = image.cuda()
-            features.append(backbone(image).data.cpu().numpy())
+            features.append(backbone.up_to_embedding(image).mean(-1).mean(-1).data.cpu().numpy())
             labels.append(label)
     features = np.concatenate(features, 0)
     labels = np.concatenate([l.numpy() for l in labels], 0)
@@ -134,7 +196,7 @@ def culster_fonts(model_path, data_path, use_gpu=False):
 
 if __name__ == "__main__":
     font_model_path, synbols_default_bw_path = prepare_environment(font_classifier_remote_path)
-    clusters = culster_fonts(font_model_path, synbols_default_bw_path)
+    clusters = cluster_fonts(font_model_path, synbols_default_bw_path)
 
     logger.info("Saving json")
     with open('font_clusters.json', 'w') as outfile:
