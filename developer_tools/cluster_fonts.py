@@ -6,6 +6,7 @@ from os.path import join
 
 import numpy as np
 import scipy
+import h5py
 from scipy.cluster.hierarchy import linkage
 import torch
 import torch.nn.functional as F
@@ -13,16 +14,16 @@ from torch.utils.data import DataLoader
 from torchvision import models
 import torchvision.transforms as tt
 from tqdm import tqdm
+import multiprocessing as mp
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-cp", "--benchmark_code_path", type=str,
-                    default='/mnt/projects/vision_prototypes/synbols/font_plain_borgy/c0160f3a00fbe81b5594720c8b21d352/code',
-                    help='Classification code path')
 parser.add_argument("-e", "--model_path", type=str,
                     default='/mnt/datasets/public/research/pau/synbols/plain_feature_extractor.pth',
                     help='Experiment folder, with weights and exp_dict')
 parser.add_argument("-d", "--data_path", type=str,
-                    default='/mnt/datasets/public/research/synbols/old/plain_n=1000000.npz')
+                    default='/mnt/datasets/public/research/synbols/less-variations_n=100000_2020-May-20.h5py')
+parser.add_argument("-a", "--attribute", type=str, default='font', choices=['char', 'font'], 
+                    help="The attribute to cluster")
 parser.add_argument("-o", "--output", type=str,
                     default='./hierarchical_clustering_font.json',
                     help='Output path for the json path')
@@ -35,7 +36,7 @@ logging.basicConfig(level=logging.NOTSET)
 logger = logging.getLogger()
 
 logger.info("Loading dataset")
-data = np.load(args.data_path, allow_pickle=True)
+
 dataset_info = {'augmentation': False,
                 'height': 32,
                 'name': 'synbols_npz',
@@ -43,10 +44,15 @@ dataset_info = {'augmentation': False,
                 'task': 'font', 'width': 32, 'channels': 3}
 
 
+def load_json(x):
+    return json.loads(x)[args.attribute]
+
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, data):
-        y = np.array([d['font'] for d in data['y']])
-        self.x = data['x']
+        y = data['y'][...]
+        with mp.Pool(8) as pool:
+            y = pool.map(load_json, y)
+        self.x = data['x'][...]
         self.labelset = list(sorted(set(y)))
         self.y = np.zeros(y.shape[0], dtype=int)
         for i, label in enumerate(self.labelset):
@@ -62,7 +68,9 @@ class Dataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.x)
 
+data = h5py.File(args.data_path, 'r')
 dataset = Dataset(data)
+data.close()
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=512, shuffle=False, num_workers=4, pin_memory=True)
 
 logger.info("Loading pytorch model")
