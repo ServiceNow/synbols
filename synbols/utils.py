@@ -1,10 +1,10 @@
-import numpy as np
 import os
-
 from collections import defaultdict, Counter
 from itertools import chain
 from warnings import warn
+import csv
 
+import numpy as np
 
 LOCALE_DATA_PATH = "/locales"
 
@@ -77,29 +77,33 @@ def make_img_grid(x, y, h_axis='char', v_axis='font', n_row=20, n_col=40):
 
 # TODO: features to add 1) blacklisting, 2) clustering (in docker)
 class Language:
-    def __init__(self, locale_file):
+    def __init__(self, locale_file, font_blacklist_dir):
         self.data_file = locale_file
+        self.font_blacklist_dir = font_blacklist_dir
         try:
             self.name = os.path.basename(self.data_file) \
-                               .replace(".npz", "") \
-                               .replace("locale_", "") \
-                               .split("_")[1] \
-                               .lower()
+                .replace(".npz", "").replace("locale_", "").split("_")[1].lower()
         except Exception:
             print(locale_file)
+
         self.loaded = False
 
     def _load_data(self):
         # Load locale data
         data = np.load(self.data_file)
-        self.char_types = {k.replace("char_types__", ""):
-                           v for k, v in data.items()
-                           if "char_types__" in k}
+        self.char_types = {k.replace("char_types__", ""): v for k, v in data.items() if "char_types__" in k}
         self.char_codes = data["char_codes"].astype(np.uint)
         self.glyph_avail = data["glyph_avail"]
         self.fonts = data["fonts"]
         self.bold_avail = data["bold_avail"].astype(np.bool)
         del data
+
+        blacklist_file = os.path.join(self.font_blacklist_dir, 'blacklist_%s.tsv' % self.name)
+        if os.path.exists(blacklist_file):
+            self.font_blacklist = _read_blacklist_file(blacklist_file)
+        else:
+            self.font_blacklist = []
+
         self.loaded = True
 
     def get_alphabet(self,
@@ -107,7 +111,8 @@ class Language:
                      auxiliary=True,
                      lower=True,
                      upper=False,
-                     support_bold=True):
+                     support_bold=False,
+                     include_blacklisted_fonts=False):
         # Load locale data on demand
         if not self.loaded:
             self._load_data()
@@ -160,10 +165,29 @@ class Language:
         glyph_avail = glyph_avail[mask]
         # -- Heuristic ends
 
+        if not include_blacklisted_fonts:
+            fonts = np.setdiff1d(fonts, self.font_blacklist)
+
         # Return chars and fonts
         return Alphabet(self.name,
                         fonts=fonts,
                         symbols=[chr(x) for x in char_codes])
+
+
+def language_map_statistics():
+    str_list = []
+    lang_map = load_all_languages()
+    for lang_name, lang in lang_map.items():
+        alphabet = lang.get_alphabet()
+        str_list.append("  * Language %s contains %d fonts and %d symbols" % (
+            lang_name, len(alphabet.fonts), len(alphabet.symbols)))
+    return "\n".join(str_list)
+
+
+def _read_blacklist_file(file_path):
+    with open(file_path, 'r') as fd:
+        blacklist = [row[0] for row in csv.reader(fd, delimiter="\t")]
+    return blacklist
 
 
 def load_all_languages(override_locale_path=None):
@@ -175,12 +199,14 @@ def load_all_languages(override_locale_path=None):
     locale_path = LOCALE_DATA_PATH \
         if override_locale_path is None \
         else override_locale_path
+    blacklist_dir = os.path.join(os.path.dirname(__file__), 'fonts', 'blacklist')
+
     languages = {}
     if os.path.exists(locale_path):
         for locale_file in [os.path.join(locale_path, x)
                             for x in os.listdir(locale_path)
                             if x.startswith("locale_") and x.endswith(".npz")]:
-            lang = Language(locale_file=locale_file)
+            lang = Language(locale_file=locale_file, font_blacklist_dir=blacklist_dir)
             languages[lang.name] = lang
     else:
         warn("The locale data path was not found. \

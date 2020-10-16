@@ -3,6 +3,8 @@ import argparse
 import logging
 import subprocess
 import sys
+from synbols.utils import language_map_statistics
+from argparse import RawDescriptionHelpFormatter
 
 from datetime import datetime
 
@@ -17,30 +19,28 @@ def main():
 
     logging.basicConfig(level=logging.INFO)
 
-    parser = argparse.ArgumentParser()
+    epilog = """Details of symbols available for each languages. More or less can be made available depending on 
+arguemtns to get_alphabet(): \n%s""" % language_map_statistics()
+    parser = argparse.ArgumentParser(epilog=epilog, formatter_class=RawDescriptionHelpFormatter)
 
     dataset_names = ' | '.join(DATASET_GENERATOR_MAP.keys())
     language_names = ' | '.join(LANGUAGE_MAP.keys())
 
     parser.add_argument('--dataset',
-                        help='Name of the predefined dataset.' +
-                        'One of %s' % dataset_names,
+                        help='Name of the predefined dataset. One of %s' % dataset_names,
                         default='default')
     parser.add_argument('--n_samples',
                         help='number of samples to generate',
                         type=int,
                         default=10000)
     parser.add_argument('--language',
-                        help='Which language\'s alphabet to use.' +
-                        'One of %s' % language_names,
+                        help='Which language\'s alphabet to use. One of %s' % language_names,
                         default='default')
     parser.add_argument('--resolution',
-                        help="""Image resolution e.g.: "32x32".
-                        Defaults to the dataset's default.""",
+                        help="""Image resolution e.g.: "32x32". Defaults to the dataset's default.""",
                         default='default')
     parser.add_argument('--seed',
-                        help="""The seed of the random number generator.
-                        Defaults to None.""",
+                        help="""The seed of the random number generator. Defaults to None.""",
                         type=int,
                         default=None)
 
