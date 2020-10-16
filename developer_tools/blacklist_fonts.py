@@ -41,10 +41,6 @@ def prepare_environment(font_model_remote_path, char_model_remote_path, n_sample
     return font_model_path, char_model_path, synbols_default_bw_path
 
 
-def load_json(json_str):
-    return json.loads(json_str)['font']
-
-
 class Block(torch.nn.Module):
     def __init__(self, ni, no, stride, dropout=0, groups=1):
         super().__init__()
@@ -116,24 +112,32 @@ class Resnet12(torch.nn.Module):
 
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, data, attribute='font'):
+    def __init__(self, data):
         y = data['y'][...]
 
         with mp.Pool(8) as pool:
-            y = np.array(pool.map(load_json, y))
+            self.meta = pool.map(json.loads, y)
 
+        y_font = np.array([_y['font'] for _y in self.meta])
+        y_char = np.array([_y['char'] for _y in self.meta])
+        
         self.x = data['x'][...]
-        self.labelset = list(sorted(set(y)))
-        self.y = np.zeros(y.shape[0], dtype=int)
-        for i, label in enumerate(self.labelset):
-            self.y[y == label] = i
+        self.fontset = list(sorted(set(y_font)))
+        self.charset = list(sorted(set(y_char)))
+        self.fonts = np.zeros(y_font.shape[0], dtype=int)
+        self.chars = np.zeros(y_char.shape[0], dtype=int)
+        for i, font in enumerate(self.fontset):
+            self.fonts[y_font == font] = i
+
+        for i, char in enumerate(self.charset):
+            self.chars[y_char == char] = i
 
         n_channels = 3
         self.transforms = [tt.ToPILImage(), tt.ToTensor(), tt.Normalize([0.5] * n_channels, [0.5] * n_channels)]
         self.transforms = tt.Compose(self.transforms)
 
     def __getitem__(self, idx):
-        return self.transforms(self.x[idx]), self.y[idx]
+        return self.transforms(self.x[idx]), self.font[idx], self.char[idx]
 
     def __len__(self):
         return len(self.x)
@@ -158,11 +162,11 @@ def cluster_fonts(model_path, data_path, use_gpu=False):
         backbone.eval()
         if use_gpu:
             backbone.cuda()
-        for image, label in tqdm(dataloader):
+        for image, font, char in tqdm(dataloader):
             if use_gpu:
                 image = image.cuda()
             features.append(backbone.up_to_embedding(image).mean(-1).mean(-1).data.cpu().numpy())
-            labels.append(label)
+            labels.append(font)
     features = np.concatenate(features, 0)
     labels = np.concatenate([l.numpy() for l in labels], 0)
     prototypes = np.zeros((len(np.unique(labels)), features.shape[-1]))
@@ -200,8 +204,49 @@ def cluster_fonts(model_path, data_path, use_gpu=False):
 
     return clusters
 
-def filter_fonts(char_model_path, synbols_default_bw_path):
-    pass
+def filter_fonts(model_path, data_path, use_gpu=False):
+    data = h5py.File(data_path, 'r')
+    dataset = Dataset(data)
+    data.close()
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=512, shuffle=False, num_workers=4, pin_memory=True)
+
+    logger.info("Loading pytorch model")
+    weights = torch.load(model_path, map_location=torch.device('cpu'))['model']
+    nclasses = weights['classifier.weight'].shape[0]
+    backbone = Resnet12(1, 3, nclasses)
+    backbone.load_state_dict(weights)
+
+    logits = []
+    fonts = []
+    chars = []
+    logger.info("Extracting predictions")
+    with torch.no_grad():
+        backbone.eval()
+        if use_gpu:
+            backbone.cuda()
+        for image, font, char in tqdm(dataloader):
+            if use_gpu:
+                image = image.cuda()
+            logits.append(F.softmax(backbone(image), -1).data.cpu().numpy())
+            fonts.append(font.numpy())
+            chars.append(char.numpy())
+    logits = np.concatenate(logits, 0)
+    preds = logits.argmax(-1)
+    fonts = np.concatenate(fonts)
+    chars = np.concatenate(chars)
+
+    error_dict = {font: [] for font in dataset.fontset}
+
+    font2str = {i: dataset.fontset[i] for i in range(len(dataset.fontset))}
+    char2str = {i: dataset.charset[i] for i in range(len(dataset.charset))}
+
+    for font, char, pred in zip(fonts, chars, preds):
+        font_name = font2str[font]
+        char_name = char2str[char]
+        pred_name = char2str[int(pred)]
+        error_dict[font_name].append((char_name, pred_name))
+
+    return error_dict
 
 def clusters_to_blacklist(clusters):
     blacklist = []
