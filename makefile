@@ -27,7 +27,7 @@ font-blacklist: .require-version
 	@echo "FROM aldro61/synbols:$(version)\nRUN pip install --upgrade pip && pip install pandas torch torchvision" > $(TMP_WD)/Dockerfile
 	@cd $(TMP_WD) && docker build -t "synbols:$(version)-fontblacklist" . && cd -
 	@SYNBOLS_DEV_IMAGE="synbols:$(version)-fontblacklist" \
-	synbols developer_tools/cluster_fonts.py
+	synbols developer_tools/blacklist_fonts.py --mount-path=/tmp
 
 # Package code for release to PyPI
 package: .dev-dependencies
