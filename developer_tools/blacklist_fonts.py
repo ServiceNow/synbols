@@ -24,7 +24,7 @@ font_classifier_remote_path = ("https://github.com/ElementAI/synbols-resources/r
 char_classifier_remote_path = ("https://github.com/ElementAI/synbols-resources/raw/master/models/"
                                "font_filtering_char_classifier_resnet12.pth")
 
-def prepare_environment(font_model_remote_path, n_samples=100000, target_dir='/tmp'):
+def prepare_environment(font_model_remote_path, char_model_remote_path, n_samples=100000, target_dir='/tmp'):
     font_model_path = os.path.join(target_dir, os.path.basename(font_model_remote_path))
     char_model_path = os.path.join(target_dir, os.path.basename(char_model_remote_path))
 
