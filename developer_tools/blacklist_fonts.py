@@ -1,23 +1,25 @@
-import subprocess as sp
-from glob import glob
 import json
 import logging
+import multiprocessing as mp
 import os
+import subprocess as sp
 
-import numpy as np
 import h5py
-from scipy.cluster.hierarchy import linkage
+import numpy as np
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as tt
+from scipy.cluster.hierarchy import linkage
 from tqdm import tqdm
-import multiprocessing as mp
+
+from synbols.data_io import write_h5
+from synbols.predefined_datasets import DATASET_GENERATOR_MAP
 
 logging.basicConfig(level=logging.NOTSET)
 logger = logging.getLogger()
 
-font_classifier_remote_path = "https://github.com/ElementAI/synbols-resources/raw/master/models/font_clustering_feature_extractor.pth"
-font_classifier_remote_path = "https://github.com/ElementAI/synbols-resources/raw/master/models/font_clustering_feature_extractor_resnet12.pth"
+font_classifier_remote_path = ("https://github.com/ElementAI/synbols-resources/raw/master/models/"
+                               "font_clustering_feature_extractor_resnet12.pth")
 
 
 def prepare_environment(font_model_remote_path, n_samples=100000, target_dir='/tmp'):
@@ -25,12 +27,12 @@ def prepare_environment(font_model_remote_path, n_samples=100000, target_dir='/t
 
     sp.run(["wget", "--continue", font_model_remote_path], cwd=target_dir)
 
-    pattern = '*default-bw*n=%d*h5py' % n_samples
-
-    if len(glob(os.path.join(target_dir, pattern))) == 0:
-        sp.run(["synbols-datasets", "--dataset=default-bw", "--n_samples=%d" % n_samples], cwd=target_dir)
-
-    synbols_default_bw_path = glob(os.path.join(target_dir, pattern))[0]
+    synbols_default_bw_path = os.path.join(target_dir, "synbols_default-bw_n=%d.h5py" % n_samples)
+    if not os.path.exists(synbols_default_bw_path):
+        ds_generator = DATASET_GENERATOR_MAP['default-bw'](n_samples, language='english')
+        write_h5(synbols_default_bw_path, ds_generator, n_samples)
+    else:
+        logger.info("Reusing existing dataset %s." % synbols_default_bw_path)
 
     return font_model_path, synbols_default_bw_path
 
@@ -114,9 +116,7 @@ class Dataset(torch.utils.data.Dataset):
         y = data['y'][...]
 
         with mp.Pool(8) as pool:
-            y = pool.map(load_json, y)
-
-        y = np.array(y)
+            y = np.array(pool.map(load_json, y))
 
         self.x = data['x'][...]
         self.labelset = list(sorted(set(y)))
@@ -216,13 +216,12 @@ def blacklist_to_tsv(blacklist, comments):
 
 
 if __name__ == "__main__":
-    font_model_path, synbols_default_bw_path = prepare_environment(font_classifier_remote_path)
+    font_model_path, synbols_default_bw_path = prepare_environment(font_classifier_remote_path, n_samples=100000)
     clusters = cluster_fonts(font_model_path, synbols_default_bw_path)
 
-    logger.info("Saving json")
-    with open('font_clusters.json', 'w') as outfile:
+    with open('font_clusters_english.json', 'w') as outfile:
         json.dump(clusters, outfile)
 
     blacklist_tsv = blacklist_to_tsv(*clusters_to_blacklist(clusters))
-    with open("blacklist.tsv", 'w') as fd:
+    with open("blacklist_english.tsv", 'w') as fd:
         fd.write(blacklist_tsv)
