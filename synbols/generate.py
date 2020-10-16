@@ -121,39 +121,30 @@ def basic_attribute_sampler(alphabet=None,
         symbols = []
         _n_symbols = _select(1, n_symbols, _rng)
         for i in range(_n_symbols):
-            _alphabet = _select(lambda rng:
-                                LANGUAGE_MAP['english']
-                                .get_alphabet(support_bold=True),
+            _alphabet = _select(lambda rng: LANGUAGE_MAP['english'].get_alphabet(support_bold=True),
                                 alphabet,
                                 _rng)
 
-            _char = _select(lambda rng:
-                            rng.choice(_alphabet.symbols),
+            _char = _select(lambda rng: rng.choice(_alphabet.symbols),
                             char,
                             _rng)
-            _font = _select(lambda rng:
-                            rng.choice(sorted(_alphabet.fonts)),
+            _font = _select(lambda rng: rng.choice(sorted(_alphabet.fonts)),
                             font,
                             _rng)
-            _is_bold = _select(lambda rng:
-                               rng.choice([True, False]),
+            _is_bold = _select(lambda rng: rng.choice([True, False]),
                                is_bold,
                                _rng)
-            _is_slant = _select(lambda rng:
-                                rng.choice([True, False]),
+            _is_slant = _select(lambda rng: rng.choice([True, False]),
                                 is_slant,
                                 _rng)
             _rotation = _select(lambda rng: rng.randn() * 0.3, rotation, _rng)
-            _scale = _select(lambda rng:
-                             0.6 * np.exp(rng.randn() * 0.2),
+            _scale = _select(lambda rng: 0.6 * np.exp(rng.randn() * 0.2),
                              scale,
                              _rng)
-            _translation = _select(lambda rng:
-                                   tuple(rng.rand(2) * 1.8 - 0.9),
+            _translation = _select(lambda rng: tuple(rng.rand(2) * 1.8 - 0.9),
                                    translation,
                                    _rng)
-            _foreground = _select(lambda rng:
-                                  Gradient(seed=_rand_seed(_rng)),
+            _foreground = _select(lambda rng: Gradient(seed=_rand_seed(_rng)),
                                   foreground,
                                   _rng)
 
@@ -167,18 +158,10 @@ def basic_attribute_sampler(alphabet=None,
                                   scale=_scale,
                                   translation=_translation))
 
-        _background = _select(
-            lambda rng: Gradient(seed=_rand_seed(_rng)), background, _rng
-        )
-        _inverse_color = _select(
-            lambda rng: rng.choice([True, False]), inverse_color, _rng
-        )
-        _pixel_noise_scale = _select(
-            lambda rng: 0.01, pixel_noise_scale, _rng
-        )
-        _max_contrast = _select(
-            lambda rng: True, max_contrast, _rng
-        )
+        _background = _select(lambda rng: Gradient(seed=_rand_seed(_rng)), background, _rng)
+        _inverse_color = _select(lambda rng: rng.choice([True, False]), inverse_color, _rng)
+        _pixel_noise_scale = _select(lambda rng: 0.01, pixel_noise_scale, _rng)
+        _max_contrast = _select(lambda rng: True, max_contrast, _rng)
 
         return Image(symbols,
                      background=_background,

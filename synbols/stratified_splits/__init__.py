@@ -96,33 +96,20 @@ def stratified_split(attr_list, attr_name, ratios, rng=np.random):
 
 
 def make_default_splits(attr_list, ratios, random_seed):
-    random_masks = partition_map_to_mask(random_map(len(attr_list),
-                                                    ratios,
-                                                    np.random.RandomState(
-                                                        random_seed)))
+    random_masks = partition_map_to_mask(random_map(len(attr_list), ratios, np.random.RandomState(random_seed)))
     verify_part_mask(random_masks, len(attr_list), ratios)
 
-    stratified_char_map = stratified_split(attr_list,
-                                           'char',
-                                           ratios,
-                                           np.random.RandomState(
-                                               random_seed))
+    stratified_char_map = stratified_split(attr_list, 'char', ratios, np.random.RandomState(random_seed))
     stratified_char = partition_map_to_mask(stratified_char_map)
+    # TODO we're getting some error from CI here, where stratified_char.shape[1] = 1 instead of 3
     verify_part_mask(stratified_char,
                      len(attr_list),
                      ratios,
                      verify_ratios=False)
 
-    stratified_font_map = stratified_split(attr_list,
-                                           'font',
-                                           ratios,
-                                           np.random.RandomState(
-                                               random_seed))
+    stratified_font_map = stratified_split(attr_list, 'font', ratios, np.random.RandomState(random_seed))
     stratified_font = partition_map_to_mask(stratified_font_map)
-    verify_part_mask(stratified_font,
-                     len(attr_list),
-                     ratios,
-                     verify_ratios=False)
+    verify_part_mask(stratified_font, len(attr_list), ratios, verify_ratios=False)
 
     compositional_char_font = compositional_split(stratified_char_map,
                                                   stratified_font_map)
