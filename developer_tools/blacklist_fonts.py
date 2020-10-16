@@ -145,7 +145,7 @@ class Dataset(torch.utils.data.Dataset):
         self.transforms = tt.Compose(self.transforms)
 
     def __getitem__(self, idx):
-        return self.transforms(self.x[idx]), self.font[idx], self.char[idx]
+        return self.transforms(self.x[idx]), self.fonts[idx], self.chars[idx]
 
     def __len__(self):
         return len(self.x)
@@ -212,7 +212,7 @@ def cluster_fonts(model_path, data_path, use_gpu=False):
 
     return clusters
 
-def filter_fonts(model_path, data_path, use_gpu=False):
+def find_difficult_fonts(model_path, data_path, use_gpu=False):
     data = h5py.File(data_path, 'r')
     dataset = Dataset(data)
     data.close()
@@ -279,7 +279,7 @@ if __name__ == "__main__":
                                                                                     char_classifier_remote_path,
                                                                                     n_samples=100000)
     clusters = cluster_fonts(font_model_path, synbols_default_bw_path)
-    difficult_fonts = filter_fonts(char_model_path, synbols_default_bw_path)
+    difficult_fonts = find_difficult_fonts(char_model_path, synbols_default_bw_path)
 
     with open('font_clusters_english.json', 'w') as outfile:
         json.dump(clusters, outfile)
