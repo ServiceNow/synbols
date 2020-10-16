@@ -54,4 +54,4 @@ run_tests:
 
 # Runs flake8
 run_flake8:
-	flake8 synbols tests
+	flake8 synbols tests --max-line-length=120
