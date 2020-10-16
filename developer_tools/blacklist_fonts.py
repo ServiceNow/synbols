@@ -21,11 +21,15 @@ logger = logging.getLogger()
 font_classifier_remote_path = ("https://github.com/ElementAI/synbols-resources/raw/master/models/"
                                "font_clustering_feature_extractor_resnet12.pth")
 
+char_classifier_remote_path = ("https://github.com/ElementAI/synbols-resources/raw/master/models/"
+                               "font_filtering_char_classifier_resnet12.pth")
 
 def prepare_environment(font_model_remote_path, n_samples=100000, target_dir='/tmp'):
     font_model_path = os.path.join(target_dir, os.path.basename(font_model_remote_path))
+    char_model_path = os.path.join(target_dir, os.path.basename(char_model_remote_path))
 
     sp.run(["wget", "--continue", font_model_remote_path], cwd=target_dir)
+    sp.run(["wget", "--continue", char_model_remote_path], cwd=target_dir)
 
     synbols_default_bw_path = os.path.join(target_dir, "synbols_default-bw_n=%d.h5py" % n_samples)
     if not os.path.exists(synbols_default_bw_path):
@@ -34,7 +38,7 @@ def prepare_environment(font_model_remote_path, n_samples=100000, target_dir='/t
     else:
         logger.info("Reusing existing dataset %s." % synbols_default_bw_path)
 
-    return font_model_path, synbols_default_bw_path
+    return font_model_path, char_model_path, synbols_default_bw_path
 
 
 def load_json(json_str):
@@ -196,6 +200,8 @@ def cluster_fonts(model_path, data_path, use_gpu=False):
 
     return clusters
 
+def filter_fonts(char_model_path, synbols_default_bw_path):
+    pass
 
 def clusters_to_blacklist(clusters):
     blacklist = []
@@ -216,8 +222,11 @@ def blacklist_to_tsv(blacklist, comments):
 
 
 if __name__ == "__main__":
-    font_model_path, synbols_default_bw_path = prepare_environment(font_classifier_remote_path, n_samples=100000)
+    font_model_path, char_model_path, synbols_default_bw_path = prepare_environment(font_classifier_remote_path, 
+                                                                                    char_classifier_remote_path,
+                                                                                    n_samples=100000)
     clusters = cluster_fonts(font_model_path, synbols_default_bw_path)
+    difficult_fonts = filter_fonts(char_model_path, synbols_default_bw_path)
 
     with open('font_clusters_english.json', 'w') as outfile:
         json.dump(clusters, outfile)
