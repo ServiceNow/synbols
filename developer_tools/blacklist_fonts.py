@@ -25,14 +25,18 @@ font_classifier_remote_path = ("https://github.com/ElementAI/synbols-resources/r
 char_classifier_remote_path = ("https://github.com/ElementAI/synbols-resources/raw/master/models/"
                                "font_filtering_char_classifier_resnet12.pth")
 
+
 def prepare_environment(font_model_remote_path, char_model_remote_path, n_samples=100000, target_dir='/tmp'):
-    font_model_path = os.path.join(target_dir, os.path.basename(font_model_remote_path))
-    char_model_path = os.path.join(target_dir, os.path.basename(char_model_remote_path))
+    font_model_path = os.path.join(
+        target_dir, os.path.basename(font_model_remote_path))
+    char_model_path = os.path.join(
+        target_dir, os.path.basename(char_model_remote_path))
 
     sp.run(["wget", "--continue", font_model_remote_path], cwd=target_dir)
     sp.run(["wget", "--continue", char_model_remote_path], cwd=target_dir)
 
-    synbols_default_bw_path = os.path.join(target_dir, "synbols_default-bw_n=%d.h5py" % n_samples)
+    synbols_default_bw_path = os.path.join(
+        target_dir, "synbols_default-bw_n=%d.h5py" % n_samples)
     if not os.path.exists(synbols_default_bw_path):
 
         attr_sampler = basic_attribute_sampler(
@@ -52,7 +56,8 @@ def prepare_environment(font_model_remote_path, char_model_remote_path, n_sample
 class Block(torch.nn.Module):
     def __init__(self, ni, no, stride, dropout=0, groups=1):
         super().__init__()
-        self.dropout = torch.nn.Dropout2d(dropout) if dropout > 0 else lambda x: x
+        self.dropout = torch.nn.Dropout2d(
+            dropout) if dropout > 0 else lambda x: x
         self.conv0 = torch.nn.Conv2d(ni, no, 3, stride, padding=1, bias=False)
         self.bn0 = torch.nn.BatchNorm2d(no)
         self.conv1 = torch.nn.Conv2d(no, no, 3, 1, padding=1, bias=False)
@@ -85,7 +90,8 @@ class Resnet12(torch.nn.Module):
         self.classifier = torch.nn.Linear(self.output_size, nclasses)
         start_width = in_ch
         for i in range(len(self.widths)):
-            setattr(self, "group_%d" % i, Block(start_width, self.widths[i], 1, dropout))
+            setattr(self, "group_%d" % i, Block(
+                start_width, self.widths[i], 1, dropout))
             start_width = self.widths[i]
 
     def add_classifier(self, nclasses, name="classifier", modalities=None):
@@ -128,7 +134,7 @@ class Dataset(torch.utils.data.Dataset):
 
         y_font = np.array([_y['font'] for _y in self.meta])
         y_char = np.array([_y['char'] for _y in self.meta])
-        
+
         self.x = data['x'][...]
         self.fontset = list(sorted(set(y_font)))
         self.charset = list(sorted(set(y_char)))
@@ -141,7 +147,8 @@ class Dataset(torch.utils.data.Dataset):
             self.chars[y_char == char] = i
 
         n_channels = 3
-        self.transforms = [tt.ToPILImage(), tt.ToTensor(), tt.Normalize([0.5] * n_channels, [0.5] * n_channels)]
+        self.transforms = [tt.ToPILImage(), tt.ToTensor(), tt.Normalize(
+            [0.5] * n_channels, [0.5] * n_channels)]
         self.transforms = tt.Compose(self.transforms)
 
     def __getitem__(self, idx):
@@ -152,10 +159,12 @@ class Dataset(torch.utils.data.Dataset):
 
 
 def cluster_fonts(model_path, data_path, use_gpu=False):
+    logger.info("Font clustering")
     data = h5py.File(data_path, 'r')
     dataset = Dataset(data)
     data.close()
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=512, shuffle=False, num_workers=4, pin_memory=True)
+    dataloader = torch.utils.data.DataLoader(
+        dataset, batch_size=512, shuffle=False, num_workers=4, pin_memory=True)
 
     logger.info("Loading pytorch model")
     weights = torch.load(model_path, map_location=torch.device('cpu'))['model']
@@ -173,7 +182,8 @@ def cluster_fonts(model_path, data_path, use_gpu=False):
         for image, font, char in tqdm(dataloader):
             if use_gpu:
                 image = image.cuda()
-            features.append(backbone.up_to_embedding(image).mean(-1).mean(-1).data.cpu().numpy())
+            features.append(backbone.up_to_embedding(
+                image).mean(-1).mean(-1).data.cpu().numpy())
             labels.append(font)
     features = np.concatenate(features, 0)
     labels = np.concatenate([l.numpy() for l in labels], 0)
@@ -194,13 +204,13 @@ def cluster_fonts(model_path, data_path, use_gpu=False):
         left, right, score, _ = z
         leafs = []
         if left < len(prototypes):
-            leafs.append([dataset.labelset[int(left)], score])
+            leafs.append([dataset.fontset[int(left)], score])
         else:
             index = indices.index(left)
             indices.pop(index)
             leafs += clusters.pop(index)
         if right < len(prototypes):
-            leafs.append([dataset.labelset[int(right)], score])
+            leafs.append([dataset.fontset[int(right)], score])
         else:
             index = indices.index(right)
             indices.pop(index)
@@ -212,11 +222,14 @@ def cluster_fonts(model_path, data_path, use_gpu=False):
 
     return clusters
 
+
 def find_difficult_fonts(model_path, data_path, use_gpu=False):
+    logging.info("Finding difficult fonts")
     data = h5py.File(data_path, 'r')
     dataset = Dataset(data)
     data.close()
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=512, shuffle=False, num_workers=4, pin_memory=True)
+    dataloader = torch.utils.data.DataLoader(
+        dataset, batch_size=512, shuffle=False, num_workers=4, pin_memory=True)
 
     logger.info("Loading pytorch model")
     weights = torch.load(model_path, map_location=torch.device('cpu'))['model']
@@ -245,16 +258,14 @@ def find_difficult_fonts(model_path, data_path, use_gpu=False):
 
     error_dict = {font: [] for font in dataset.fontset}
 
-    font2str = {i: dataset.fontset[i] for i in range(len(dataset.fontset))}
-    char2str = {i: dataset.charset[i] for i in range(len(dataset.charset))}
-
     for font, char, pred in zip(fonts, chars, preds):
-        font_name = font2str[font]
-        char_name = char2str[char]
-        pred_name = char2str[int(pred)]
+        font_name = dataset.fontset[font]
+        char_name = dataset.charset[char]
+        pred_name = dataset.charset[int(pred)]
         error_dict[font_name].append((char_name, pred_name))
 
     return error_dict
+
 
 def clusters_to_blacklist(clusters):
     blacklist = []
@@ -275,11 +286,12 @@ def blacklist_to_tsv(blacklist, comments):
 
 
 if __name__ == "__main__":
-    font_model_path, char_model_path, synbols_default_bw_path = prepare_environment(font_classifier_remote_path, 
+    font_model_path, char_model_path, synbols_default_bw_path = prepare_environment(font_classifier_remote_path,
                                                                                     char_classifier_remote_path,
                                                                                     n_samples=100000)
     clusters = cluster_fonts(font_model_path, synbols_default_bw_path)
-    difficult_fonts = find_difficult_fonts(char_model_path, synbols_default_bw_path)
+    difficult_fonts = find_difficult_fonts(
+        char_model_path, synbols_default_bw_path)
 
     with open('font_clusters_english.json', 'w') as outfile:
         json.dump(clusters, outfile)
