@@ -179,8 +179,8 @@ def language_map_statistics():
     lang_map = load_all_languages()
     for lang_name, lang in lang_map.items():
         alphabet = lang.get_alphabet()
-        str_list.append(
-            "  * Language %s contains %d fonts and %d symbols" % (lang_name, len(alphabet.fonts), len(alphabet.symbols)))
+        str_list.append("  * Language %s contains %d fonts and %d symbols" % (
+            lang_name, len(alphabet.fonts), len(alphabet.symbols)))
     return "\n".join(str_list)
 
 
