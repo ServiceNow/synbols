@@ -13,7 +13,8 @@ from scipy.cluster.hierarchy import linkage
 from tqdm import tqdm
 
 from synbols.data_io import write_h5
-from synbols.predefined_datasets import DATASET_GENERATOR_MAP
+from synbols.drawing import SolidColor
+from synbols.generate import basic_attribute_sampler, LANGUAGE_MAP, dataset_generator
 
 logging.basicConfig(level=logging.NOTSET)
 logger = logging.getLogger()
@@ -33,7 +34,14 @@ def prepare_environment(font_model_remote_path, char_model_remote_path, n_sample
 
     synbols_default_bw_path = os.path.join(target_dir, "synbols_default-bw_n=%d.h5py" % n_samples)
     if not os.path.exists(synbols_default_bw_path):
-        ds_generator = DATASET_GENERATOR_MAP['default-bw'](n_samples, language='english')
+
+        attr_sampler = basic_attribute_sampler(
+            alphabet=LANGUAGE_MAP['english'].get_alphabet(auxiliary=False),
+            background=SolidColor((0, 0, 0)),
+            foreground=SolidColor((1, 1, 1))
+        )
+
+        ds_generator = dataset_generator(attr_sampler, n_samples)
         write_h5(synbols_default_bw_path, ds_generator, n_samples)
     else:
         logger.info("Reusing existing dataset %s." % synbols_default_bw_path)
