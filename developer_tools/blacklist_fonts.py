@@ -290,14 +290,13 @@ if __name__ == "__main__":
                                                                                     char_classifier_remote_path,
                                                                                     n_samples=100000)
     clusters = cluster_fonts(font_model_path, synbols_default_bw_path)
-    difficult_fonts = find_difficult_fonts(
-        char_model_path, synbols_default_bw_path)
+    difficult_fonts = find_difficult_fonts(char_model_path, synbols_default_bw_path)
 
     with open('font_clusters_english.json', 'w') as outfile:
-        json.dump(clusters, outfile)
+        json.dump(clusters, outfile, indent=2)
 
     with open('difficult_fonts.json', 'w') as outfile:
-        json.dump(difficult_fonts, outfile)
+        json.dump(difficult_fonts, outfile, indent=2)
 
     blacklist_tsv = blacklist_to_tsv(*clusters_to_blacklist(clusters))
     with open("blacklist_english.tsv", 'w') as fd:
