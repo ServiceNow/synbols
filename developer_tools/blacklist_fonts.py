@@ -295,7 +295,7 @@ if __name__ == "__main__":
     with open('font_clusters_english.json', 'w') as outfile:
         json.dump(clusters, outfile, indent=2)
 
-    with open('difficult_fonts.json', 'w') as outfile:
+    with open('difficult_fonts_english.json', 'w') as outfile:
         json.dump(difficult_fonts, outfile, indent=2)
 
     blacklist_tsv = blacklist_to_tsv(*clusters_to_blacklist(clusters))

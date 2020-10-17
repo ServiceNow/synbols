@@ -12,6 +12,7 @@ from synbols.drawing import SolidColor
 import numpy as np
 from PIL import Image
 import os
+from collections import Counter
 
 
 def cluster_to_img_grid(font_cluster):
@@ -50,38 +51,45 @@ def view_clusters(font_cluster_path):
 
 def view_difficult_fonts(difficult_font_path):
     bg = SolidColor((0, 0, 0))
-    fg = SolidColor((1, 1, 1))
     img_grid = []
 
     with open(difficult_font_path) as fd:
         errors = json.load(fd)
 
-        for font, err_list in errors.items():
-            if len(err_list) < 20:
+        font_err_count = Counter({font: len(err_list) for font, err_list in errors.items()})
+
+        for font, err_count in font_err_count.most_common():
+            err_list = errors[font]
+
+            if len(err_list) < 10:
                 continue
-            print("%s: %s" % (font, str(err_list)))
+
+            char_err_count = Counter([true for true, pred in err_list])
+            print("%s: %s" % (font, str(char_err_count)))
+
             img = basic_attribute_sampler(font='arial', char=font, is_bold=False, is_slant=False, scale=1.,
-                                          translation=(0, 0),
-                                          background=bg, foreground=fg, rotation=0, inverse_color=False,
-                                          resolution=(264, 64))()
+                                          translation=(0, 0), background=bg, foreground=SolidColor((1, 1, 1)),
+                                          rotation=0, inverse_color=False, resolution=(128, 128))()
             img_list = [img.make_image()]
 
-            for true, pred in err_list[:20]:
-                img = basic_attribute_sampler(font=font, char=true, is_bold=False, is_slant=False, scale=1.,
-                                              translation=(0, 0),
-                                              background=bg, foreground=fg, rotation=0, inverse_color=False,
-                                              resolution=(64, 64))()
+            for char in 'abcdefghijklmnopqrstuvwxyz':
+                intensity = 1 - min(char_err_count.get(char, 0), 5) * 0.2
+
+                fg = SolidColor((intensity, intensity, 1))
+                img = basic_attribute_sampler(font=font, char=char, is_bold=False, is_slant=False, scale=1.,
+                                              translation=(0, 0), background=bg, foreground=fg, rotation=0,
+                                              inverse_color=False, resolution=(128, 128))()
                 img_list.append(img.make_image())
             img_grid.append(np.hstack(img_list))
     img_grid = np.vstack(img_grid)
 
-    Image.fromarray(img_grid).save("difficult_chars.png")
+    Image.fromarray(img_grid).save("difficult_fonts_english.png")
 
 
 if __name__ == "__main__":
     blacklist_dir = os.path.join(os.path.dirname(synbols.__file__), 'fonts', 'blacklist')
     font_cluster_path = os.path.join(blacklist_dir, 'font_clusters_english.json')
-    difficult_font_path = "difficult_fonts.json"
+    difficult_font_path = os.path.join(blacklist_dir, "difficult_fonts_english.json")
 
     view_difficult_fonts(difficult_font_path)
     # view_clusters(font_cluster_path)
