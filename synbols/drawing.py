@@ -294,7 +294,8 @@ def _surface_to_array(surface):
 def _make_surface(width, height):
     """Creates a cairo.ImageSurface and cairo.Context."""
     surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
-    surface.set_device_scale(width, height)
+    scale = min(width, height)
+    surface.set_device_scale(scale, scale)
     ctxt = cairo.Context(surface)
     return surface, ctxt
 
