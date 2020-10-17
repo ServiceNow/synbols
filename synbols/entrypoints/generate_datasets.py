@@ -21,6 +21,7 @@ def main():
 
     epilog = "Details of symbols available for each languages. More or less can be made available depending on " + \
              "arguemtns to get_alphabet(): \n%s" % language_map_statistics()
+
     parser = argparse.ArgumentParser(epilog=epilog, formatter_class=RawDescriptionHelpFormatter)
 
     dataset_names = ' | '.join(DATASET_GENERATOR_MAP.keys())

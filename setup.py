@@ -8,7 +8,7 @@ with open("README.md", "r") as f:
 setup(
     # Package description
     name="synbols",
-    version="0.1.2",  # XXX: developers, if you change the version, please tag and push the docker image (see doc)
+    version="0.1.3.dev0",  # XXX: developers, if you change the version, please tag and push the docker image (see doc)
     author='Alexandre Lacoste, Pau Rodriguez, Frederic Branchaud-Charron, Parmida Atighehchian, Massimo Caccia, ' +
            'Issam Hadj Laradji, Alexandre Drouin, Matt Craddock, Laurent Charlin, David Vazquez',
     author_email='allac@elementai.com',
@@ -27,6 +27,9 @@ setup(
 
     # Data files required at runtime
     packages=find_packages(),
+    package_data={
+        'synbols.fonts.blacklist': ['blacklist_english.tsv', 'font_clusters_english.json'],
+    },
 
     # Install the Synbols runner
     entry_points={
