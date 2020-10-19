@@ -100,3 +100,13 @@ Libre Barcode 39	buggy
 Libre Barcode 39 Extended	buggy
 Libre Barcode 39 Extended Text	buggy
 Redacted	buggy
+Kumar One	buggy (render no chars when slant is used)
+Kumar One Outline	buggy (render no chars when slant is used)
+Rubik	buggy (render no chars when slant is used)
+Constantine	buggy (render no chars when slant is used)
+Snowburst	buggy (render no chars when slant is used)
+Arbutus Slab	buggy (render no chars when slant is used with auxiliary chars)
+Autour One	buggy (render no chars when slant is used with auxiliary chars)
+Oxygen	buggy (render no chars when slant is used with auxiliary chars)
+Cramaten	buggy (render no chars when slant is used with auxiliary chars)
+Oranienbaum	buggy (render no chars when slant is used with auxiliary chars)
