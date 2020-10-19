@@ -22,10 +22,8 @@ def draw_symbol(ctxt, attributes):
 
     attributes.foreground.set_as_source(ctxt)
 
-    weight = cairo.FontWeight.BOLD \
-        if attributes.is_bold else cairo.FontWeight.NORMAL
-    slant = cairo.FontSlant.OBLIQUE \
-        if attributes.is_slant else cairo.FontSlant.NORMAL
+    weight = cairo.FontWeight.BOLD if attributes.is_bold else cairo.FontWeight.NORMAL
+    slant = cairo.FontSlant.OBLIQUE if attributes.is_slant else cairo.FontSlant.NORMAL
     char = attributes.char
 
     ctxt.set_font_size(1)
@@ -68,6 +66,7 @@ def draw_symbol(ctxt, attributes):
 
 class Pattern(object):
     """Base class for all patterns"""
+
     def surface(self, width, height):
         surface, ctxt = _make_surface(width, height)
         self.draw(ctxt)
@@ -87,6 +86,7 @@ class Pattern(object):
 
 class RandomPattern(Pattern):
     """Base class for patterns using a seed."""
+
     def attribute_dict(self):
         return {'style': self.__class__.__name__,
                 'seed': self.seed}
@@ -231,7 +231,7 @@ class Camouflage(RandomPattern):
 
     def draw(self, ctxt):
         stroke_vector = self.stroke_length * \
-            np.array([np.cos(self.stroke_angle), np.sin(self.stroke_angle)])
+                        np.array([np.cos(self.stroke_angle), np.sin(self.stroke_angle)])
         rng = np.random.RandomState(self.seed)
         for i in range(self.n_stroke):
             start = (rng.rand(2) * 1.6 - 0.3) * (1 - stroke_vector)
@@ -262,7 +262,7 @@ class ImagePattern(RandomPattern):
         # TODO more extensions
         self._path = glob(os.path.join(root, '**', '*.*'), recursive=True)
         self._path = list(filter(lambda p: os.path.splitext(p)[1]
-                                 in ('.jpg', '.png', '.gif'),
+                                           in ('.jpg', '.png', '.gif'),
                                  self._path))
         self.seed = seed
 
@@ -276,7 +276,7 @@ class ImagePattern(RandomPattern):
         surface = ctxt.get_group_target()
         width, height = surface.get_width(), surface.get_height()
         im = PILImage.open(rng.choice(self._path, 1).item()) \
-                     .resize((width, height))
+            .resize((width, height))
         ctxt.set_source_surface(_from_pil(im))
 
 
@@ -305,7 +305,7 @@ def _image_transform(img,
                      pixel_noise_scale,
                      is_gray,
                      max_contrast,
-                     rng):
+                     rng, symbols=()):
     """Basic array transformation of the image."""
     img = img.astype(np.float32) / 256.
 
@@ -317,7 +317,12 @@ def _image_transform(img,
 
     if max_contrast:
         mn, mx = np.min(img), np.max(img)
-        img = (img - mn) / (mx - mn)
+
+        if mx - mn > 0:
+            img = (img - mn) / (mx - mn)
+        else:
+            if len(symbols) > 0:
+                print("Font %s yields empty image" % symbols[0].font)
 
     img += rng.randn(*img.shape) * pixel_noise_scale
     img = np.clip(img, 0., 1.)
@@ -336,7 +341,7 @@ def _from_pil(im, alpha=1.0, format=cairo.FORMAT_ARGB32):
     Returns: a cairo.ImageSurface object
     """
     assert format in \
-        (cairo.FORMAT_RGB24, cairo.FORMAT_ARGB32), \
+           (cairo.FORMAT_RGB24, cairo.FORMAT_ARGB32), \
         f"Unsupported pixel format: {format}"
     if 'A' not in im.getbands():
         im.putalpha(int(alpha * 256.))
@@ -408,7 +413,7 @@ class Image:
                                 self.pixel_noise_scale,
                                 self.is_gray,
                                 self.max_contrast,
-                                rng)
+                                rng, self.symbols)
 
     def attribute_dict(self):
         symbols = [symbol.attribute_dict() for symbol in self.symbols]
