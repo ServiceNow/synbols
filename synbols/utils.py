@@ -1,8 +1,8 @@
+import csv
 import os
 from collections import defaultdict, Counter
 from itertools import chain
 from warnings import warn
-import csv
 
 import numpy as np
 
@@ -75,7 +75,6 @@ def make_img_grid(x, y, h_axis='char', v_axis='font', n_row=20, n_col=40):
     return img_grid, h_values, v_values
 
 
-# TODO: features to add 1) blacklisting, 2) clustering (in docker)
 class Language:
     def __init__(self, locale_file, font_blacklist_dir):
         self.data_file = locale_file
@@ -166,6 +165,7 @@ class Language:
         # -- Heuristic ends
 
         if not include_blacklisted_fonts:
+            # print("blacklisting the following \n%s"% ('\n'.join(self.font_blacklist)))
             fonts = np.setdiff1d(fonts, self.font_blacklist)
 
         # Return chars and fonts
