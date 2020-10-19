@@ -338,16 +338,11 @@ def _from_pil(im, alpha=1.0, format=cairo.FORMAT_ARGB32):
 
     Returns: a cairo.ImageSurface object
     """
-    assert format in \
-           (cairo.FORMAT_RGB24, cairo.FORMAT_ARGB32), \
-        f"Unsupported pixel format: {format}"
+    assert format in (cairo.FORMAT_RGB24, cairo.FORMAT_ARGB32), f"Unsupported pixel format: {format}"
     if 'A' not in im.getbands():
         im.putalpha(int(alpha * 256.))
     arr = bytearray(im.tobytes('raw', 'BGRa'))
-    surface = cairo.ImageSurface.create_for_data(arr,
-                                                 format,
-                                                 im.width,
-                                                 im.height)
+    surface = cairo.ImageSurface.create_for_data(arr, format, im.width, im.height)
     surface.set_device_scale(im.width, im.height)
     return surface
 
