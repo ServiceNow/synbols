@@ -1,10 +1,10 @@
 import logging
 import numpy as np
 
-from .drawing import Camouflage, NoPattern, SolidColor, MultiGradient
+from .drawing import Camouflage, NoPattern, SolidColor, MultiGradient, ImagePattern
 from .fonts import LANGUAGE_MAP
 from .generate import dataset_generator, basic_attribute_sampler, \
-    flatten_mask, flatten_mask_except_first, add_occlusion
+    flatten_mask, flatten_mask_except_first, add_occlusion, rand_seed
 
 
 def generate_plain_dataset(n_samples, language='english', seed=None, **kwargs):
@@ -23,7 +23,7 @@ def generate_plain_dataset(n_samples, language='english', seed=None, **kwargs):
         translation=(0., 0.),
         inverse_color=False,
         pixel_noise_scale=0.)
-    return dataset_generator(attr_sampler, n_samples, seed=seed)
+    return dataset_generator(attr_sampler, n_samples, dataset_seed=seed)
 
 
 def generate_tiny_dataset(n_samples, language='english', seed=None, **kwarg):
@@ -41,7 +41,7 @@ def generate_tiny_dataset(n_samples, language='english', seed=None, **kwarg):
         scale=1,
         resolution=(8, 8),
         is_gray=True)
-    return dataset_generator(attr_sampler, n_samples, seed=seed)
+    return dataset_generator(attr_sampler, n_samples, dataset_seed=seed)
 
 
 def generate_default_dataset(n_samples,
@@ -54,7 +54,7 @@ def generate_default_dataset(n_samples,
     attr_sampler = basic_attribute_sampler(
         alphabet=LANGUAGE_MAP[language].get_alphabet()
     )
-    return dataset_generator(attr_sampler, n_samples, seed=seed)
+    return dataset_generator(attr_sampler, n_samples, dataset_seed=seed)
 
 
 def generate_solid_bg_dataset(n_samples,
@@ -70,7 +70,16 @@ def generate_solid_bg_dataset(n_samples,
         background=bg,
         foreground=fg
     )
-    return dataset_generator(attr_sampler, n_samples, seed=seed)
+    return dataset_generator(attr_sampler, n_samples, dataset_seed=seed)
+
+
+def generate_natural_images_dataset(n_samples, language='english', seed=None, **kwargs):
+    attr_sampler = basic_attribute_sampler(
+        alphabet=LANGUAGE_MAP[language].get_alphabet(),
+        background=lambda rng: ImagePattern(seed=rand_seed(rng)),
+        foreground=lambda rng: ImagePattern(seed=rand_seed(rng)))
+
+    return dataset_generator(attr_sampler, n_samples, dataset_seed=seed)
 
 
 def generate_korean_1k_dataset(n_samples, seed=None, **kwarg):
@@ -81,7 +90,7 @@ def generate_korean_1k_dataset(n_samples, seed=None, **kwarg):
     attr_sampler = basic_attribute_sampler(
         char=lambda rng: rng.choice(chars),
         font=lambda rng: rng.choice(fonts))
-    return dataset_generator(attr_sampler, n_samples, seed=seed)
+    return dataset_generator(attr_sampler, n_samples, dataset_seed=seed)
 
 
 def generate_camouflage_dataset(n_samples,
@@ -121,7 +130,7 @@ def generate_camouflage_dataset(n_samples,
             is_slant=False,
             scale=scale)(seed)
 
-    return dataset_generator(attr_sampler, n_samples, seed=seed)
+    return dataset_generator(attr_sampler, n_samples, dataset_seed=seed)
 
 
 def generate_non_camou_bw_dataset(n_samples,
@@ -176,10 +185,7 @@ def generate_segmentation_dataset(n_samples,
         scale=scale,
         is_bold=False,
         n_symbols=n_symbols)
-    return dataset_generator(attr_generator,
-                             n_samples,
-                             flatten_mask,
-                             seed=seed)
+    return dataset_generator(attr_generator, n_samples, flatten_mask, dataset_seed=seed)
 
 
 def generate_counting_dataset(n_samples,
@@ -202,31 +208,20 @@ def generate_counting_dataset(n_samples,
 
     def char_sampler(rng):
         if rng.rand() < 0.3:
-            return rng.choice(LANGUAGE_MAP[language]
-                              .get_alphabet(support_bold=False)
-                              .symbols)
+            return rng.choice(LANGUAGE_MAP[language].get_alphabet(support_bold=False).symbols)
         else:
             return 'a'
 
-    attr_generator = basic_attribute_sampler(char=char_sampler,
-                                             resolution=resolution,
-                                             scale=scale,
-                                             is_bold=False,
+    attr_generator = basic_attribute_sampler(char=char_sampler, resolution=resolution, scale=scale, is_bold=False,
                                              n_symbols=n_symbols)
-    return dataset_generator(attr_generator,
-                             n_samples,
-                             flatten_mask,
-                             seed=seed)
+    return dataset_generator(attr_generator, n_samples, flatten_mask, dataset_seed=seed)
 
 
 def generate_counting_dataset_scale_fix(n_samples, seed=None, **kwargs):
     """Generate 3-10 symbols at fixed scale.
     Samples 'a' with prob 70% or a latin lowercase otherwise.
     """
-    return generate_counting_dataset(n_samples,
-                                     scale_variation=0,
-                                     seed=seed,
-                                     **kwargs)
+    return generate_counting_dataset(n_samples, scale_variation=0, seed=seed, **kwargs)
 
 
 def generate_counting_dataset_crowded(n_samples, seed=None, **kwargs):
@@ -237,11 +232,7 @@ def generate_counting_dataset_crowded(n_samples, seed=None, **kwargs):
     def n_symbols(rng):
         return rng.choice(list(range(30, 50)))
 
-    return generate_counting_dataset(n_samples,
-                                     scale_variation=0.1,
-                                     n_symbols=n_symbols,
-                                     seed=seed,
-                                     **kwargs)
+    return generate_counting_dataset(n_samples, scale_variation=0.1, n_symbols=n_symbols, seed=seed, **kwargs)
 
 
 # for few-shot learning
@@ -266,7 +257,7 @@ def all_chars(n_samples, seed=None, **kwarg):
         char, alphabet = symbols_list[np.random.choice(len(symbols_list))]
         return basic_attribute_sampler(alphabet=alphabet, char=char)(seed)
 
-    return dataset_generator(attr_sampler, n_samples, seed=seed)
+    return dataset_generator(attr_sampler, n_samples, dataset_seed=seed)
 
 
 def generate_balanced_font_chars_dataset(n_samples, seed=None, **kwarg):
@@ -303,16 +294,11 @@ def generate_balanced_font_chars_dataset(n_samples, seed=None, **kwarg):
             font, alphabet = font_list[np.random.choice(len(font_list))]
             symbol = np.random.choice(alphabet.symbols[:200])
         else:
-            symbol, alphabet = symbols_list[
-                np.random.choice(len(symbols_list))
-            ]
+            symbol, alphabet = symbols_list[np.random.choice(len(symbols_list))]
             font = np.random.choice(alphabet.fonts[:200])
-        return basic_attribute_sampler(char=symbol,
-                                       font=font,
-                                       is_bold=False,
-                                       is_slant=False)(seed)
+        return basic_attribute_sampler(char=symbol, font=font, is_bold=False, is_slant=False)(seed)
 
-    return dataset_generator(attr_sampler, n_samples, seed=seed)
+    return dataset_generator(attr_sampler, n_samples, dataset_seed=seed)
 
 
 # for active learning
@@ -329,12 +315,12 @@ def generate_large_translation(n_samples,
         alphabet=LANGUAGE_MAP[language].get_alphabet(),
         scale=0.5,
         translation=lambda rng: tuple(rng.rand(2) * 4 - 2))
-    return dataset_generator(attr_sampler, n_samples, seed=seed)
+    return dataset_generator(attr_sampler, n_samples, dataset_seed=seed)
 
 
 def missing_symbol_dataset(n_samples, language='english', seed=None, **kwarg):
     """With 10% probability, no symbols are drawn"""
-    bg = MultiGradient(alpha=0.5, n_gradients=2, types=('linear', 'radial'))
+    bg = lambda rng: MultiGradient(alpha=0.5, n_gradients=2, types=('linear', 'radial'), seed=rand_seed(rng))
 
     def tr(rng):
         if rng.rand() > 0.1:
@@ -346,7 +332,7 @@ def missing_symbol_dataset(n_samples, language='english', seed=None, **kwarg):
         alphabet=LANGUAGE_MAP[language].get_alphabet(),
         translation=tr,
         background=bg)
-    return dataset_generator(attr_generator, n_samples, seed=seed)
+    return dataset_generator(attr_generator, n_samples, dataset_seed=seed)
 
 
 def generate_some_large_occlusions(n_samples,
@@ -364,16 +350,11 @@ def generate_some_large_occlusions(n_samples,
             return 0
 
     attr_sampler = add_occlusion(
-        basic_attribute_sampler(
-            alphabet=LANGUAGE_MAP[language].get_alphabet()
-        ),
+        basic_attribute_sampler(alphabet=LANGUAGE_MAP[language].get_alphabet()),
         n_occlusion=n_occlusion,
         scale=lambda rng: 0.6 * np.exp(rng.randn() * 0.1),
         translation=lambda rng: tuple(rng.rand(2) * 6 - 3))
-    return dataset_generator(attr_sampler,
-                             n_samples,
-                             flatten_mask_except_first,
-                             seed=seed)
+    return dataset_generator(attr_sampler, n_samples, flatten_mask_except_first, dataset_seed=seed)
 
 
 def generate_many_small_occlusions(n_samples,
@@ -389,7 +370,7 @@ def generate_many_small_occlusions(n_samples,
     return dataset_generator(attr_sampler,
                              n_samples,
                              flatten_mask_except_first,
-                             seed=seed)
+                             dataset_seed=seed)
 
 
 def generate_pixel_noise(n_samples, language='english', seed=None, **kwarg):
@@ -404,7 +385,7 @@ def generate_pixel_noise(n_samples, language='english', seed=None, **kwarg):
     attr_sampler = basic_attribute_sampler(
         alphabet=LANGUAGE_MAP[language].get_alphabet(),
         pixel_noise_scale=pixel_noise)
-    return dataset_generator(attr_sampler, n_samples, seed=seed)
+    return dataset_generator(attr_sampler, n_samples, dataset_seed=seed)
 
 
 # for font classification
@@ -421,7 +402,7 @@ def less_variations(n_samples, language='english', seed=None, **kwarg):
         is_slant=False,
         scale=lambda rng: 0.5 * np.exp(rng.randn() * 0.1),
         rotation=lambda rng: rng.randn() * 0.1)
-    return dataset_generator(attr_generator, n_samples, seed=seed)
+    return dataset_generator(attr_generator, n_samples, dataset_seed=seed)
 
 
 DATASET_GENERATOR_MAP = {
@@ -445,4 +426,5 @@ DATASET_GENERATOR_MAP = {
     'all-chars': all_chars,
     'less-variations': less_variations,
     'pixel-noise': generate_pixel_noise,
+    'natural-patterns': generate_natural_images_dataset,
 }
