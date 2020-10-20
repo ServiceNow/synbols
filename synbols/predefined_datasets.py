@@ -320,7 +320,8 @@ def generate_large_translation(n_samples,
 
 def missing_symbol_dataset(n_samples, language='english', seed=None, **kwarg):
     """With 10% probability, no symbols are drawn"""
-    bg = lambda rng: MultiGradient(alpha=0.5, n_gradients=2, types=('linear', 'radial'), seed=rand_seed(rng))
+    def background(rng):
+        MultiGradient(alpha=0.5, n_gradients=2, types=('linear', 'radial'), seed=rand_seed(rng))
 
     def tr(rng):
         if rng.rand() > 0.1:
@@ -331,7 +332,7 @@ def missing_symbol_dataset(n_samples, language='english', seed=None, **kwarg):
     attr_generator = basic_attribute_sampler(
         alphabet=LANGUAGE_MAP[language].get_alphabet(),
         translation=tr,
-        background=bg)
+        background=background)
     return dataset_generator(attr_generator, n_samples, dataset_seed=seed)
 
 
