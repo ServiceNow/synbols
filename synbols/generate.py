@@ -16,7 +16,7 @@ def _select(default, value, rng):
         return value
 
 
-def _rand_seed(rng):
+def rand_seed(rng):
     return rng.randint(np.iinfo(np.uint32).max)
 
 
@@ -121,32 +121,16 @@ def basic_attribute_sampler(alphabet=None,
         symbols = []
         _n_symbols = _select(1, n_symbols, _rng)
         for i in range(_n_symbols):
-            _alphabet = _select(lambda rng: LANGUAGE_MAP['english'].get_alphabet(support_bold=True),
-                                alphabet,
-                                _rng)
+            _alphabet = _select(lambda rng: LANGUAGE_MAP['english'].get_alphabet(support_bold=True), alphabet, _rng)
 
-            _char = _select(lambda rng: rng.choice(_alphabet.symbols),
-                            char,
-                            _rng)
-            _font = _select(lambda rng: rng.choice(sorted(_alphabet.fonts)),
-                            font,
-                            _rng)
-            _is_bold = _select(lambda rng: rng.choice([True, False]),
-                               is_bold,
-                               _rng)
-            _is_slant = _select(lambda rng: rng.choice([True, False]),
-                                is_slant,
-                                _rng)
+            _char = _select(lambda rng: rng.choice(_alphabet.symbols), char, _rng)
+            _font = _select(lambda rng: rng.choice(sorted(_alphabet.fonts)), font, _rng)
+            _is_bold = _select(lambda rng: rng.choice([True, False]), is_bold, _rng)
+            _is_slant = _select(lambda rng: rng.choice([True, False]), is_slant, _rng)
             _rotation = _select(lambda rng: rng.randn() * 0.3, rotation, _rng)
-            _scale = _select(lambda rng: 0.6 * np.exp(rng.randn() * 0.2),
-                             scale,
-                             _rng)
-            _translation = _select(lambda rng: tuple(rng.rand(2) * 1.8 - 0.9),
-                                   translation,
-                                   _rng)
-            _foreground = _select(lambda rng: Gradient(seed=_rand_seed(_rng)),
-                                  foreground,
-                                  _rng)
+            _scale = _select(lambda rng: 0.6 * np.exp(rng.randn() * 0.2), scale, _rng)
+            _translation = _select(lambda rng: tuple(rng.rand(2) * 1.8 - 0.9), translation, _rng)
+            _foreground = _select(lambda rng: Gradient(seed=rand_seed(_rng)), foreground, _rng)
 
             symbols.append(Symbol(alphabet=_alphabet,
                                   char=_char,
@@ -158,7 +142,7 @@ def basic_attribute_sampler(alphabet=None,
                                   scale=_scale,
                                   translation=_translation))
 
-        _background = _select(lambda rng: Gradient(seed=_rand_seed(_rng)), background, _rng)
+        _background = _select(lambda rng: Gradient(seed=rand_seed(_rng)), background, _rng)
         _inverse_color = _select(lambda rng: rng.choice([True, False]), inverse_color, _rng)
         _pixel_noise_scale = _select(lambda rng: 0.01, pixel_noise_scale, _rng)
         _max_contrast = _select(lambda rng: True, max_contrast, _rng)
@@ -170,7 +154,7 @@ def basic_attribute_sampler(alphabet=None,
                      pixel_noise_scale=_pixel_noise_scale,
                      is_gray=is_gray,
                      max_contrast=_max_contrast,
-                     seed=_rand_seed(_rng))
+                     seed=rand_seed(_rng))
 
     return sampler
 
@@ -196,7 +180,6 @@ def add_occlusion(attr_sampler,
                   scale=None,
                   translation=None,
                   foreground=None):
-
     """Augment an attribute sampler to add occlusions over the other symbols.
 
     Args:
@@ -254,7 +237,7 @@ def add_occlusion(attr_sampler,
                                 rotation,
                                 _rng)
             _foreground = _select(lambda rng:
-                                  Gradient(seed=_rand_seed(_rng)),
+                                  Gradient(seed=rand_seed(_rng)),
                                   foreground, _rng)
 
             occlusion = Symbol(LANGUAGE_MAP['english'].get_alphabet(),
@@ -276,7 +259,7 @@ def add_occlusion(attr_sampler,
 def dataset_generator(attr_sampler,
                       n_samples,
                       mask_aggregator=None,
-                      seed=None):
+                      dataset_seed=None):
     """High level function generating the dataset from an attribute sampler."""
 
     if isinstance(attr_sampler, types.GeneratorType):
@@ -287,10 +270,10 @@ def dataset_generator(attr_sampler,
 
         attr_sampler = sampler
 
-    rng = np.random.RandomState(seed)
+    rng = np.random.RandomState(dataset_seed)
 
     for i in tqdm(range(n_samples)):
-        attributes = attr_sampler(_rand_seed(rng))
+        attributes = attr_sampler(rand_seed(rng))
         mask = attributes.make_mask()
         x = attributes.make_image()
         y = attributes.attribute_dict()
@@ -322,7 +305,7 @@ def generate_and_write_dataset(file_path,
             will be saved alongside the dataset.
         seed: integer or None. Specifies the seed the random number generator.
     """
-    ds_generator = dataset_generator(attr_sampler, n_samples, seed=seed)
+    ds_generator = dataset_generator(attr_sampler, n_samples, dataset_seed=seed)
 
     if preview_shape is not None:
         n_row, n_col = preview_shape
@@ -386,7 +369,7 @@ def generate_char_grid(language, n_char, n_font, seed=None, **kwargs):
                 yield basic_attribute_sampler(alphabet,
                                               char=char,
                                               font=font,
-                                              **kwargs)(_rand_seed(rng))
+                                              **kwargs)(rand_seed(rng))
 
     return dataset_generator(_attr_generator(), n_char * n_font, flatten_mask)
 
@@ -397,6 +380,6 @@ def text_generator(char_list, seed=None, **kwargs):
 
     def _attr_generator():
         for char in char_list:
-            yield basic_attribute_sampler(char=char, **kwargs)(_rand_seed(rng))
+            yield basic_attribute_sampler(char=char, **kwargs)(rand_seed(rng))
 
     return dataset_generator(_attr_generator(), len(char_list))
