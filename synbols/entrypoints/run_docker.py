@@ -81,7 +81,7 @@ def run_in_docker(file, paths, ports, args):
     # Merge all command line arguments
     args = " ".join(args)
 
-    arg_list = f"docker run --rm --user {os.getuid()}".split()
+    arg_list = f"docker run --rm --user {os.getuid()} -it".split()
     arg_list += ["-v", f"{SYNBOLS_INCLUDE_PATH}:/synbols_include/synbols"]
     for p in paths + [curdir, file_path]:
         arg_list += ["-v", f"{p}:{p}"]

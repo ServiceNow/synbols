@@ -1,6 +1,3 @@
-Kumar One	similar to Kumar One Outline (1.81e-07)
-Constantine	similar to Kumar One Outline (2.54e-08)
-Rubik	similar to Kumar One Outline (2.54e-08)
 Stalinist One	similar to Stalin One (0.154)
 CabinSketch	similar to Cabin Sketch (0.185)
 Asap Condensed VF Beta	similar to Asap Condensed (0.187)
@@ -98,3 +95,19 @@ Ek Mukta	similar to Mukta (0.24)
 Mukta Vaani	similar to Mukta (0.24)
 Inter	similar to Be Vietnam (0.282)
 Public Sans	similar to Be Vietnam (0.282)
+Libre Barcode 128	buggy
+Libre Barcode 39	buggy
+Libre Barcode 39 Extended	buggy
+Libre Barcode 39 Extended Text	buggy
+Redacted	buggy
+Kumar One	buggy (render no chars when slant is used)
+Kumar One Outline	buggy (render no chars when slant is used)
+Rubik	buggy (render no chars when slant is used)
+Constantine	buggy (render no chars when slant is used)
+Snowburst	buggy (render no chars when slant is used)
+Arbutus Slab	buggy (render no chars when slant is used with auxiliary chars)
+Autour One	buggy (render no chars when slant is used with auxiliary chars)
+Oxygen	buggy (render no chars when slant is used with auxiliary chars)
+Cramaten	buggy (render no chars when slant is used with auxiliary chars)
+Oranienbaum	buggy (render no chars when slant is used with auxiliary chars)
+Yeseva One	buggy (render no chars when slant is used with auxiliary chars)
