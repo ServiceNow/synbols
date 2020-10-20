@@ -1,5 +1,5 @@
 FROM ubuntu:18.04 AS base
-#MAINTAINER TODO
+LABEL maintainer="Alexandre Drouin (adrouin@elementai.com), Alexandre Lacoste (allac@elementai.com)"
 
 ARG GOOGLE_FONTS_COMMIT=ed61614fb47affd2a4ef286e0b313c5c47226c69
 
@@ -18,11 +18,12 @@ RUN apt-get update && \
 COPY docker/requirements.txt .
 RUN pip install -r requirements.txt
 
-# Download Natural images (CC License)
+# Download landscape images
 RUN mkdir -p /images && cd /images && \
-    wget https://github.com/ElementAI/synbols-resources/raw/master/datasets/natural_images.tar.gz && \
-    tar -xf natural_images.tar.gz && \
-    rm natural_images.tar.gz
+    wget https://github.com/ElementAI/synbols-resources/raw/master/datasets/landscapes.zip && \
+    unzip landscapes.zip && \
+    rm landscapes.zip && \
+    echo "Installed $(ls -l | grep -i jpg | wc -l) natural images."
 
 # Install all Google fonts and extract their metadata
 RUN wget -O google_fonts.zip https://github.com/google/fonts/archive/${GOOGLE_FONTS_COMMIT}.zip && \
@@ -39,7 +40,6 @@ RUN wget -O google_fonts.zip https://github.com/google/fonts/archive/${GOOGLE_FO
 
 # Install fonts from 1001freefonts.com
 # Some fonts fail to install because they contain ' (quotes) in their name. Skipping these for now.
-ENV A=1
 RUN mkdir "1001-fonts" && \
     cd "1001-fonts" && \
     wget https://github.com/ElementAI/synbols-resources/raw/master/fonts/1001fonts.zip && \
