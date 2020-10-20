@@ -266,7 +266,7 @@ class ImagePattern(RandomPattern):
         seed : Optional[int], Random seed to use for transformation, default to None
     """
 
-    def __init__(self, root='/images', rotation=0, translation=1., crop=True, seed=None):
+    def __init__(self, root='/images', rotation=0, translation=0., crop=True, seed=None):
         # TODO more extensions
         self._path = glob(os.path.join(root, '**', '*.*'), recursive=True)
         self._path = list(
@@ -290,10 +290,10 @@ class ImagePattern(RandomPattern):
         w, h = im.size
         min_crop_size_x = int(min_crop_size * w)
         min_crop_size_y = int(min_crop_size * h)
-        crop_x2 = self.rng.randint(min_crop_size_x, w - 1)
-        crop_y2 = self.rng.randint(min_crop_size_y, h - 1)
-        x1 = self.rng.randint(0, w - crop_x2)
-        y1 = self.rng.randint(0, h - crop_y2)
+        crop_x2 = self.rng.randint(min_crop_size_x + 1, w)
+        crop_y2 = self.rng.randint(min_crop_size_y + 1, h)
+        x1 = self.rng.randint(0, crop_x2 - min_crop_size_x)
+        y1 = self.rng.randint(0, crop_y2 - min_crop_size_y)
         return im.crop((x1, y1, crop_x2, crop_y2))
 
     def draw(self, ctxt):
@@ -303,7 +303,7 @@ class ImagePattern(RandomPattern):
     def set_as_source(self, ctxt):
         surface = ctxt.get_group_target()
         width, height = surface.get_width(), surface.get_height()
-        im = PILImage.open(self.rng.choice(self._path, 1).item())
+        im = PILImage.open(self.rng.choice(self._path, 1).item()).convert('RGB')
         im = self._rotate_and_translate(im, self.rotation, self.translation)
         # Generate a crop with a least 10% of the image in it.
         if self.crop:
