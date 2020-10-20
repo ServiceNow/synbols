@@ -2,8 +2,8 @@ import os
 from glob import glob
 
 import cairo
-from PIL import Image as PILImage
 import numpy as np
+from PIL import Image as PILImage
 
 
 def draw_symbol(ctxt, attributes):
@@ -256,25 +256,59 @@ class Camouflage(RandomPattern):
 
 
 class ImagePattern(RandomPattern):
-    """Uses natural images to render patterns."""
+    """Uses natural images to render patterns.
 
-    def __init__(self, root='/images', seed=None):
+    Args:
+        root : str, Base path to search for images.
+        rotation: float, Maximum random rotation in radian, default 0.
+        translation: float, Maximum random translation in proportion, default 1.
+        crop: bool, Whether to take a random crop of the image or not, default True.
+        seed : Optional[int], Random seed to use for transformation, default to None
+    """
+
+    def __init__(self, root='/images', rotation=0, translation=1., crop=True, seed=None):
         # TODO more extensions
         self._path = glob(os.path.join(root, '**', '*.*'), recursive=True)
-        self._path = list(filter(lambda p: os.path.splitext(p)[1] in ('.jpg', '.png', '.gif'), self._path))
+        self._path = list(
+            filter(lambda p: os.path.splitext(p)[1] in ('.jpg', '.png', '.gif'), self._path))
+        self.rotation = rotation
+        self.translation = translation
+        self.crop = crop
         self.seed = seed
+        self.rng = np.random.RandomState(self.seed)
+
+    def _rotate_and_translate(self, im, rotation, translation):
+        """Randomly rotate and translate the image."""
+        w, h = im.size
+        rot = np.rad2deg(rotation) * ((self.rng.rand() - 0.5) * 2)
+        translation_x = w * translation * ((self.rng.rand() - 0.5) * 2)
+        translation_y = h * translation * ((self.rng.rand() - 0.5) * 2)
+        return im.rotate(rot, translate=(translation_x, translation_y))
+
+    def _random_crop(self, im, min_crop_size):
+        """Randomly crop the image with a minimal crop size of `min_crop_size`% of the image."""
+        w, h = im.size
+        min_crop_size_x = int(min_crop_size * w)
+        min_crop_size_y = int(min_crop_size * h)
+        crop_x2 = self.rng.randint(min_crop_size_x, w - 1)
+        crop_y2 = self.rng.randint(min_crop_size_y, h - 1)
+        x1 = self.rng.randint(0, w - crop_x2)
+        y1 = self.rng.randint(0, h - crop_y2)
+        return im.crop((x1, y1, crop_x2, crop_y2))
 
     def draw(self, ctxt):
         self.set_as_source(ctxt)
         ctxt.paint()
 
     def set_as_source(self, ctxt):
-        rng = np.random.RandomState(self.seed)
-
         surface = ctxt.get_group_target()
         width, height = surface.get_width(), surface.get_height()
-        im = PILImage.open(rng.choice(self._path, 1).item()) \
-            .resize((width, height))
+        im = PILImage.open(self.rng.choice(self._path, 1).item())
+        im = self._rotate_and_translate(im, self.rotation, self.translation)
+        # Generate a crop with a least 10% of the image in it.
+        if self.crop:
+            im = self._random_crop(im, min_crop_size=0.1)
+        im = im.resize((width, height))
         ctxt.set_source_surface(_from_pil(im))
 
 
