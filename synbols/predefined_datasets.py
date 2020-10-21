@@ -74,6 +74,7 @@ def generate_solid_bg_dataset(n_samples,
 
 
 def generate_natural_images_dataset(n_samples, language='english', seed=None, **kwargs):
+    """Same as default dataset, but uses natural images as foreground and background."""
     attr_sampler = basic_attribute_sampler(
         alphabet=LANGUAGE_MAP[language].get_alphabet(),
         background=lambda rng: ImagePattern(seed=rand_seed(rng)),
@@ -320,8 +321,9 @@ def generate_large_translation(n_samples,
 
 def missing_symbol_dataset(n_samples, language='english', seed=None, **kwarg):
     """With 10% probability, no symbols are drawn"""
+
     def background(rng):
-        MultiGradient(alpha=0.5, n_gradients=2, types=('linear', 'radial'), seed=rand_seed(rng))
+        return MultiGradient(alpha=0.5, n_gradients=2, types=('linear', 'radial'), seed=rand_seed(rng))
 
     def tr(rng):
         if rng.rand() > 0.1:
