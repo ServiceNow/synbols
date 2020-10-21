@@ -263,10 +263,12 @@ class ImagePattern(RandomPattern):
         rotation: float, Maximum random rotation in radian, default 0.
         translation: float, Maximum random translation in proportion, default 1.
         crop: bool, Whether to take a random crop of the image or not, default True.
+        min_crop_size: float, Crop's minimal proportion from the image, default 0.2.
         seed : Optional[int], Random seed to use for transformation, default to None
     """
 
-    def __init__(self, root='/images', rotation=0, translation=0., crop=True, seed=None):
+    def __init__(self, root='/images', rotation=0, translation=0.,
+                 crop=True, min_crop_size=0.2, seed=None):
         # TODO more extensions
         self._path = glob(os.path.join(root, '**', '*.*'), recursive=True)
         self._path = list(
@@ -275,6 +277,7 @@ class ImagePattern(RandomPattern):
         self.translation = translation
         self.crop = crop
         self.seed = seed
+        self.min_crop_size = min_crop_size
         self.rng = np.random.RandomState(self.seed)
 
     def _rotate_and_translate(self, im, rotation, translation):
@@ -307,7 +310,7 @@ class ImagePattern(RandomPattern):
         im = self._rotate_and_translate(im, self.rotation, self.translation)
         # Generate a crop with a least 10% of the image in it.
         if self.crop:
-            im = self._random_crop(im, min_crop_size=0.1)
+            im = self._random_crop(im, min_crop_size=self.min_crop_size)
         im = im.resize((width, height))
         ctxt.set_source_surface(_from_pil(im))
 
