@@ -383,7 +383,7 @@ def generate_pixel_noise(n_samples, language='english', seed=None, **kwarg):
         if rng.rand() > 0.5:
             return 0
         else:
-            return 0.35
+            return 0.25
 
     attr_sampler = basic_attribute_sampler(
         alphabet=LANGUAGE_MAP[language].get_alphabet(),
