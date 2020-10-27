@@ -380,10 +380,10 @@ def generate_pixel_noise(n_samples, language='english', seed=None, **kwarg):
     """Add large pixel noise with probability 0.5."""
 
     def pixel_noise(rng):
-        if rng.rand() > 0.5:
+        if rng.rand() > 0.1:
             return 0
         else:
-            return 0.25
+            return 0.3
 
     attr_sampler = basic_attribute_sampler(
         alphabet=LANGUAGE_MAP[language].get_alphabet(),
