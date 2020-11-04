@@ -168,8 +168,7 @@ if __name__ == "__main__":
 
     # Package all locales
     locales = [(k, v) for k, v in Locale.getAvailableLocales().items()
-               if "_" not in k and
-               k in ['en', 'te', 'th', 'vi', 'ar', 'iw', 'km', 'ta', 'gu', 'bn', 'ml', 'el', 'ru', 'ko', 'zh', 'jp']]
+        if  k in ['en', 'te', 'th', 'vi', 'ar', 'he', 'km', 'ta', 'gu', 'bn', 'ml', 'el', 'ru', 'ko', 'zh', 'ja']]
     for code, locale in tqdm(locales, desc="Packaging locales"):
         chars = get_locale_chars(code, unicode=True)
         name = locale.getDisplayName().encode('ascii', 'ignore').decode('ascii')
