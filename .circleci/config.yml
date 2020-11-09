@@ -11,7 +11,7 @@ jobs:
     environment:
       MAKE_CMD: << parameters.make_cmd >>
     docker:
-      - image: aldro61/synbols:v0.1.1
+      - image: aldro61/synbols:v1.0.0
     working_directory: ~/synbols
     steps:
       - checkout
