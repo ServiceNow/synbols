@@ -7,3 +7,4 @@ pyicu-binary==2.3.1
 Pillow
 scipy
 tqdm==4.48.0
+ffmpeg-python
