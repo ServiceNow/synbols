@@ -90,7 +90,7 @@ def add_splits(fd, split_dict, random_seed):
 def write_h5(file_path,
              dataset_generator,
              n_samples,
-             split_function=None,
+             split_function=make_default_splits,
              ratios=(0.6, 0.2, 0.2),
              random_seed=42):
     with h5py.File(file_path, 'w', libver='latest') as fd:
@@ -107,12 +107,10 @@ def write_h5(file_path,
 
         attr_list = [json.loads(attr) for attr in fd['y']]
 
-        if split_function is None:
-            split_function = make_default_splits
-
-        add_splits(fd,
-                   split_function(attr_list, ratios, random_seed),
-                   random_seed)
+        if split_function is not None:
+            add_splits(fd,
+                       split_function(attr_list, ratios, random_seed),
+                       random_seed)
 
 
 def load_h5(file_path):
