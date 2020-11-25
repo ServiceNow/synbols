@@ -1,8 +1,10 @@
-from tqdm import tqdm
-import numpy as np
 import types
-from .drawing import Gradient, Image, Symbol
+
+import numpy as np
+from tqdm import tqdm
+
 from .data_io import write_h5
+from .drawing import Gradient, Image, Symbol
 from .fonts import LANGUAGE_MAP
 from .utils import make_img_grid
 
