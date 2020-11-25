@@ -133,15 +133,16 @@ class Gradient(RandomPattern):
                  seed=None):
         self.random_color = random_color
         self.seed = seed
-        self.rng = np.random.RandomState(self.seed)
 
         self.types = types
         self.alpha = alpha
 
     def set_as_source(self, ctxt):
+        rng = np.random.RandomState(self.seed)
+
         pat = _random_pattern(self.alpha,
                               self.random_color,
-                              rng=self.rng,
+                              rng=rng,
                               patern_types=self.types)
         ctxt.set_source(pat)
 
