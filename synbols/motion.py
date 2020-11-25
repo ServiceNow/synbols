@@ -114,13 +114,11 @@ def video_dataset_generator(scene_sampler,
 def write_video(file_name, image_seq, frame_rate=10, vcodec='libx264'):
     image_seq = np.asarray(image_seq)
     n_images, height, width, n_channels = image_seq.shape
-    process = (
-        ffmpeg
-            .input('pipe:', format='rawvideo', pix_fmt='rgb24', s='{}x{}'.format(width, height))
-            .output(file_name, pix_fmt='yuv420p', vcodec=vcodec, r=frame_rate)
-            .overwrite_output()
-            .run_async(pipe_stdin=True)
-    )
+    node = ffmpeg.input('pipe:', format='rawvideo', pix_fmt='rgb24', s='{}x{}'.format(width, height))
+    node = node.output(file_name, pix_fmt='yuv420p', vcodec=vcodec, r=frame_rate)
+    node = node.overwrite_output()
+    process = node.run_async(pipe_stdin=True)
+
     for frame in image_seq:
         process.stdin.write(frame.astype(np.uint8).tobytes())
     process.stdin.close()
