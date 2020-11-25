@@ -12,7 +12,7 @@ RUN apt-get update && \
 
 # Install system dependencies
 RUN apt-get update && \
-    apt-get install -y curl fonts-cantarell fontconfig git icu-devtools ipython3 jq libcairo2-dev libhdf5-dev pkg-config ttf-ubuntu-font-family unzip wget
+    apt-get install -y curl fonts-cantarell fontconfig git icu-devtools ipython3 jq libcairo2-dev libhdf5-dev pkg-config ttf-ubuntu-font-family unzip wget ffmpeg
 
 # Install all python requirements
 COPY docker/requirements.txt .
