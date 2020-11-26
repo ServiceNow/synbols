@@ -16,7 +16,7 @@ RUN apt-get update && \
 
 # Install all python requirements
 COPY docker/requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Download landscape images
 RUN mkdir -p /images && cd /images && \

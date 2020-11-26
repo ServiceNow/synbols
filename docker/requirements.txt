@@ -8,3 +8,4 @@ Pillow
 scipy
 tqdm==4.48.0
 ffmpeg-python
+pymunk
