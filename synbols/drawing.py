@@ -525,7 +525,7 @@ class Symbol:
             font=self.font,
             is_bold=str(self.is_bold),
             is_slant=str(self.is_slant),
-            scale=self.scale,
+            scale=float(self.scale),
             translation=tuple(self.translation),
             rotation=float(self.rotation),
             foreground=self.foreground.attribute_dict(),

@@ -6,7 +6,11 @@ import numpy as np
 def transition_function(scene, masks):
     update_scene(scene, masks)
     for symbol in scene.symbols:
-        symbol.symbol.translation += 0.2 * np.random.randn(2)
+        symbol.symbol.translation += 0.05 * np.random.randn(2)
+        symbol.speed += 0.2 * np.random.randn(2)
+        symbol.angular_speed += 0.2 * np.random.randn(1)
+        symbol.symbol.scale += 0.05 * np.random.randn(1)
+
 
 
 attr_sampler = basic_attribute_sampler(resolution=(32, 32), n_symbols=3)
