@@ -1,8 +1,7 @@
 import pymunk
 from pymunk import autogeometry as autog
-from synbols.motion import video_dataset_generator, dynamic_scene_sampler, update_scene, make_preview
+from synbols.motion import video_dataset_generator, dynamic_scene_sampler, make_preview
 from synbols.generate import basic_attribute_sampler
-from synbols import drawing
 import numpy as np
 
 
