@@ -49,7 +49,7 @@ def draw_symbol(ctxt, attributes):
 
     extent = ctxt.text_extents(char)
 
-    translate = (np.array(attributes.translation) + 1.) / 2.
+    translate = (np.array(attributes.translation) * np.array([1., -1.]) + 1.) / 2.
     translate *= np.array((1 - extent.width, 1 - extent.height))
     ctxt.translate(-extent.x_bearing, -extent.y_bearing)
     ctxt.translate(translate[0], translate[1])
