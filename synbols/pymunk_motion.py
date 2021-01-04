@@ -47,7 +47,7 @@ class BoxScene:
             seg.elasticity = 0.95
             seg.friction = 0.9
             segments.append(seg)
-        # self._space.add(segments)
+            # self._space.add(segments)
 
     def add_symbols(self, symbols):
         self.bodys = []
