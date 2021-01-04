@@ -8,9 +8,9 @@ from tqdm import tqdm
 import ffmpeg
 
 
-def bounce(pix_lower, pix_upper, speed):
-    bounce_upper = np.sum(pix_upper > 5) > 2
-    bounce_lower = np.sum(pix_lower > 5) > 2
+def bounce(pix_lower, pix_upper, pos, speed):
+    bounce_upper = np.sum(pix_upper > 2) > 2 or pos > 1.
+    bounce_lower = np.sum(pix_lower > 2) > 2 or pos < -1.
 
     if bounce_upper and not bounce_lower:
         return np.abs(speed) * -1
@@ -40,8 +40,8 @@ class Movable:
         self.symbol.translation += self.speed
         self.symbol.rotation += self.angular_speed
 
-        speed_y = bounce(mask[0, :], mask[-1, :], self.speed[1])
-        speed_x = bounce(mask[:, 0], mask[:, -1], self.speed[0])
+        speed_y = bounce(mask[-1, :], mask[0, :], self.symbol.translation[1], self.speed[1])
+        speed_x = bounce(mask[:, 0], mask[:, -1], self.symbol.translation[0], self.speed[0])
 
         self.speed = speed_x, speed_y
 
