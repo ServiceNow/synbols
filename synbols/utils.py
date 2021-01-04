@@ -78,9 +78,8 @@ def make_img_grid(x, y, h_axis='char', v_axis='font', n_row=20, n_col=40):
 class FailSafeLanguage:
     def get_alphabet(self, standard=True, auxiliary=False, lower=True, upper=False, support_bold=False,
                      include_blacklisted_fonts=False):
-
         chars = list('abcdefghijklmnopqrstuvwxyz')
-        return  Alphabet(name='english', symbols=chars, fonts=['arial'])
+        return Alphabet(name='english', symbols=chars, fonts=['arial'])
 
 
 class Language:
