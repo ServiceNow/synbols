@@ -75,6 +75,14 @@ def make_img_grid(x, y, h_axis='char', v_axis='font', n_row=20, n_col=40):
     return img_grid, h_values, v_values
 
 
+class FailSafeLanguage:
+    def get_alphabet(self, standard=True, auxiliary=False, lower=True, upper=False, support_bold=False,
+                     include_blacklisted_fonts=False):
+
+        chars = list('abcdefghijklmnopqrstuvwxyz')
+        return  Alphabet(name='english', symbols=chars, fonts=['arial'])
+
+
 class Language:
     def __init__(self, locale_file, font_blacklist_dir):
         self.data_file = locale_file
@@ -211,4 +219,5 @@ def load_all_languages(override_locale_path=None):
     else:
         warn("The locale data path was not found. \
         Did you execute the code with the 'synbols' executable?")
+        languages['english'] = FailSafeLanguage()
     return languages
