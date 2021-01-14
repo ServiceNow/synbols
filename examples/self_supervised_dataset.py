@@ -36,16 +36,18 @@ def multi_transform(*transformations):
     return transform
 
 
-n_samples = 100
-resolution = (128, 128)
+n_samples = 100000
+resolution = (32, 32)
 attr_sampler = basic_attribute_sampler(alphabet=alphabet, resolution=resolution, n_symbols=1, scale=0.7,
                                        max_contrast=False)
 
-trans = [multi_transform(change_position, change_font),
+trans = [None,
+         multi_transform(change_position, change_font),
          multi_transform(change_font, change_bg),
-         multi_transform(change_bg, change_char),
+         multi_transform(change_bg,   change_char),
          multi_transform(change_char, change_position)]
 
 sampler = views_sampler(attr_sampler, trans)
 file_name = 'synbols_%d_double_transforms_n=%d_res=%dx%d' % (len(trans), n_samples, resolution[0], resolution[1])
 generate_and_write_dataset(file_name, sampler, n_samples, preview_shape=(10, 10))
+

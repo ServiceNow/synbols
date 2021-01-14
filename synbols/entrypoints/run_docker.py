@@ -13,6 +13,7 @@ SYNBOLS_INCLUDE_PATH = os.path.join(
 SYNBOLS_VERSION = pkg_resources.require("synbols")[0].version
 DOCKER_IMAGE = "aldro61/synbols"
 DOCKER_TAG = "v%s" % SYNBOLS_VERSION  # The tag matches the package version
+# XXX: Developers: the Docker image can be overridden by setting the SYNBOLS_DEV_IMAGE environment variable
 
 
 def is_docker_installed():
@@ -91,7 +92,7 @@ def run_in_docker(file, paths, ports, args):
     arg_list += ["sh",
                  "-c",
                  "export PYTHONPATH=$PYTHONPATH:/synbols_include;" +
-                 f"python {file} {args}"]
+                 f"python '{file}' {args}"]
 
     subprocess.run(arg_list)  # might need stderr=sys.stderr, stdout=sys.stdout
 
