@@ -133,7 +133,6 @@ class Gradient(RandomPattern):
                  seed=None):
         self.random_color = random_color
         self.seed = seed
-
         self.types = types
         self.alpha = alpha
 

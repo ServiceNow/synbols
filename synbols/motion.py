@@ -4,6 +4,7 @@ from synbols.generate import _select, rand_seed
 import numpy as np
 import types
 from tqdm import tqdm
+from copy import deepcopy
 
 import ffmpeg
 
@@ -75,8 +76,34 @@ def dynamic_scene_sampler(attribute_sampler, transition_function, speed=None, an
             img = scene.make_image()
             scene_attr = scene.attribute_dict()
             masks = scene.make_mask()
-
+            # TODO add the seed to the transition function
             transition_function(scene, masks)
+
+            out_list.append((img, masks, scene_attr))
+        img, masks, scene_attr = zip(*out_list)
+
+        return np.stack(img), np.stack(masks), scene_attr
+
+    return sampler
+
+
+def views_sampler(attribute_sampler, transformations):
+    def sampler(seed=None):
+        # print("sample seed: %d" % seed)
+        _rng = np.random.RandomState(seed)
+        # print(_rng.get_state()[1][0])
+
+        original = attribute_sampler(seed=rand_seed(_rng))
+
+        out_list = []
+        for transformation in transformations:
+            attr = deepcopy(original)
+            if transformation is not None:
+                transformation(attr, _rng)
+
+            img = attr.make_image()
+            scene_attr = attr.attribute_dict()
+            masks = attr.make_mask()
 
             out_list.append((img, masks, scene_attr))
         img, masks, scene_attr = zip(*out_list)
@@ -104,14 +131,13 @@ def video_dataset_generator(scene_sampler,
 
     for i in tqdm(range(n_samples)):
         images, masks, attr_seq = scene_sampler(rand_seed(rng))
-
         if mask_aggregator is not None:
             masks = np.stack([mask_aggregator(mask) for mask in masks])
 
         yield images, masks, attr_seq
 
 
-def write_video(file_name, image_seq, frame_rate=10, vcodec='libx264'):
+def write_video(file_name, image_seq, frame_rate=40, vcodec='libx264'):
     image_seq = np.asarray(image_seq)
     n_images, height, width, n_channels = image_seq.shape
     node = ffmpeg.input('pipe:', format='rawvideo', pix_fmt='rgb24', s='{}x{}'.format(width, height))
