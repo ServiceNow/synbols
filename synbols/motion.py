@@ -9,7 +9,6 @@ from copy import deepcopy
 import ffmpeg
 
 
-
 def bounce(pix_lower, pix_upper, pos, speed):
     bounce_upper = np.sum(pix_upper > 2) > 2 or pos > 1.
     bounce_lower = np.sum(pix_lower > 2) > 2 or pos < -1.

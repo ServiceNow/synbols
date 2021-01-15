@@ -50,4 +50,3 @@ trans = [None,
 sampler = views_sampler(attr_sampler, trans)
 file_name = 'synbols_%d_double_transforms_n=%d_res=%dx%d' % (len(trans), n_samples, resolution[0], resolution[1])
 generate_and_write_dataset(file_name, sampler, n_samples, preview_shape=(10, 10))
-
