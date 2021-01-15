@@ -329,7 +329,7 @@ def missing_symbol_dataset(n_samples, language='english', seed=None, **kwarg):
         if rng.rand() > 0.1:
             return tuple(rng.rand(2) * 2 - 1)
         else:
-            return 10
+            return (10., 10.)
 
     attr_generator = basic_attribute_sampler(
         alphabet=LANGUAGE_MAP[language].get_alphabet(),
