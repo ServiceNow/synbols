@@ -118,6 +118,7 @@ class SolidColor(Pattern):
         dict['color'] = tuple(self.color)
         return dict
 
+
 # There is a plan to make to color sampler a bit more fancy.
 def color_sampler(rng=np.random, brightness_range=(0, 1)):
     def sampler():
@@ -235,7 +236,7 @@ class Camouflage(RandomPattern):
 
     def draw(self, ctxt):
         stroke_vector = self.stroke_length * \
-                        np.array([np.cos(self.stroke_angle), np.sin(self.stroke_angle)])
+            np.array([np.cos(self.stroke_angle), np.sin(self.stroke_angle)])
         rng = np.random.RandomState(self.seed)
         for i in range(self.n_stroke):
             start = (rng.rand(2) * 1.6 - 0.3) * (1 - stroke_vector)
