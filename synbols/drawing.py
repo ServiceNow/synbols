@@ -113,6 +113,10 @@ class SolidColor(Pattern):
     def set_as_source(self, ctxt):
         ctxt.set_source_rgb(*self.color)
 
+    def attribute_dict(self):
+        dict = super().attribute_dict()
+        dict['color'] = tuple(self.color)
+        return dict
 
 # There is a plan to make to color sampler a bit more fancy.
 def color_sampler(rng=np.random, brightness_range=(0, 1)):
