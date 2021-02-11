@@ -455,6 +455,8 @@ class Image:
         data = dict(
             resolution=self.resolution,
             pixel_noise_scale=self.pixel_noise_scale,
+            inverse_color=bool(self.inverse_color),
+            max_contrast=bool(self.max_contrast),
             seed=self.seed,
             background=self.background.attribute_dict()
         )
