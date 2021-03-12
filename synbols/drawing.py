@@ -34,9 +34,6 @@ def draw_symbol(ctxt, attributes):
     font_size = attributes.scale / max(extent.width, extent.height, 0.1)
     ctxt.set_font_size(font_size)
 
-    # extent = ctxt.text_extents(char)
-    # print(max(extent.width, extent.height))
-    # print()
     font_matrix = ctxt.get_font_matrix()
 
     # set slant to normal and perform it manually.
