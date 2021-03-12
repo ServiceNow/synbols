@@ -31,7 +31,7 @@ def draw_symbol(ctxt, attributes):
 
     extent = ctxt.text_extents(char)
     # normalize font size
-    font_size = attributes.scale / max(extent.width, extent.height)
+    font_size = attributes.scale / max(extent.width, extent.height, 0.1)
     ctxt.set_font_size(font_size)
 
     # extent = ctxt.text_extents(char)
