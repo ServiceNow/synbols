@@ -12,6 +12,10 @@
 
 [[paper]](https://arxiv.org/abs/2009.06415)
 
+## Description
+
+This is the code repository for the [Synbols](https://proceedings.neurips.cc//paper_files/paper/2020/hash/0169cf885f882efd795951253db5cdfb-Abstract.html) dataset generator. Dataloaders and examples such as image classification can be found in https://github.com/ElementAI/synbols-benchmarks.
+
 ## Installation
 
 The easiest way to install Synbols is via [PyPI](https://pypi.org/project/synbols/). Simply run the following command:
