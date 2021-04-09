@@ -6,13 +6,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import subprocess
 import sys
+
 logging.basicConfig(level=logging.INFO)
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str)
-    parser.add_argument("--attr_keys", nargs='+', type=str)
+    parser.add_argument("--attr_keys", nargs="+", type=str)
     parser.add_argument("--split_name", type=str)
     parser.add_argument("--save", default=None, type=str)
     return parser.parse_args()
@@ -38,16 +39,12 @@ def view_split(split_mask, attr_list, attr_keys, name):
 
     n_mask = split_mask.shape[1]
 
-    ratios = ', '.join(['%.1f%%' % (r * 100) for r in split_mask.mean(axis=0)])
+    ratios = ", ".join(["%.1f%%" % (r * 100) for r in split_mask.mean(axis=0)])
 
-    fig, ax_grid = plt.subplots(n_mask,
-                                len(attr_keys),
-                                sharex='col',
-                                num="split %s, split ratios=%s" %
-                                (name, ratios))
+    fig, ax_grid = plt.subplots(n_mask, len(attr_keys), sharex="col", num="split %s, split ratios=%s" % (name, ratios))
 
     for j, attr_key in enumerate(attr_keys):
-        print('computing histogram for attr %s' % attr_key)
+        print("computing histogram for attr %s" % attr_key)
         values = np.array([attr[attr_key] for attr in attr_list])
 
         if values.dtype.type is np.str_:
@@ -74,9 +71,8 @@ def main():
 
     args = parse_args()
     if args.data is None:
-        raise Exception(" path to the data is not defined."
-                        "Please use `--data` and indicate the path.")
-    print('load dataset in h5 format ...')
+        raise Exception(" path to the data is not defined." "Please use `--data` and indicate the path.")
+    print("load dataset in h5 format ...")
 
     x, mask, attr_list, splits = load_h5(args.data)
     print("x.shape:", x.shape)
@@ -89,15 +85,17 @@ def main():
     check = all(key in all_attr_keys for key in args.attr_keys)
 
     if not check:
-        raise Exception("One or more of the provided attribute keys are" +
-                        "not valid." +
-                        f"The complete list of keys is {all_attr_keys}")
+        raise Exception(
+            "One or more of the provided attribute keys are"
+            + "not valid."
+            + f"The complete list of keys is {all_attr_keys}"
+        )
 
     split_masks = splits[args.split_name]
     print("making statistics for %s." % args.split_name)
     view_split(split_masks, attr_list, args.attr_keys, args.split_name)
 
-    plot_dataset(x, attr_list, v_axis=None, h_axis='font')
+    plot_dataset(x, attr_list, v_axis=None, h_axis="font")
 
     if args.save:
         plt.savefig(args.save)

@@ -22,14 +22,14 @@ def flatten_attr(attr, ctxt=None):
     flat_dict = {}
     if isinstance(attr, (list, tuple, np.ndarray)):
         for i, val in enumerate(attr):
-            flat_dict.update(flatten_attr(val, ctxt + '[%d]' % i))
+            flat_dict.update(flatten_attr(val, ctxt + "[%d]" % i))
 
     elif isinstance(attr, dict):
         for key, val in attr.items():
             if ctxt is None:
                 sub_ctxt = key
             else:
-                sub_ctxt = ctxt + '.%s' % key
+                sub_ctxt = ctxt + ".%s" % key
             flat_dict.update(flatten_attr(val, sub_ctxt))
     else:
         flat_dict = {ctxt: attr}
@@ -44,7 +44,7 @@ def _extract_axis(y, axis_name, max_val):
     return [e for e, _ in counter.most_common(max_val)]
 
 
-def make_img_grid(x, y, h_axis='char', v_axis='font', n_row=20, n_col=40):
+def make_img_grid(x, y, h_axis="char", v_axis="font", n_row=20, n_col=40):
     h_values = _extract_axis(y, h_axis, n_col)
     v_values = _extract_axis(y, v_axis, n_row)
 
@@ -80,8 +80,9 @@ class Language:
         self.data_file = locale_file
         self.font_blacklist_dir = font_blacklist_dir
         try:
-            self.name = os.path.basename(self.data_file) \
-                .replace(".npz", "").replace("locale_", "").split("_")[1].lower()
+            self.name = (
+                os.path.basename(self.data_file).replace(".npz", "").replace("locale_", "").split("_")[1].lower()
+            )
         except Exception:
             print(locale_file)
 
@@ -97,7 +98,7 @@ class Language:
         self.bold_avail = data["bold_avail"].astype(np.bool)
         del data
 
-        blacklist_file = os.path.join(self.font_blacklist_dir, 'blacklist_%s.tsv' % self.name)
+        blacklist_file = os.path.join(self.font_blacklist_dir, "blacklist_%s.tsv" % self.name)
         if os.path.exists(blacklist_file):
             self.font_blacklist = _read_blacklist_file(blacklist_file)
         else:
@@ -105,13 +106,15 @@ class Language:
 
         self.loaded = True
 
-    def get_alphabet(self,
-                     standard=True,
-                     auxiliary=True,
-                     lower=True,
-                     upper=False,
-                     support_bold=False,
-                     include_blacklisted_fonts=False):
+    def get_alphabet(
+        self,
+        standard=True,
+        auxiliary=True,
+        lower=True,
+        upper=False,
+        support_bold=False,
+        include_blacklisted_fonts=False,
+    ):
         # Load locale data on demand
         if not self.loaded:
             self._load_data()
@@ -132,8 +135,10 @@ class Language:
         # Validate final selection
         chars_to_keep = list(chain(*chars_to_keep))
         if len(chars_to_keep) == 0:
-            raise ValueError("Filtered character set is empty. \
-            Consider including more characters using the arguments.")
+            raise ValueError(
+                "Filtered character set is empty. \
+            Consider including more characters using the arguments."
+            )
         chars_to_keep = np.array(chars_to_keep)
 
         char_codes = self.char_codes[chars_to_keep]
@@ -169,9 +174,7 @@ class Language:
             fonts = np.setdiff1d(fonts, self.font_blacklist)
 
         # Return chars and fonts
-        return Alphabet(self.name,
-                        fonts=fonts,
-                        symbols=[chr(x) for x in char_codes])
+        return Alphabet(self.name, fonts=fonts, symbols=[chr(x) for x in char_codes])
 
 
 def language_map_statistics():
@@ -179,13 +182,14 @@ def language_map_statistics():
     lang_map = load_all_languages()
     for lang_name, lang in lang_map.items():
         alphabet = lang.get_alphabet()
-        str_list.append("  * Language %s contains %d fonts and %d symbols" % (
-            lang_name, len(alphabet.fonts), len(alphabet.symbols)))
+        str_list.append(
+            "  * Language %s contains %d fonts and %d symbols" % (lang_name, len(alphabet.fonts), len(alphabet.symbols))
+        )
     return "\n".join(str_list)
 
 
 def _read_blacklist_file(file_path):
-    with open(file_path, 'r') as fd:
+    with open(file_path, "r") as fd:
         blacklist = [row[0] for row in csv.reader(fd, delimiter="\t")]
     return blacklist
 
@@ -196,19 +200,21 @@ def load_all_languages(override_locale_path=None):
     Returns a dictionnary of Language objects indexed by their name.
 
     """
-    locale_path = LOCALE_DATA_PATH \
-        if override_locale_path is None \
-        else override_locale_path
-    blacklist_dir = os.path.join(os.path.dirname(__file__), 'fonts', 'blacklist')
+    locale_path = LOCALE_DATA_PATH if override_locale_path is None else override_locale_path
+    blacklist_dir = os.path.join(os.path.dirname(__file__), "fonts", "blacklist")
 
     languages = {}
     if os.path.exists(locale_path):
-        for locale_file in [os.path.join(locale_path, x)
-                            for x in os.listdir(locale_path)
-                            if x.startswith("locale_") and x.endswith(".npz")]:
+        for locale_file in [
+            os.path.join(locale_path, x)
+            for x in os.listdir(locale_path)
+            if x.startswith("locale_") and x.endswith(".npz")
+        ]:
             lang = Language(locale_file=locale_file, font_blacklist_dir=blacklist_dir)
             languages[lang.name] = lang
     else:
-        warn("The locale data path was not found. \
-        Did you execute the code with the 'synbols' executable?")
+        warn(
+            "The locale data path was not found. \
+        Did you execute the code with the 'synbols' executable?"
+        )
     return languages

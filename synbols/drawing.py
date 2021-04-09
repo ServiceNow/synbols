@@ -39,14 +39,14 @@ def draw_symbol(ctxt, attributes):
     # set slant to normal and perform it manually.
     # There seems to be some issues with system italic
     if slant != cairo.FONT_SLANT_NORMAL:
-        font_matrix = font_matrix.multiply(cairo.Matrix(1, 0.2, 0., 1))
+        font_matrix = font_matrix.multiply(cairo.Matrix(1, 0.2, 0.0, 1))
 
     font_matrix.rotate(attributes.rotation)
     ctxt.set_font_matrix(font_matrix)
 
     extent = ctxt.text_extents(char)
 
-    translate = (np.array(attributes.translation) + 1.) / 2.
+    translate = (np.array(attributes.translation) + 1.0) / 2.0
     translate *= np.array((1 - extent.width, 1 - extent.height))
     ctxt.translate(-extent.x_bearing, -extent.y_bearing)
     ctxt.translate(translate[0], translate[1])
@@ -78,15 +78,14 @@ class Pattern(object):
         raise NotImplementedError()
 
     def attribute_dict(self):
-        return {'style': self.__class__.__name__}
+        return {"style": self.__class__.__name__}
 
 
 class RandomPattern(Pattern):
     """Base class for patterns using a seed."""
 
     def attribute_dict(self):
-        return {'style': self.__class__.__name__,
-                'seed': self.seed}
+        return {"style": self.__class__.__name__, "seed": self.seed}
 
 
 class NoPattern(Pattern):
@@ -123,11 +122,7 @@ def color_sampler(rng=np.random, brightness_range=(0, 1)):
 class Gradient(RandomPattern):
     """Uses linear or radial graidents to render patterns."""
 
-    def __init__(self,
-                 alpha=1,
-                 types=('radial', 'linear'),
-                 random_color=None,
-                 seed=None):
+    def __init__(self, alpha=1, types=("radial", "linear"), random_color=None, seed=None):
         self.random_color = random_color
         self.seed = seed
         self.rng = np.random.RandomState(self.seed)
@@ -136,22 +131,14 @@ class Gradient(RandomPattern):
         self.alpha = alpha
 
     def set_as_source(self, ctxt):
-        pat = _random_pattern(self.alpha,
-                              self.random_color,
-                              rng=self.rng,
-                              patern_types=self.types)
+        pat = _random_pattern(self.alpha, self.random_color, rng=self.rng, patern_types=self.types)
         ctxt.set_source(pat)
 
 
 class MultiGradient(RandomPattern):
     """Renders multiple gradient patterns at with transparency."""
 
-    def __init__(self,
-                 alpha=0.5,
-                 n_gradients=2,
-                 types=('radial', 'linear'),
-                 random_color=None,
-                 seed=None):
+    def __init__(self, alpha=0.5, n_gradients=2, types=("radial", "linear"), random_color=None, seed=None):
 
         self.random_color = random_color
         self.seed = seed
@@ -166,10 +153,7 @@ class MultiGradient(RandomPattern):
                 alpha = self.alpha
             else:
                 alpha = self.alpha
-            pat = _random_pattern(alpha,
-                                  self.random_color,
-                                  rng=rng,
-                                  patern_types=self.types)
+            pat = _random_pattern(alpha, self.random_color, rng=rng, patern_types=self.types)
             ctxt.rectangle(0, 0, 1, 1)  # Rectangle(x0, y0, x1, y1)
             ctxt.set_source(pat)
             ctxt.fill()
@@ -178,10 +162,7 @@ class MultiGradient(RandomPattern):
         raise NotImplementedError()
 
 
-def _random_pattern(alpha=0.8,
-                    random_color=None,
-                    patern_types=('linear', 'radial'),
-                    rng=np.random):
+def _random_pattern(alpha=0.8, random_color=None, patern_types=("linear", "radial"), rng=np.random):
     """"Select a random pattern with either radial or linear gradient."""
     if random_color is None:
         random_color = color_sampler(rng)
@@ -189,14 +170,14 @@ def _random_pattern(alpha=0.8,
 
     # TODO have the locations dependant on the symbol position
     # or in general have a more intelligent design
-    if pattern_type == 'linear':
+    if pattern_type == "linear":
         x1, y1 = rng.rand(2)
         theta = rng.rand() * 2 * np.pi
         r = rng.randn() * 0.2 + 1
         x2 = x1 + r * np.cos(theta)
         y2 = y1 + r * np.sin(theta)
         pat = cairo.LinearGradient(x1, y1, x2, y2)
-    elif pattern_type == 'radial':
+    elif pattern_type == "radial":
         x1, y1, x2, y2 = rng.rand(4)
         pat = cairo.RadialGradient(x1, y1, 2, x2, y2, 0.1)
     else:
@@ -212,13 +193,9 @@ def _random_pattern(alpha=0.8,
 
 
 class Camouflage(RandomPattern):
-    def __init__(self,
-                 stroke_length=0.4,
-                 stroke_width=0.05,
-                 stroke_angle=np.pi / 4,
-                 stroke_noise=0.02,
-                 n_stroke=500,
-                 seed=None):
+    def __init__(
+        self, stroke_length=0.4, stroke_width=0.05, stroke_angle=np.pi / 4, stroke_noise=0.02, n_stroke=500, seed=None
+    ):
         self.seed = seed
         self.stroke_length = stroke_length
         self.stroke_width = stroke_width
@@ -227,8 +204,7 @@ class Camouflage(RandomPattern):
         self.stroke_noise = stroke_noise
 
     def draw(self, ctxt):
-        stroke_vector = self.stroke_length * \
-                        np.array([np.cos(self.stroke_angle), np.sin(self.stroke_angle)])
+        stroke_vector = self.stroke_length * np.array([np.cos(self.stroke_angle), np.sin(self.stroke_angle)])
         rng = np.random.RandomState(self.seed)
         for i in range(self.n_stroke):
             start = (rng.rand(2) * 1.6 - 0.3) * (1 - stroke_vector)
@@ -264,12 +240,10 @@ class ImagePattern(RandomPattern):
         seed : Optional[int], Random seed to use for transformation, default to None
     """
 
-    def __init__(self, root='/images', rotation=0, translation=0.,
-                 crop=True, min_crop_size=0.2, seed=None):
+    def __init__(self, root="/images", rotation=0, translation=0.0, crop=True, min_crop_size=0.2, seed=None):
         # TODO more extensions
-        self._path = glob(os.path.join(root, '**', '*.*'), recursive=True)
-        self._path = list(
-            filter(lambda p: os.path.splitext(p)[1] in ('.jpg', '.png', '.gif'), self._path))
+        self._path = glob(os.path.join(root, "**", "*.*"), recursive=True)
+        self._path = list(filter(lambda p: os.path.splitext(p)[1] in (".jpg", ".png", ".gif"), self._path))
         self.rotation = rotation
         self.translation = translation
         self.crop = crop
@@ -303,7 +277,7 @@ class ImagePattern(RandomPattern):
     def set_as_source(self, ctxt):
         surface = ctxt.get_group_target()
         width, height = surface.get_width(), surface.get_height()
-        im = PILImage.open(self.rng.choice(self._path, 1).item()).convert('RGB')
+        im = PILImage.open(self.rng.choice(self._path, 1).item()).convert("RGB")
         im = self._rotate_and_translate(im, self.rotation, self.translation)
         # Generate a crop with a least 10% of the image in it.
         if self.crop:
@@ -315,11 +289,7 @@ class ImagePattern(RandomPattern):
 def _surface_to_array(surface):
     """Converts a cairo.ImageSurface object to a numpy array."""
     buf = surface.get_data()
-    img = np.ndarray(shape=(surface.get_height(),
-                            surface.get_width(),
-                            4),
-                     dtype=np.uint8,
-                     buffer=buf)
+    img = np.ndarray(shape=(surface.get_height(), surface.get_width(), 4), dtype=np.uint8, buffer=buf)
     return img[:, :, :3]
 
 
@@ -332,14 +302,9 @@ def _make_surface(width, height):
     return surface, ctxt
 
 
-def _image_transform(img,
-                     inverse_color,
-                     pixel_noise_scale,
-                     is_gray,
-                     max_contrast,
-                     rng, symbols=()):
+def _image_transform(img, inverse_color, pixel_noise_scale, is_gray, max_contrast, rng, symbols=()):
     """Basic array transformation of the image."""
-    img = img.astype(np.float32) / 256.
+    img = img.astype(np.float32) / 256.0
 
     if is_gray:
         img = np.mean(img, axis=2, keepdims=True)
@@ -357,13 +322,13 @@ def _image_transform(img,
                 print("Font %s yields empty image" % symbols[0].font)
 
     img += rng.randn(*img.shape) * pixel_noise_scale
-    img = np.clip(img, 0., 1.)
+    img = np.clip(img, 0.0, 1.0)
 
     return (img * 255).astype(np.uint8)
 
 
 def _from_pil(im, alpha=1.0, format=cairo.FORMAT_ARGB32):
-    """ Convert a PIL Image to a Cairo surface.
+    """Convert a PIL Image to a Cairo surface.
 
     Args:
         im: Pillow Image
@@ -373,9 +338,9 @@ def _from_pil(im, alpha=1.0, format=cairo.FORMAT_ARGB32):
     Returns: a cairo.ImageSurface object
     """
     assert format in (cairo.FORMAT_RGB24, cairo.FORMAT_ARGB32), f"Unsupported pixel format: {format}"
-    if 'A' not in im.getbands():
-        im.putalpha(int(alpha * 256.))
-    arr = bytearray(im.tobytes('raw', 'BGRa'))
+    if "A" not in im.getbands():
+        im.putalpha(int(alpha * 256.0))
+    arr = bytearray(im.tobytes("raw", "BGRa"))
     surface = cairo.ImageSurface.create_for_data(arr, format, im.width, im.height)
     surface.set_device_scale(im.width, im.height)
     return surface
@@ -402,15 +367,17 @@ class Image:
     the same image will be rendered. Defaults to None.
     """
 
-    def __init__(self,
-                 symbols,
-                 resolution=(32, 32),
-                 background=NoPattern(),
-                 inverse_color=False,
-                 pixel_noise_scale=0.01,
-                 is_gray=False,
-                 max_contrast=True,
-                 seed=None):
+    def __init__(
+        self,
+        symbols,
+        resolution=(32, 32),
+        background=NoPattern(),
+        inverse_color=False,
+        pixel_noise_scale=0.01,
+        is_gray=False,
+        max_contrast=True,
+        seed=None,
+    ):
         self.symbols = symbols
         self.resolution = resolution
         self.inverse_color = inverse_color
@@ -435,12 +402,9 @@ class Image:
             ctxt.restore()
         img = _surface_to_array(surface)
         rng = np.random.RandomState(self.seed)
-        return _image_transform(img,
-                                self.inverse_color,
-                                self.pixel_noise_scale,
-                                self.is_gray,
-                                self.max_contrast,
-                                rng, self.symbols)
+        return _image_transform(
+            img, self.inverse_color, self.pixel_noise_scale, self.is_gray, self.max_contrast, rng, self.symbols
+        )
 
     def attribute_dict(self):
         symbols = [symbol.attribute_dict() for symbol in self.symbols]
@@ -448,10 +412,10 @@ class Image:
             resolution=self.resolution,
             pixel_noise_scale=self.pixel_noise_scale,
             seed=self.seed,
-            background=self.background.attribute_dict()
+            background=self.background.attribute_dict(),
         )
         data.update(symbols[0])  # hack to allow flatten access
-        data['symbols'] = symbols
+        data["symbols"] = symbols
 
         return data
 
@@ -478,16 +442,7 @@ class Symbol:
             symbol fits entirely in the image. Note if the scale i
     """
 
-    def __init__(self,
-                 alphabet,
-                 char,
-                 font,
-                 foreground,
-                 is_slant,
-                 is_bold,
-                 rotation,
-                 scale,
-                 translation):
+    def __init__(self, alphabet, char, font, foreground, is_slant, is_bold, rotation, scale, translation):
         self.alphabet = alphabet
         self.char = char
         self.font = font
