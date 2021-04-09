@@ -3,19 +3,8 @@ from matplotlib import pyplot as plt
 from .utils import make_img_grid
 
 
-def plot_dataset(x,
-                 y,
-                 h_axis='char',
-                 v_axis='font',
-                 n_row=20,
-                 n_col=40,
-                 hide_axis=False):
-    img_grid, h_values, v_values = make_img_grid(x,
-                                                 y,
-                                                 h_axis,
-                                                 v_axis,
-                                                 n_row,
-                                                 n_col)
+def plot_dataset(x, y, h_axis="char", v_axis="font", n_row=20, n_col=40, hide_axis=False):
+    img_grid, h_values, v_values = make_img_grid(x, y, h_axis, v_axis, n_row, n_col)
 
     plt.tight_layout()
 
