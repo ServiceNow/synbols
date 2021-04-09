@@ -54,4 +54,10 @@ run_tests:
 
 # Runs flake8
 run_flake8:
-	flake8 synbols tests --max-line-length=120
+	flake8
+
+# Setup pre-commit hooks
+# XXX: These are useful to run checks on the code before committing
+setup-precommit-hooks:
+	pip install pre-commit
+	pre-commit install
