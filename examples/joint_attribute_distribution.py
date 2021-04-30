@@ -19,7 +19,7 @@ color_distr_dict = {'a': (0.8, 0.2, 0),  # 80% of 'a's are blue and 20% are gree
                     'c': (0.2, 0, 0.8)}
 
 
-def attribute_sampler():
+def attribute_sampler(seed=None):
     """Makes brightness dependent on scale and color dependant on symbol."""
 
     char = np.random.choice(list('abc'))
