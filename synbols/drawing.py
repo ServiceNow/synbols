@@ -413,6 +413,7 @@ class Image:
             pixel_noise_scale=self.pixel_noise_scale,
             seed=self.seed,
             background=self.background.attribute_dict(),
+            inverse_color=int(self.inverse_color),
         )
         data.update(symbols[0])  # hack to allow flatten access
         data["symbols"] = symbols
