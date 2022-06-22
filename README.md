@@ -1,7 +1,9 @@
+*ServiceNow completed its acquisition of Element AI on January 8, 2021. All references to Element AI in the materials that are part of this project should refer to ServiceNow.*
+
 ![#Synbols](https://github.com/ElementAI/synbols/raw/master/title.png)
 # Probing Learning Algorithms with Synthetic Datasets
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![CircleCI](https://circleci.com/gh/ElementAI/synbols.svg?style=shield)](https://circleci.com/gh/ElementAI/synbols)
 [![Documentation Status](https://readthedocs.org/projects/synbols/badge/?version=latest)](https://synbols.readthedocs.io/en/latest/?badge=latest)
 
