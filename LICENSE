@@ -1,14 +1,3 @@
-Notice -  the authors have used available fonts in order to render images to generate the datasets described in this
-paper and corresponding repository. These fonts were obtained via Google Fonts (https://fonts.google.com/) and
-1001 Free Fonts (https://www.1001freefonts.com/).
-The authors removed any font licensed under terms that clearly restrict commercial use. If you have any issues or what
-to identify potentially infringing content, please contact the authors. The authors and their employer make no
-representations as to your own use of the fonts.
-
-This code is released under the Apache v2 license ( https://www.apache.org/licenses/LICENSE-2.0 ).  (c) 2020 Element AI Inc.
-
-
-
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -197,7 +186,7 @@ This code is released under the Apache v2 license ( https://www.apache.org/licen
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright [yyyy] [name of copyright owner]
+   Copyright 2021 ServiceNow
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
